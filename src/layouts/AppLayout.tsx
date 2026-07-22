@@ -1,15 +1,8 @@
-import {
-  BankOutlined,
-  DashboardOutlined,
-  InboxOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  TeamOutlined,
-  UserOutlined,
-} from '@ant-design/icons'
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@ant-design/icons'
 import { Avatar, Button, Dropdown, Layout, Menu, Typography, theme as antTheme } from 'antd'
 import type { FC } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { DASHBOARD_ITEM, NAV_GROUPS } from '@/layouts/navConfig'
 import { useAppStore } from '@/store'
 import { BRAND_GRADIENT_FROM, BRAND_GRADIENT_TO } from '@/theme/brand'
 import { SIDEBAR_BG, SIDEBAR_BORDER } from '@/theme/sidebar'
@@ -17,19 +10,13 @@ import { SIDEBAR_BG, SIDEBAR_BORDER } from '@/theme/sidebar'
 const { Header, Sider, Content } = Layout
 
 const NAV_ITEMS = [
-  { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
-  {
-    key: '/hr',
-    icon: <TeamOutlined />,
-    label: 'HR & Payroll',
-    children: [
-      { key: '/hr/employees', label: 'Employees' },
-      { key: '/hr/leave', label: 'Leave Management' },
-      { key: '/hr/payroll', label: 'Payroll' },
-    ],
-  },
-  { key: '/finance', icon: <BankOutlined />, label: 'Finance' },
-  { key: '/inventory', icon: <InboxOutlined />, label: 'Inventory' },
+  DASHBOARD_ITEM,
+  ...NAV_GROUPS.map(group => ({
+    key: group.key,
+    icon: group.icon,
+    label: group.label,
+    children: group.children.map(leaf => ({ key: leaf.path, label: leaf.label })),
+  })),
 ]
 
 export const AppLayout: FC = () => {
