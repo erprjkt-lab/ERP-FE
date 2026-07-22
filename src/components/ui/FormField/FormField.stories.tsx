@@ -138,12 +138,7 @@ export const FullEmployeeForm: Story = {
             rules={[{ required: true }]}
           />
         </div>
-        <FormField
-          label="Active"
-          name="isActive"
-          fieldType="switch"
-          valuePropName="checked"
-        />
+        <FormField label="Active" name="isActive" fieldType="switch" valuePropName="checked" />
         <FormField
           label="Notes"
           name="notes"

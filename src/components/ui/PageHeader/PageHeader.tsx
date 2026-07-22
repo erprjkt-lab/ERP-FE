@@ -26,10 +26,19 @@ export const PageHeader: FC<PageHeaderProps> = ({
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumb
           style={{ marginBottom: 8 }}
-          items={breadcrumbs.map(b => ({ title: b.href ? <a href={b.href}>{b.label}</a> : b.label }))}
+          items={breadcrumbs.map(b => ({
+            title: b.href ? <a href={b.href}>{b.label}</a> : b.label,
+          }))}
         />
       )}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 16,
+        }}
+      >
         <div>
           <Typography.Title level={3} style={{ margin: 0 }}>
             {title}

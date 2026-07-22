@@ -1,4 +1,4 @@
-import { Button, Empty } from 'antd'
+import { Button, Empty, theme as antTheme } from 'antd'
 import type { FC, ReactNode } from 'react'
 
 export interface EmptyStateProps {
@@ -18,6 +18,7 @@ export const EmptyState: FC<EmptyStateProps> = ({
   image,
   action,
 }) => {
+  const { token } = antTheme.useToken()
   const emptyImage = image === 'simple' ? Empty.PRESENTED_IMAGE_SIMPLE : undefined
 
   return (
@@ -30,7 +31,7 @@ export const EmptyState: FC<EmptyStateProps> = ({
           {description && (
             <>
               <br />
-              <span style={{ color: 'rgba(0,0,0,.45)', fontSize: 13 }}>{description}</span>
+              <span style={{ color: token.colorTextDescription, fontSize: 13 }}>{description}</span>
             </>
           )}
         </span>

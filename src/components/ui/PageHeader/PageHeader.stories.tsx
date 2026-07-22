@@ -21,7 +21,9 @@ export const Default: Story = {
     actions: (
       <>
         <Button icon={<ExportOutlined />}>Export</Button>
-        <Button type="primary" icon={<PlusOutlined />}>Add Employee</Button>
+        <Button type="primary" icon={<PlusOutlined />}>
+          Add Employee
+        </Button>
       </>
     ),
   },
@@ -33,7 +35,9 @@ export const WithFilters: Story = {
     subtitle: '248 employees',
     breadcrumbs: [{ label: 'HR', href: '/hr' }, { label: 'Employees' }],
     actions: (
-      <Button type="primary" icon={<PlusOutlined />}>Add Employee</Button>
+      <Button type="primary" icon={<PlusOutlined />}>
+        Add Employee
+      </Button>
     ),
     children: (
       <Input.Search placeholder="Search by name, ID, or email..." style={{ maxWidth: 320 }} />

@@ -7,7 +7,16 @@ const meta = {
   title: 'UI/Typography',
   component: AntTypography,
   tags: ['autodocs'],
-  parameters: { layout: 'padded', backgrounds: { default: 'white' } },
+  parameters: {
+    layout: 'padded',
+    backgrounds: { default: 'white' },
+    docs: {
+      description: {
+        component:
+          'Two-face system: **Space Grotesk** for `Title` (h1–h5) headings, **Inter** for everything else (`Text`, `Paragraph`, form labels, table cells). Headings pick up the display face automatically via a global `.ant-typography` rule — no per-component wiring needed.',
+      },
+    },
+  },
 } satisfies Meta<typeof AntTypography>
 
 export default meta
@@ -53,7 +62,9 @@ export const TextVariants: Story = {
 export const ERPUsage: Story = {
   render: () => (
     <div style={{ maxWidth: 500 }}>
-      <Title level={3} style={{ marginBottom: 4 }}>John Doe</Title>
+      <Title level={3} style={{ marginBottom: 4 }}>
+        John Doe
+      </Title>
       <Text type="secondary">EMP-001 · Engineering · Senior Engineer</Text>
       <Divider />
       <Paragraph>

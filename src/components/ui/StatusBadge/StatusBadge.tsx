@@ -6,7 +6,11 @@ export type StatusBadgeStatus = Status | 'approved' | 'rejected' | 'paid' | 'dra
 
 const STATUS_CONFIG: Record<
   StatusBadgeStatus,
-  { color: string; label: string; dotStatus?: 'success' | 'processing' | 'error' | 'warning' | 'default' }
+  {
+    color: string
+    label: string
+    dotStatus?: 'success' | 'processing' | 'error' | 'warning' | 'default'
+  }
 > = {
   active: { color: 'green', label: 'Active', dotStatus: 'success' },
   inactive: { color: 'default', label: 'Inactive', dotStatus: 'default' },

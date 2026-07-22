@@ -3,23 +3,11 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/layouts/AppLayout'
 import { EmployeeDetail, EmployeeForm, EmployeeList } from '@/modules/hr'
 import { Dashboard } from '@/pages/Dashboard'
+import { ANTD_THEME } from '@/theme/antd-theme'
 
 function App() {
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#1677ff',
-          borderRadius: 6,
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        },
-        components: {
-          Layout: {
-            bodyBg: '#f5f5f5',
-          },
-        },
-      }}
-    >
+    <ConfigProvider theme={ANTD_THEME}>
       <AntApp>
         <BrowserRouter>
           <Routes>

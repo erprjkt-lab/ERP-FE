@@ -32,7 +32,9 @@ export const FormField: FC<FormFieldProps> = ({
       case 'textarea':
         return <Input.TextArea placeholder={placeholder} disabled={disabled} rows={3} />
       case 'number':
-        return <InputNumber placeholder={placeholder} disabled={disabled} style={{ width: '100%' }} />
+        return (
+          <InputNumber placeholder={placeholder} disabled={disabled} style={{ width: '100%' }} />
+        )
       case 'select':
         return (
           <Select
@@ -41,7 +43,9 @@ export const FormField: FC<FormFieldProps> = ({
             options={options}
             showSearch
             filterOption={(input, option) =>
-              String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              String(option?.label ?? '')
+                .toLowerCase()
+                .includes(input.toLowerCase())
             }
           />
         )

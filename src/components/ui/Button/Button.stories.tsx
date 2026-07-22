@@ -1,11 +1,6 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  SaveOutlined,
-} from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons'
 import type { Meta, StoryObj } from '@storybook/react'
-import { fn } from '@storybook/test'
+import { fn } from 'storybook/test'
 import { Space } from 'antd'
 import { Button } from './Button'
 
@@ -62,25 +57,43 @@ export const AllVariants: Story = {
   render: () => (
     <Space direction="vertical" size="middle">
       <Space wrap>
-        <Button type="primary" icon={<PlusOutlined />}>Add New</Button>
+        <Button type="primary" icon={<PlusOutlined />}>
+          Add New
+        </Button>
         <Button type="default">Default</Button>
         <Button type="dashed">Dashed</Button>
         <Button type="link">Link</Button>
         <Button type="text">Text</Button>
       </Space>
       <Space wrap>
-        <Button type="primary" danger icon={<DeleteOutlined />}>Delete</Button>
-        <Button type="default" danger>Cancel</Button>
-        <Button type="primary" icon={<SaveOutlined />}>Save</Button>
-        <Button type="default" icon={<EditOutlined />}>Edit</Button>
+        <Button type="primary" danger icon={<DeleteOutlined />}>
+          Delete
+        </Button>
+        <Button type="default" danger>
+          Cancel
+        </Button>
+        <Button type="primary" icon={<SaveOutlined />}>
+          Save
+        </Button>
+        <Button type="default" icon={<EditOutlined />}>
+          Edit
+        </Button>
       </Space>
       <Space wrap>
-        <Button type="primary" size="large">Large</Button>
-        <Button type="primary" size="middle">Middle</Button>
-        <Button type="primary" size="small">Small</Button>
+        <Button type="primary" size="large">
+          Large
+        </Button>
+        <Button type="primary" size="middle">
+          Middle
+        </Button>
+        <Button type="primary" size="small">
+          Small
+        </Button>
       </Space>
       <Space wrap>
-        <Button type="primary" loading>Loading</Button>
+        <Button type="primary" loading>
+          Loading
+        </Button>
         <Button disabled>Disabled</Button>
       </Space>
     </Space>

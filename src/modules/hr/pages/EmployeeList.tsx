@@ -5,7 +5,19 @@ import {
   EyeOutlined,
   PlusOutlined,
 } from '@ant-design/icons'
-import { App, Avatar, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import {
+  App,
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Input,
+  Row,
+  Select,
+  Space,
+  theme as antTheme,
+  Tooltip,
+} from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -14,20 +26,25 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Employee } from '@/types/hr'
 import { useHRStore } from '../store/hrStore'
+import { getDepartmentColor } from '../utils/departmentColor'
 import { MOCK_EMPLOYEES } from '../_mock/employees'
 
-const COLUMNS: TableColumnsType<Employee> = [
+const getColumns = (colorTextDescription: string): TableColumnsType<Employee> => [
   {
     title: 'Employee',
     key: 'employee',
     render: (_, record) => (
       <Space>
-        <Avatar src={record.avatar} size={36}>
+        <Avatar
+          src={record.avatar}
+          size={36}
+          style={{ backgroundColor: getDepartmentColor(record.departmentId) }}
+        >
           {record.firstName[0]}
         </Avatar>
         <div>
           <div style={{ fontWeight: 500 }}>{record.fullName}</div>
-          <div style={{ fontSize: 12, color: 'rgba(0,0,0,.45)' }}>{record.employeeId}</div>
+          <div style={{ fontSize: 12, color: colorTextDescription }}>{record.employeeId}</div>
         </div>
       </Space>
     ),
@@ -61,12 +78,7 @@ const COLUMNS: TableColumnsType<Employee> = [
     render: (_, _record) => (
       <Space size="small">
         <Tooltip title="View">
-          <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => {}}
-          />
+          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => {}} />
         </Tooltip>
         <Tooltip title="Edit">
           <Button type="text" size="small" icon={<EditOutlined />} />
@@ -82,10 +94,15 @@ const COLUMNS: TableColumnsType<Employee> = [
 export const EmployeeList: FC = () => {
   const navigate = useNavigate()
   App.useApp()
+  const { token } = antTheme.useToken()
   const { employeeListFilters, setFilter, resetFilters } = useHRStore()
+  const columns = getColumns(token.colorTextDescription)
 
   const filtered = MOCK_EMPLOYEES.filter(e => {
-    if (employeeListFilters.search && !e.fullName.toLowerCase().includes(employeeListFilters.search.toLowerCase())) {
+    if (
+      employeeListFilters.search &&
+      !e.fullName.toLowerCase().includes(employeeListFilters.search.toLowerCase())
+    ) {
       return false
     }
     if (employeeListFilters.status && e.status !== employeeListFilters.status) return false
@@ -104,7 +121,11 @@ export const EmployeeList: FC = () => {
         actions={
           <>
             <Button icon={<ExportOutlined />}>Export</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/hr/employees/new')}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/hr/employees/new')}
+            >
               Add Employee
             </Button>
           </>
@@ -141,7 +162,7 @@ export const EmployeeList: FC = () => {
 
       <Card styles={{ body: { padding: 0 } }}>
         <DataTable<Employee>
-          columns={COLUMNS}
+          columns={columns}
           dataSource={filtered}
           rowKey="id"
           totalLabel="employees"

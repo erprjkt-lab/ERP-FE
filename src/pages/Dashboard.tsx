@@ -1,20 +1,28 @@
-import { CheckCircleOutlined, ClockCircleOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons'
-import { Card, Col, Row, Typography } from 'antd'
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  DollarOutlined,
+  TeamOutlined,
+} from '@ant-design/icons'
+import { Card, Col, Row, Typography, theme as antTheme } from 'antd'
 import type { FC } from 'react'
 import { KPICard } from '@/components/ui/KPICard'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { MOCK_EMPLOYEES } from '@/modules/hr/_mock/employees'
+import { MOCK_DEPARTMENTS, MOCK_EMPLOYEES } from '@/modules/hr/_mock/employees'
+import { getDepartmentColor } from '@/modules/hr/utils/departmentColor'
+import { tabularNums } from '@/theme/typography'
 
 const activeCount = MOCK_EMPLOYEES.filter(e => e.status === 'active').length
+const DEPARTMENTS_BY_HEADCOUNT = [...MOCK_DEPARTMENTS].sort((a, b) => b.headCount - a.headCount)
+const MAX_HEADCOUNT = DEPARTMENTS_BY_HEADCOUNT[0].headCount
 
 export const Dashboard: FC = () => {
+  const { token } = antTheme.useToken()
+
   return (
     <div>
-      <PageHeader
-        title="Dashboard"
-        subtitle="Welcome back, Admin"
-      />
+      <PageHeader title="Dashboard" subtitle="Welcome back, Admin" />
 
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
@@ -23,6 +31,7 @@ export const Dashboard: FC = () => {
             value={MOCK_EMPLOYEES.length}
             prefix={<TeamOutlined />}
             trend={{ value: 12 }}
+            tone="dark"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -39,7 +48,7 @@ export const Dashboard: FC = () => {
             title="Pending Leaves"
             value={14}
             prefix={<ClockCircleOutlined />}
-            color="#fa8c16"
+            color={token.colorWarning}
             trend={{ value: -5 }}
           />
         </Col>
@@ -48,8 +57,8 @@ export const Dashboard: FC = () => {
             title="Active Employees"
             value={activeCount}
             prefix={<CheckCircleOutlined />}
-            color="#52c41a"
             trend={{ value: 2 }}
+            tone="accent"
           />
         </Col>
       </Row>
@@ -65,7 +74,7 @@ export const Dashboard: FC = () => {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '8px 0',
-                  borderBottom: '1px solid #f0f0f0',
+                  borderBottom: `1px solid ${token.colorBorderSecondary}`,
                 }}
               >
                 <div>
@@ -81,31 +90,27 @@ export const Dashboard: FC = () => {
         </Col>
         <Col xs={24} lg={12}>
           <Card title="Department Overview">
-            {[
-              { name: 'Engineering', count: 45, pct: 45 },
-              { name: 'HR', count: 12, pct: 12 },
-              { name: 'Finance', count: 18, pct: 18 },
-              { name: 'Operations', count: 30, pct: 30 },
-              { name: 'Sales', count: 25, pct: 25 },
-            ].map(dept => (
-              <div key={dept.name} style={{ marginBottom: 12 }}>
+            {DEPARTMENTS_BY_HEADCOUNT.map(dept => (
+              <div key={dept.id} style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <Typography.Text>{dept.name}</Typography.Text>
-                  <Typography.Text type="secondary">{dept.count} employees</Typography.Text>
+                  <Typography.Text type="secondary" style={tabularNums}>
+                    {dept.headCount} employees
+                  </Typography.Text>
                 </div>
                 <div
                   style={{
                     height: 6,
-                    background: '#f0f0f0',
+                    background: token.colorFillSecondary,
                     borderRadius: 3,
                     overflow: 'hidden',
                   }}
                 >
                   <div
                     style={{
-                      width: `${(dept.count / 130) * 100}%`,
+                      width: `${(dept.headCount / MAX_HEADCOUNT) * 100}%`,
                       height: '100%',
-                      background: '#1677ff',
+                      background: getDepartmentColor(dept.id),
                       borderRadius: 3,
                     }}
                   />

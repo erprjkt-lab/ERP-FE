@@ -26,12 +26,21 @@ const STATUS_COLORS = { active: 'green', inactive: 'default', pending: 'orange' 
 
 const COLUMNS: TableColumnsType<AnyObject> = [
   { title: 'Name', dataIndex: 'name' },
-  { title: 'Department', dataIndex: 'department', filters: [
-    { text: 'Engineering', value: 'Engineering' },
-    { text: 'HR', value: 'HR' },
-    { text: 'Finance', value: 'Finance' },
-  ], onFilter: (value, record) => record['department'] === value },
-  { title: 'Status', dataIndex: 'status', render: (s: SampleRow['status']) => <Tag color={STATUS_COLORS[s]}>{s}</Tag> },
+  {
+    title: 'Department',
+    dataIndex: 'department',
+    filters: [
+      { text: 'Engineering', value: 'Engineering' },
+      { text: 'HR', value: 'HR' },
+      { text: 'Finance', value: 'Finance' },
+    ],
+    onFilter: (value, record) => record['department'] === value,
+  },
+  {
+    title: 'Status',
+    dataIndex: 'status',
+    render: (s: SampleRow['status']) => <Tag color={STATUS_COLORS[s]}>{s}</Tag>,
+  },
   { title: 'Salary', dataIndex: 'salary', render: (v: number) => `₹${v.toLocaleString('en-IN')}` },
   { title: 'Join Date', dataIndex: 'joinDate' },
 ]

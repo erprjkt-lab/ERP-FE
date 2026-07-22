@@ -10,7 +10,18 @@ const meta = {
   argTypes: {
     status: {
       control: 'select',
-      options: ['active', 'inactive', 'pending', 'archived', 'cancelled', 'approved', 'rejected', 'paid', 'draft', 'overdue'],
+      options: [
+        'active',
+        'inactive',
+        'pending',
+        'archived',
+        'cancelled',
+        'approved',
+        'rejected',
+        'paid',
+        'draft',
+        'overdue',
+      ],
     },
     variant: {
       control: 'select',
@@ -66,7 +77,11 @@ export const AllVariants: Story = {
     <Space direction="vertical" size="large">
       <div>
         <p style={{ marginBottom: 8, fontWeight: 600 }}>Tag (default)</p>
-        <Space><StatusBadge status="active" /><StatusBadge status="pending" /><StatusBadge status="rejected" /></Space>
+        <Space>
+          <StatusBadge status="active" />
+          <StatusBadge status="pending" />
+          <StatusBadge status="rejected" />
+        </Space>
       </div>
       <div>
         <p style={{ marginBottom: 8, fontWeight: 600 }}>Dot</p>

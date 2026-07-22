@@ -75,11 +75,7 @@ export const EmployeeForm: FC = () => {
               placeholder="employee@company.com"
               rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
             />
-            <FormField
-              label="Phone"
-              name="phone"
-              placeholder="+91 9000000000"
-            />
+            <FormField label="Phone" name="phone" placeholder="+91 9000000000" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
@@ -125,11 +121,7 @@ export const EmployeeForm: FC = () => {
               placeholder="0"
               rules={[{ required: true, type: 'number', min: 0 }]}
             />
-            <FormField
-              label="Location"
-              name="location"
-              placeholder="City / Office"
-            />
+            <FormField label="Location" name="location" placeholder="City / Office" />
           </div>
 
           <FormField

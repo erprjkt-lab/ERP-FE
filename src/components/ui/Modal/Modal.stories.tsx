@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { fn } from '@storybook/test'
+import { fn } from 'storybook/test'
 import { Button, Form, Input, Typography } from 'antd'
 import { useState } from 'react'
 import { Modal } from './Modal'
@@ -19,7 +19,9 @@ export const Default: Story = {
     const [open, setOpen] = useState(false)
     return (
       <>
-        <Button type="primary" onClick={() => setOpen(true)}>Open Modal</Button>
+        <Button type="primary" onClick={() => setOpen(true)}>
+          Open Modal
+        </Button>
         <Modal
           title="Confirm Action"
           open={open}
@@ -39,15 +41,25 @@ export const FormModal: Story = {
     const [form] = Form.useForm()
     return (
       <>
-        <Button type="primary" onClick={() => setOpen(true)}>Add Department</Button>
+        <Button type="primary" onClick={() => setOpen(true)}>
+          Add Department
+        </Button>
         <Modal
           title="Add Department"
           open={open}
           onOk={() => form.submit()}
-          onCancel={() => { setOpen(false); form.resetFields() }}
+          onCancel={() => {
+            setOpen(false)
+            form.resetFields()
+          }}
           okText="Save"
         >
-          <Form form={form} layout="vertical" onFinish={() => setOpen(false)} style={{ marginTop: 16 }}>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={() => setOpen(false)}
+            style={{ marginTop: 16 }}
+          >
             <Form.Item label="Department Name" name="name" rules={[{ required: true }]}>
               <Input placeholder="e.g. Engineering" />
             </Form.Item>
@@ -66,7 +78,9 @@ export const Destructive: Story = {
     const [open, setOpen] = useState(false)
     return (
       <>
-        <Button danger onClick={() => setOpen(true)}>Delete Employee</Button>
+        <Button danger onClick={() => setOpen(true)}>
+          Delete Employee
+        </Button>
         <Modal
           title="Delete Employee"
           open={open}

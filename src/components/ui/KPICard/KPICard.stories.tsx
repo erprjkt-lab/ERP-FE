@@ -1,4 +1,9 @@
-import { TeamOutlined, DollarOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import {
+  TeamOutlined,
+  DollarOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+} from '@ant-design/icons'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Col, Row } from 'antd'
 import { KPICard } from './KPICard'
