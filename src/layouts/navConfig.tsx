@@ -46,6 +46,9 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: <AppstoreOutlined />,
     label: 'Masters',
     children: [
+      { path: '/masters/countries', label: 'Country' },
+      { path: '/masters/states', label: 'State' },
+      { path: '/masters/cities', label: 'City' },
       { path: '/masters/customers', label: 'Customer' },
       { path: '/masters/vendors', label: 'Vendor' },
       { path: '/masters/suppliers', label: 'Supplier' },

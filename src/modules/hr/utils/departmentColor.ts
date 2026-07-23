@@ -1,10 +1,18 @@
 import { getTonalRamp } from '@/theme/color-utils'
-import { MOCK_DEPARTMENTS } from '../_mock/employees'
 
 const FALLBACK_COLOR = '#8A7A76'
-const RAMP = getTonalRamp(MOCK_DEPARTMENTS.length)
-const DEPARTMENT_COLORS = new Map(MOCK_DEPARTMENTS.map((d, i) => [d.id, RAMP[i]]))
+const RAMP_SIZE = 12
+const RAMP = getTonalRamp(RAMP_SIZE)
+
+function hashToIndex(value: string): number {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
+  }
+  return hash % RAMP_SIZE
+}
 
 export function getDepartmentColor(departmentId?: string | null): string {
-  return (departmentId && DEPARTMENT_COLORS.get(departmentId)) || FALLBACK_COLOR
+  if (!departmentId) return FALLBACK_COLOR
+  return RAMP[hashToIndex(departmentId)]
 }

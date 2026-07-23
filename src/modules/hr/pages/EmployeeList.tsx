@@ -25,11 +25,17 @@ import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Employee } from '@/types/hr'
+import { EMPLOYEE_STATUS_OPTIONS } from '../constants'
+import { useDeleteEmployee, useEmployees } from '../hooks/useEmployees'
 import { useHRStore } from '../store/hrStore'
 import { getDepartmentColor } from '../utils/departmentColor'
-import { MOCK_EMPLOYEES } from '../_mock/employees'
 
-const getColumns = (colorTextDescription: string): TableColumnsType<Employee> => [
+const getColumns = (
+  colorTextDescription: string,
+  onView: (record: Employee) => void,
+  onEdit: (record: Employee) => void,
+  onDelete: (record: Employee) => void,
+): TableColumnsType<Employee> => [
   {
     title: 'Employee',
     key: 'employee',
@@ -40,7 +46,7 @@ const getColumns = (colorTextDescription: string): TableColumnsType<Employee> =>
           size={36}
           style={{ backgroundColor: getDepartmentColor(record.departmentId) }}
         >
-          {record.firstName[0]}
+          {record.fullName.charAt(0)}
         </Avatar>
         <div>
           <div style={{ fontWeight: 500 }}>{record.fullName}</div>
@@ -60,31 +66,31 @@ const getColumns = (colorTextDescription: string): TableColumnsType<Employee> =>
     key: 'designation',
   },
   {
-    title: 'Type',
-    dataIndex: 'employmentType',
-    key: 'type',
-    render: type => <span style={{ textTransform: 'capitalize' }}>{type.replace('-', ' ')}</span>,
-  },
-  {
     title: 'Status',
     dataIndex: 'status',
     key: 'status',
-    render: status => <StatusBadge status={status} />,
+    render: status => <StatusBadge status={status ?? 'active'} />,
   },
   {
     title: 'Actions',
     key: 'actions',
     width: 120,
-    render: (_, _record) => (
-      <Space size="small">
+    render: (_, record) => (
+      <Space size="small" onClick={e => e.stopPropagation()}>
         <Tooltip title="View">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => {}} />
+          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
         </Tooltip>
         <Tooltip title="Edit">
-          <Button type="text" size="small" icon={<EditOutlined />} />
+          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
         </Tooltip>
         <Tooltip title="Delete">
-          <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => onDelete(record)}
+          />
         </Tooltip>
       </Space>
     ),
@@ -93,12 +99,37 @@ const getColumns = (colorTextDescription: string): TableColumnsType<Employee> =>
 
 export const EmployeeList: FC = () => {
   const navigate = useNavigate()
-  App.useApp()
+  const { modal, message } = App.useApp()
   const { token } = antTheme.useToken()
   const { employeeListFilters, setFilter, resetFilters } = useHRStore()
-  const columns = getColumns(token.colorTextDescription)
+  const { data: employees = [], isLoading } = useEmployees()
+  const { mutateAsync: deleteEmployee } = useDeleteEmployee()
 
-  const filtered = MOCK_EMPLOYEES.filter(e => {
+  const handleDelete = (record: Employee) => {
+    modal.confirm({
+      title: 'Delete this employee?',
+      content: 'This action cannot be undone.',
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await deleteEmployee(Number(record.id))
+          message.success('Employee deleted successfully')
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : 'Something went wrong')
+        }
+      },
+    })
+  }
+
+  const columns = getColumns(
+    token.colorTextDescription,
+    record => navigate(`/hr/employees/${record.id}`),
+    record => navigate(`/hr/employees/${record.id}/edit`),
+    handleDelete,
+  )
+
+  const filtered = employees.filter(e => {
     if (
       employeeListFilters.search &&
       !e.fullName.toLowerCase().includes(employeeListFilters.search.toLowerCase())
@@ -116,7 +147,7 @@ export const EmployeeList: FC = () => {
     <div>
       <PageHeader
         title="Employees"
-        subtitle={`${filtered.length} of ${MOCK_EMPLOYEES.length} employees`}
+        subtitle={`${filtered.length} of ${employees.length} employees`}
         breadcrumbs={[{ label: 'HR', href: '/hr' }, { label: 'Employees' }]}
         actions={
           <>
@@ -147,11 +178,7 @@ export const EmployeeList: FC = () => {
               onChange={v => setFilter('status', v)}
               allowClear
               style={{ width: '100%' }}
-              options={[
-                { label: 'Active', value: 'active' },
-                { label: 'Inactive', value: 'inactive' },
-                { label: 'Pending', value: 'pending' },
-              ]}
+              options={EMPLOYEE_STATUS_OPTIONS}
             />
           </Col>
           <Col>
@@ -165,6 +192,7 @@ export const EmployeeList: FC = () => {
           columns={columns}
           dataSource={filtered}
           rowKey="id"
+          loading={isLoading}
           totalLabel="employees"
           onRow={record => ({
             onClick: () => navigate(`/hr/employees/${record.id}`),

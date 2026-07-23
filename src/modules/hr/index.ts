@@ -1,5 +1,8 @@
 export { EmployeeList } from './pages/EmployeeList'
 export { EmployeeDetail } from './pages/EmployeeDetail'
 export { EmployeeForm } from './pages/EmployeeForm'
+export { DepartmentList } from './pages/DepartmentList'
+export { DesignationList } from './pages/DesignationList'
+export { ShiftList } from './pages/ShiftList'
 export { useHRStore } from './store/hrStore'
 export { MOCK_EMPLOYEES, MOCK_DEPARTMENTS } from './_mock/employees'

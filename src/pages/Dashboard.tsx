@@ -37,7 +37,7 @@ export const Dashboard: FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <KPICard
             title="Monthly Payroll"
-            value={MOCK_EMPLOYEES.reduce((sum, e) => sum + e.salary, 0)}
+            value={MOCK_EMPLOYEES.reduce((sum, e) => sum + (e.salary ?? 0), 0)}
             prefix={<DollarOutlined />}
             formatter={v => `₹${Number(v).toLocaleString('en-IN')}`}
             trend={{ value: 3.2 }}
@@ -83,7 +83,7 @@ export const Dashboard: FC = () => {
                     {e.department?.name} · {e.designation?.title}
                   </Typography.Text>
                 </div>
-                <StatusBadge status={e.status} />
+                <StatusBadge status={e.status ?? 'active'} />
               </div>
             ))}
           </Card>

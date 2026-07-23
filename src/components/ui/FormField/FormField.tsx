@@ -1,8 +1,8 @@
-import { Form, Input, InputNumber, Select, Switch, DatePicker } from 'antd'
+import { Form, Input, InputNumber, Select, Switch, DatePicker, TimePicker } from 'antd'
 import type { FormItemProps } from 'antd'
 import type { FC, ReactNode } from 'react'
 
-type FieldType = 'text' | 'textarea' | 'number' | 'select' | 'switch' | 'date' | 'custom'
+type FieldType = 'text' | 'textarea' | 'number' | 'select' | 'switch' | 'date' | 'time' | 'custom'
 
 interface SelectOption {
   label: string
@@ -53,6 +53,8 @@ export const FormField: FC<FormFieldProps> = ({
         return <Switch disabled={disabled} />
       case 'date':
         return <DatePicker disabled={disabled} style={{ width: '100%' }} />
+      case 'time':
+        return <TimePicker disabled={disabled} style={{ width: '100%' }} format="HH:mm" />
       default:
         return <Input placeholder={placeholder} disabled={disabled} />
     }

@@ -1,7 +1,7 @@
 import type { BaseEntity, ID, Status } from './index'
 
-export type EmploymentType = 'full-time' | 'part-time' | 'contract' | 'intern'
-export type Gender = 'male' | 'female' | 'other' | 'prefer-not-to-say'
+export type EmploymentType = 'permanent' | 'contract' | 'intern'
+export type Gender = 'male' | 'female' | 'other'
 
 export interface Department extends BaseEntity {
   name: string
@@ -11,35 +11,47 @@ export interface Department extends BaseEntity {
   headCount: number
 }
 
-export interface Employee extends BaseEntity {
-  employeeId: string
-  firstName: string
-  lastName: string
-  fullName: string
-  email: string
-  phone: string
-  avatar?: string
-  gender: Gender
-  dateOfBirth: string
-  joinDate: string
-  exitDate?: string
-  status: Status
-  employmentType: EmploymentType
-  departmentId: ID
-  department?: Department
-  designationId: ID
-  designation?: Designation
-  managerId: ID | null
-  manager?: Pick<Employee, 'id' | 'fullName' | 'email' | 'avatar'>
-  salary: number
-  currency: string
-  location: string
-}
-
 export interface Designation extends BaseEntity {
   title: string
   level: number
-  departmentId: ID
+  departmentId: ID | null
+  department?: Department
+}
+
+export interface Shift extends BaseEntity {
+  name: string
+  startTime: string
+  endTime: string
+  lunchStartTime: string
+  lunchEndTime: string
+}
+
+export interface Employee extends BaseEntity {
+  employeeId: string
+  fullName: string
+  email: string
+  username: string
+  phone: string
+  avatar?: string
+  gender?: Gender
+  dateOfBirth?: string
+  branch?: number | null
+  joinDate?: string
+  exitDate?: string
+  status?: Status
+  employmentType?: EmploymentType
+  departmentId?: ID | null
+  department?: Department
+  designationId?: ID | null
+  designation?: Designation
+  shiftId?: ID | null
+  shift?: Shift
+  role?: string
+  managerId?: ID | null
+  manager?: Pick<Employee, 'id' | 'fullName' | 'email' | 'avatar'>
+  salary?: number
+  currency?: string
+  location?: string
 }
 
 export interface LeaveType extends BaseEntity {

@@ -2,6 +2,7 @@ export type {
   Employee,
   Department,
   Designation,
+  Shift,
   LeaveRequest,
   LeaveType,
   Payroll,

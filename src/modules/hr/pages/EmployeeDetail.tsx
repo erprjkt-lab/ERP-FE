@@ -5,14 +5,15 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { tabularNums } from '@/theme/typography'
-import { MOCK_EMPLOYEES } from '../_mock/employees'
+import { getBranchLabel } from '../constants'
+import { useEmployee } from '../hooks/useEmployees'
 import { getDepartmentColor } from '../utils/departmentColor'
 
 export const EmployeeDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { token } = antTheme.useToken()
-  const employee = MOCK_EMPLOYEES.find(e => e.id === id)
+  const { data: employee, isLoading } = useEmployee(id)
 
   if (!employee) {
     return (
@@ -20,7 +21,7 @@ export const EmployeeDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/hr/employees')}>
           Back to Employees
         </Button>
-        <p style={{ marginTop: 24 }}>Employee not found.</p>
+        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Employee not found.'}</p>
       </div>
     )
   }
@@ -59,7 +60,7 @@ export const EmployeeDetail: FC = () => {
                 size={96}
                 style={{ fontSize: 36, backgroundColor: getDepartmentColor(employee.departmentId) }}
               >
-                {employee.firstName[0]}
+                {employee.fullName.charAt(0)}
               </Avatar>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 18, fontWeight: 600 }}>{employee.fullName}</div>
@@ -67,7 +68,7 @@ export const EmployeeDetail: FC = () => {
                   {employee.email}
                 </div>
                 <div style={{ marginTop: 8 }}>
-                  <StatusBadge status={employee.status} />
+                  <StatusBadge status={employee.status ?? 'active'} />
                 </div>
               </div>
             </Space>
@@ -86,22 +87,37 @@ export const EmployeeDetail: FC = () => {
                       <Descriptions.Item label="Employee ID">
                         {employee.employeeId}
                       </Descriptions.Item>
+                      <Descriptions.Item label="Username">{employee.username}</Descriptions.Item>
                       <Descriptions.Item label="Employment Type" span={1}>
                         <span style={{ textTransform: 'capitalize' }}>
-                          {employee.employmentType.replace('-', ' ')}
+                          {employee.employmentType ?? '—'}
                         </span>
                       </Descriptions.Item>
+                      <Descriptions.Item label="Role">{employee.role ?? '—'}</Descriptions.Item>
                       <Descriptions.Item label="Department">
-                        {employee.department?.name}
+                        {employee.department?.name ?? '—'}
                       </Descriptions.Item>
                       <Descriptions.Item label="Designation">
-                        {employee.designation?.title}
+                        {employee.designation?.title ?? '—'}
                       </Descriptions.Item>
-                      <Descriptions.Item label="Join Date">{employee.joinDate}</Descriptions.Item>
-                      <Descriptions.Item label="Location">{employee.location}</Descriptions.Item>
+                      <Descriptions.Item label="Shift">
+                        {employee.shift?.name ?? '—'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Branch">
+                        {getBranchLabel(employee.branch) ?? '—'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Join Date">
+                        {employee.joinDate ?? '—'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Date of Birth">
+                        {employee.dateOfBirth ?? '—'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Location">
+                        {employee.location ?? '—'}
+                      </Descriptions.Item>
                       <Descriptions.Item label="Phone">{employee.phone}</Descriptions.Item>
                       <Descriptions.Item label="Gender" style={{ textTransform: 'capitalize' }}>
-                        {employee.gender}
+                        {employee.gender ?? '—'}
                       </Descriptions.Item>
                     </Descriptions>
                   ),
@@ -112,9 +128,13 @@ export const EmployeeDetail: FC = () => {
                   children: (
                     <Descriptions column={2} size="small" bordered>
                       <Descriptions.Item label="Monthly Salary">
-                        <span style={tabularNums}>₹{employee.salary.toLocaleString('en-IN')}</span>
+                        <span style={tabularNums}>
+                          ₹{(employee.salary ?? 0).toLocaleString('en-IN')}
+                        </span>
                       </Descriptions.Item>
-                      <Descriptions.Item label="Currency">{employee.currency}</Descriptions.Item>
+                      <Descriptions.Item label="Currency">
+                        {employee.currency ?? 'INR'}
+                      </Descriptions.Item>
                     </Descriptions>
                   ),
                 },
