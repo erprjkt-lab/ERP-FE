@@ -1,7 +1,8 @@
 import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@ant-design/icons'
-import { Avatar, Button, Dropdown, Layout, Menu, Typography, theme as antTheme } from 'antd'
+import { App, Avatar, Button, Dropdown, Layout, Menu, Typography, theme as antTheme } from 'antd'
 import type { FC } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useLogout } from '@/hooks/useAuth'
 import { DASHBOARD_ITEM, NAV_GROUPS } from '@/layouts/navConfig'
 import { useAppStore } from '@/store'
 import { BRAND_GRADIENT_FROM, BRAND_GRADIENT_TO } from '@/theme/brand'
@@ -24,6 +25,19 @@ export const AppLayout: FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = antTheme.useToken()
+  const { message } = App.useApp()
+  const { mutate: submitLogout } = useLogout()
+
+  const handleUserMenuClick = ({ key }: { key: string }) => {
+    if (key === 'logout') {
+      submitLogout(undefined, {
+        onSettled: () => {
+          message.success('Signed out successfully')
+          navigate('/login', { replace: true })
+        },
+      })
+    }
+  }
 
   return (
     <Layout style={{ height: '100vh' }}>
@@ -112,6 +126,7 @@ export const AppLayout: FC = () => {
                   { type: 'divider' },
                   { key: 'logout', label: 'Logout', danger: true },
                 ],
+                onClick: handleUserMenuClick,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
