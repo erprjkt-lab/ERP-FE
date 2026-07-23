@@ -60,7 +60,12 @@ export const EmployeeForm: FC = () => {
         location: employee.location,
       })
     }
-  }, [isEdit, employee, form])
+    // employee is a freshly-composed object on every render (useEmployees
+    // maps over the query data each call), so depending on it directly
+    // would re-run this effect — and stomp in-progress edits — on every
+    // keystroke. Depend on the stable id instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, employee?.id, form])
 
   const departmentOptions = departments.map(d => ({ label: d.name, value: d.id }))
   const designationOptions = designations

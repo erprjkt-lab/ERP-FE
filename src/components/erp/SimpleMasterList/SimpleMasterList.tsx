@@ -56,7 +56,14 @@ export function SimpleMasterList<T extends { id: string }>({
   }
 
   const handleOk = async () => {
-    const values = await form.validateFields()
+    let values: Record<string, unknown>
+    try {
+      values = await form.validateFields()
+    } catch {
+      // Field-level errors are already shown inline by the Form itself.
+      return
+    }
+
     setSubmitting(true)
     try {
       await onSubmit(values, editing)

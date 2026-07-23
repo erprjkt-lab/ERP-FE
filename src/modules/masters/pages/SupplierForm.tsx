@@ -60,7 +60,12 @@ export const SupplierForm: FC = () => {
         remarks: supplier.remarks,
       })
     }
-  }, [isEdit, supplier, form])
+    // supplier is a freshly-composed object on every render (useSuppliers
+    // maps over the store array each call), so depending on it directly
+    // would re-run this effect — and stomp in-progress edits — on every
+    // keystroke. Depend on the stable id instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, supplier?.id, form])
 
   const countryOptions = countries.map(c => ({ label: c.name, value: c.id }))
   const stateOptions = states
