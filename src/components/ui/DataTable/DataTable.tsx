@@ -5,11 +5,19 @@ import type { FC } from 'react'
 
 export interface DataTableProps<T extends AnyObject> extends TableProps<T> {
   totalLabel?: string
+  /** Fills the parent container's height and scrolls only the table body,
+   * keeping the column header and pagination bar fixed on screen. Parent
+   * chain (e.g. Card + Card body) must itself be a flex container that
+   * gives this table a definite height to fill. */
+  fillHeight?: boolean
 }
 
 export function DataTable<T extends AnyObject>({
   totalLabel = 'records',
   pagination,
+  fillHeight = false,
+  scroll,
+  className,
   ...props
 }: DataTableProps<T>) {
   const defaultPagination =
@@ -24,11 +32,16 @@ export function DataTable<T extends AnyObject>({
           ...((typeof pagination === 'object' && pagination) || {}),
         }
 
+  const mergedScroll = fillHeight
+    ? { x: 'max-content', y: 1, ...scroll }
+    : (scroll ?? { x: 'max-content' })
+
   return (
     <Table<T>
       size="middle"
-      scroll={{ x: 'max-content' }}
+      scroll={mergedScroll}
       pagination={defaultPagination}
+      className={[fillHeight ? 'erp-fill-height-table' : null, className].filter(Boolean).join(' ')}
       {...props}
     />
   )

@@ -36,3 +36,35 @@ body {
     sans-serif;
   letter-spacing: -0.01em;
 }
+
+/* DataTable is always rendered inside a zero-padding Card body, so the
+   pagination row (page-size dropdown included) needs its own horizontal
+   inset to avoid sitting flush against the card edge. */
+.ant-table-pagination {
+  padding-inline: 16px;
+}
+
+/* Used by DataTable's `fillHeight` prop: makes the table body the only
+   scrollable region within its container, keeping the column header and
+   pagination bar fixed on screen instead of scrolling away with the page. */
+.erp-fill-height-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.erp-fill-height-table .ant-spin,
+.erp-fill-height-table .ant-spin-container,
+.erp-fill-height-table .ant-table,
+.erp-fill-height-table .ant-table-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+.erp-fill-height-table .ant-table-body {
+  flex: 1;
+  min-height: 0;
+  max-height: none !important;
+  overflow: auto !important;
+}

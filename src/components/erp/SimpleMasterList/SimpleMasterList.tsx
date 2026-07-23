@@ -117,7 +117,7 @@ export function SimpleMasterList<T extends { id: string }>({
   ]
 
   return (
-    <div>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title={title}
         breadcrumbs={[breadcrumbParent, { label: breadcrumbLabel }]}
@@ -128,13 +128,19 @@ export function SimpleMasterList<T extends { id: string }>({
         }
       />
 
-      <Card styles={{ body: { padding: 0 } }}>
+      <Card
+        style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+        styles={{
+          body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
+        }}
+      >
         <DataTable<T>
           columns={columnsWithActions}
           dataSource={data}
           rowKey="id"
           loading={loading}
           totalLabel={totalLabel}
+          fillHeight
         />
       </Card>
 

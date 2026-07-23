@@ -108,7 +108,7 @@ export const CustomerList: FC = () => {
   })
 
   return (
-    <div>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Customers"
         subtitle={`${filtered.length} of ${customers.length} customers`}
@@ -158,13 +158,19 @@ export const CustomerList: FC = () => {
         </Row>
       </PageHeader>
 
-      <Card styles={{ body: { padding: 0 } }}>
+      <Card
+        style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+        styles={{
+          body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
+        }}
+      >
         <DataTable<Customer>
           columns={columns}
           dataSource={filtered}
           rowKey="id"
           loading={isLoading}
           totalLabel="customers"
+          fillHeight
           onRow={record => ({
             onClick: () => navigate(`/masters/customers/${record.id}`),
             style: { cursor: 'pointer' },
