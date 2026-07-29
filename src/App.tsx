@@ -12,9 +12,20 @@ import {
   ShiftList,
 } from '@/modules/hr'
 import {
+  ConsumableList,
   CustomerDetail,
   CustomerForm,
   CustomerList,
+  DieBlockList,
+  FinishedGoodForm,
+  FinishedGoodList,
+  FixtureList,
+  GaugeInstrumentList,
+  ItemsLayout,
+  MachineList,
+  PackingMaterialList,
+  RawMaterialForm,
+  RawMaterialList,
   SupplierDetail,
   SupplierForm,
   SupplierList,
@@ -37,6 +48,9 @@ const IMPLEMENTED_PATHS = new Set([
   '/masters/customers',
   '/masters/suppliers',
   '/masters/vendors',
+  '/masters/finished-goods',
+  '/masters/raw-materials',
+  '/masters/items',
 ])
 
 function App() {
@@ -71,6 +85,24 @@ function App() {
                 <Route path="/masters/vendors/new" element={<VendorForm />} />
                 <Route path="/masters/vendors/:id" element={<VendorDetail />} />
                 <Route path="/masters/vendors/:id/edit" element={<VendorForm />} />
+
+                <Route path="/masters/finished-goods" element={<FinishedGoodList />} />
+                <Route path="/masters/finished-goods/new" element={<FinishedGoodForm />} />
+                <Route path="/masters/finished-goods/:id/edit" element={<FinishedGoodForm />} />
+
+                <Route path="/masters/raw-materials" element={<RawMaterialList />} />
+                <Route path="/masters/raw-materials/new" element={<RawMaterialForm />} />
+                <Route path="/masters/raw-materials/:id/edit" element={<RawMaterialForm />} />
+
+                <Route path="/masters/items" element={<ItemsLayout />}>
+                  <Route index element={<Navigate to="consumables" replace />} />
+                  <Route path="consumables" element={<ConsumableList />} />
+                  <Route path="machine" element={<MachineList />} />
+                  <Route path="gauges-instruments" element={<GaugeInstrumentList />} />
+                  <Route path="packing-materials" element={<PackingMaterialList />} />
+                  <Route path="fixtures" element={<FixtureList />} />
+                  <Route path="dies-blocks" element={<DieBlockList />} />
+                </Route>
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route

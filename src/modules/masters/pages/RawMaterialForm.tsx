@@ -1,0 +1,184 @@
+import { App, Button, Card, Divider, Form, Space, Typography } from 'antd'
+import type { FC } from 'react'
+import { useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { FormField } from '@/components/ui/FormField'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { UploadField } from '@/components/ui/UploadField'
+import { MASTER_STATUS_OPTIONS } from '../constants'
+import {
+  useCreateRawMaterial,
+  useRawMaterial,
+  useUpdateRawMaterial,
+} from '../hooks/useRawMaterials'
+import type { RawMaterialInput } from '../store/mastersStore'
+
+export const RawMaterialForm: FC = () => {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { message } = App.useApp()
+  const [form] = Form.useForm()
+  const isEdit = !!id
+
+  const { data: rawMaterial } = useRawMaterial(id)
+  const { mutateAsync: createRawMaterial, isPending: creating } = useCreateRawMaterial()
+  const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
+
+  useEffect(() => {
+    if (isEdit && rawMaterial) {
+      form.setFieldsValue({
+        code: rawMaterial.code,
+        name: rawMaterial.name,
+        category: rawMaterial.category,
+        brand: rawMaterial.brand,
+        uom: rawMaterial.uom,
+        alternateUom: rawMaterial.alternateUom,
+        hsnCode: rawMaterial.hsnCode,
+        gstPercent: rawMaterial.gstPercent,
+        description: rawMaterial.description,
+        status: rawMaterial.status,
+        imageUrl: rawMaterial.imageUrl,
+        materialGrade: rawMaterial.materialGrade,
+        materialType: rawMaterial.materialType,
+        shape: rawMaterial.shape,
+        diameter: rawMaterial.diameter,
+        width: rawMaterial.width,
+        thickness: rawMaterial.thickness,
+        length: rawMaterial.length,
+        density: rawMaterial.density,
+        color: rawMaterial.color,
+        price: rawMaterial.price,
+      })
+    }
+    // rawMaterial is a freshly-composed object every render (useRawMaterials
+    // maps the store array each call) — depend on the stable id instead so
+    // this doesn't stomp in-progress edits on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, rawMaterial?.id, form])
+
+  const handleFinish = async (values: Record<string, unknown>) => {
+    const payload = {
+      name: values.name as string,
+      category: values.category as string,
+      brand: values.brand as string | undefined,
+      uom: values.uom as string,
+      alternateUom: values.alternateUom as string | undefined,
+      hsnCode: values.hsnCode as string | undefined,
+      gstPercent: values.gstPercent as number | undefined,
+      description: values.description as string | undefined,
+      status: values.status as 'active' | 'inactive',
+      imageUrl: values.imageUrl as string | undefined,
+      materialGrade: values.materialGrade as string | undefined,
+      materialType: values.materialType as string | undefined,
+      shape: values.shape as string | undefined,
+      diameter: values.diameter as number | undefined,
+      width: values.width as number | undefined,
+      thickness: values.thickness as number | undefined,
+      length: values.length as number | undefined,
+      density: values.density as number | undefined,
+      color: values.color as string | undefined,
+      price: values.price as number | undefined,
+    } satisfies RawMaterialInput
+
+    try {
+      if (isEdit && rawMaterial) {
+        await updateRawMaterial({ id: rawMaterial.id, payload })
+      } else {
+        await createRawMaterial(payload)
+      }
+      message.success(`Raw material ${isEdit ? 'updated' : 'created'} successfully`)
+      navigate('/masters/raw-materials')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title={isEdit ? 'Edit Raw Material' : 'Add Raw Material'}
+        breadcrumbs={[
+          { label: 'Masters', href: '/masters' },
+          { label: 'Raw Materials', href: '/masters/raw-materials' },
+          { label: isEdit ? 'Edit' : 'New' },
+        ]}
+        actions={
+          <Space>
+            <Button onClick={() => navigate('/masters/raw-materials')}>Cancel</Button>
+            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+              {isEdit ? 'Update' : 'Save'} Raw Material
+            </Button>
+          </Space>
+        }
+      />
+
+      <Card>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleFinish}
+          initialValues={{ status: 'active' }}
+          style={{ maxWidth: 900 }}
+        >
+          <Typography.Title level={5}>Basic Info</Typography.Title>
+          {isEdit && <FormField label="Item Code" name="code" disabled />}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <FormField
+              label="Item Name"
+              name="name"
+              rules={[{ required: true, message: 'Item name is required' }]}
+            />
+            <FormField
+              label="Category"
+              name="category"
+              rules={[{ required: true, message: 'Category is required' }]}
+            />
+            <FormField label="Brand" name="brand" />
+            <FormField
+              label="UOM"
+              name="uom"
+              rules={[{ required: true, message: 'UOM is required' }]}
+            />
+            <FormField label="Alternate UOM" name="alternateUom" />
+            <FormField label="HSN Code" name="hsnCode" />
+            <FormField label="GST %" name="gstPercent" fieldType="number" />
+            <FormField
+              label="Status"
+              name="status"
+              fieldType="select"
+              options={MASTER_STATUS_OPTIONS}
+            />
+          </div>
+
+          <Divider />
+          <Typography.Title level={5}>Description</Typography.Title>
+          <FormField label="Description" name="description" fieldType="textarea" />
+
+          <Divider />
+          <Typography.Title level={5}>Physical Specs</Typography.Title>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <FormField label="Material Grade" name="materialGrade" />
+            <FormField label="Material Type" name="materialType" />
+            <FormField label="Shape" name="shape" />
+            <FormField label="Diameter" name="diameter" fieldType="number" />
+            <FormField label="Width" name="width" fieldType="number" />
+            <FormField label="Thickness" name="thickness" fieldType="number" />
+            <FormField label="Length" name="length" fieldType="number" />
+            <FormField label="Density" name="density" fieldType="number" />
+            <FormField label="Color" name="color" />
+          </div>
+
+          <Divider />
+          <Typography.Title level={5}>Price</Typography.Title>
+          <FormField label="Price" name="price" fieldType="number" />
+
+          <Divider />
+          <Typography.Title level={5}>Image</Typography.Title>
+          <FormField label="Image" name="imageUrl">
+            <UploadField mode="image" accept="image/*" />
+          </FormField>
+        </Form>
+      </Card>
+    </div>
+  )
+}

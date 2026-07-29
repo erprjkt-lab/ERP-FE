@@ -13,6 +13,7 @@ export interface SimpleMasterListProps<T extends { id: string }> {
   breadcrumbLabel: string
   totalLabel: string
   addButtonLabel: string
+  modalWidth?: number
   data: T[]
   loading?: boolean
   columns: TableColumnsType<T>
@@ -28,6 +29,7 @@ export function SimpleMasterList<T extends { id: string }>({
   breadcrumbLabel,
   totalLabel,
   addButtonLabel,
+  modalWidth,
   data,
   loading,
   columns,
@@ -157,6 +159,7 @@ export function SimpleMasterList<T extends { id: string }>({
         onCancel={() => setOpen(false)}
         onOk={handleOk}
         confirmLoading={submitting}
+        width={modalWidth}
       >
         <Form form={form} layout="vertical">
           {renderFields(form)}

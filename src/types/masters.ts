@@ -84,3 +84,124 @@ export interface Vendor extends BaseEntity {
   remarks?: string
   status: Status
 }
+
+// category/uom are plain free-text for now — swap to a Select sourced from
+// /masters/categories and /masters/units once those masters exist.
+export interface FinishedGood extends BaseEntity {
+  code: string
+  name: string
+  category: string
+  brand?: string
+  uom: string
+  alternateUom?: string
+  hsnCode?: string
+  gstPercent?: number
+  description?: string
+  status: Status
+  imageUrl?: string
+  customerId?: ID | null
+  customerName?: string
+  customerPartNo?: string
+  drawingNo?: string
+  drawingRevision?: string
+  drawingFileName?: string
+  materialGrade?: string
+  weight?: number
+  price?: number
+}
+
+export interface RawMaterial extends BaseEntity {
+  code: string
+  name: string
+  category: string
+  brand?: string
+  uom: string
+  alternateUom?: string
+  hsnCode?: string
+  gstPercent?: number
+  description?: string
+  status: Status
+  imageUrl?: string
+  materialGrade?: string
+  materialType?: string
+  shape?: string
+  diameter?: number
+  width?: number
+  thickness?: number
+  length?: number
+  density?: number
+  color?: string
+  price?: number
+}
+
+export interface Consumable extends BaseEntity {
+  code: string
+  name: string
+  category: string
+  uom: string
+  alternateUom?: string
+  hsnCode?: string
+  gstPercent?: number
+  description?: string
+  status: Status
+  imageUrl?: string
+  price?: number
+}
+
+export interface Machine extends BaseEntity {
+  code: string
+  name: string
+  machineMake?: string
+  model?: string
+  serialNumber?: string
+  capacity?: string
+  powerRating?: string
+  installationDate?: string
+  purchaseDate?: string
+  warrantyExpiry?: string
+  amcExpiry?: string
+  maintenanceInterval?: string
+  machineLocation?: string
+  price?: number
+}
+
+export interface GaugeInstrument extends BaseEntity {
+  code: string
+  name: string
+  gaugeType?: string
+  instrumentRange?: string
+  accuracy?: string
+  leastCount?: string
+  calibrationFrequency?: string
+  calibrationDueDate?: string
+  certificateNumber?: string
+  manufacturer?: string
+  category?: string
+  price?: number
+}
+
+export interface PackingMaterial extends BaseEntity {
+  code: string
+  name: string
+  category: string
+  uom: string
+  price?: number
+}
+
+// Placeholder schema — spec spreadsheet has no field list for Fixture yet.
+export interface Fixture extends BaseEntity {
+  code: string
+  name: string
+  category: string
+  uom: string
+  price?: number
+}
+
+// Placeholder schema — spec spreadsheet has no field list for Die/Block yet.
+export interface DieBlock extends BaseEntity {
+  code: string
+  name: string
+  category: string
+  uom: string
+  price?: number
+}

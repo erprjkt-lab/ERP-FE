@@ -4,6 +4,23 @@ import type { FC } from 'react'
 
 export interface ModalProps extends AntModalProps {}
 
-export const Modal: FC<ModalProps> = props => {
-  return <AntModal destroyOnHidden {...props} />
+// Fixed, centered modal with the scroll contained to the body — without this,
+// a modal taller than the viewport (long forms like Add Machine) pushes the
+// page itself into scroll instead of scrolling inside the dialog.
+export const Modal: FC<ModalProps> = ({ centered = true, styles, ...props }) => {
+  return (
+    <AntModal
+      destroyOnHidden
+      centered={centered}
+      styles={{
+        ...styles,
+        body: {
+          maxHeight: 'calc(100vh - 200px)',
+          overflowY: 'auto',
+          ...styles?.body,
+        },
+      }}
+      {...props}
+    />
+  )
 }

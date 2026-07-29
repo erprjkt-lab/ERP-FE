@@ -1,0 +1,192 @@
+import { App, Button, Card, Divider, Form, Space, Typography } from 'antd'
+import type { FC } from 'react'
+import { useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { FormField } from '@/components/ui/FormField'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { UploadField } from '@/components/ui/UploadField'
+import { MASTER_STATUS_OPTIONS } from '../constants'
+import { useCustomers } from '../hooks/useCustomers'
+import {
+  useCreateFinishedGood,
+  useFinishedGood,
+  useUpdateFinishedGood,
+} from '../hooks/useFinishedGoods'
+import type { FinishedGoodInput } from '../store/mastersStore'
+
+export const FinishedGoodForm: FC = () => {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { message } = App.useApp()
+  const [form] = Form.useForm()
+  const isEdit = !!id
+
+  const { data: finishedGood } = useFinishedGood(id)
+  const { data: customers = [] } = useCustomers()
+  const { mutateAsync: createFinishedGood, isPending: creating } = useCreateFinishedGood()
+  const { mutateAsync: updateFinishedGood, isPending: updating } = useUpdateFinishedGood()
+
+  const customerOptions = customers.map(c => ({ label: c.name, value: c.id }))
+
+  useEffect(() => {
+    if (isEdit && finishedGood) {
+      form.setFieldsValue({
+        code: finishedGood.code,
+        name: finishedGood.name,
+        category: finishedGood.category,
+        brand: finishedGood.brand,
+        uom: finishedGood.uom,
+        alternateUom: finishedGood.alternateUom,
+        hsnCode: finishedGood.hsnCode,
+        gstPercent: finishedGood.gstPercent,
+        description: finishedGood.description,
+        status: finishedGood.status,
+        imageUrl: finishedGood.imageUrl,
+        customerId: finishedGood.customerId ?? undefined,
+        customerPartNo: finishedGood.customerPartNo,
+        drawingNo: finishedGood.drawingNo,
+        drawingRevision: finishedGood.drawingRevision,
+        drawingFileName: finishedGood.drawingFileName,
+        materialGrade: finishedGood.materialGrade,
+        weight: finishedGood.weight,
+        price: finishedGood.price,
+      })
+    }
+    // finishedGood is a freshly-composed object every render (useFinishedGoods
+    // maps the store array each call) — depend on the stable id instead so
+    // this doesn't stomp in-progress edits on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, finishedGood?.id, form])
+
+  const handleFinish = async (values: Record<string, unknown>) => {
+    const payload = {
+      name: values.name as string,
+      category: values.category as string,
+      brand: values.brand as string | undefined,
+      uom: values.uom as string,
+      alternateUom: values.alternateUom as string | undefined,
+      hsnCode: values.hsnCode as string | undefined,
+      gstPercent: values.gstPercent as number | undefined,
+      description: values.description as string | undefined,
+      status: values.status as 'active' | 'inactive',
+      imageUrl: values.imageUrl as string | undefined,
+      customerId: (values.customerId as string | undefined) ?? null,
+      customerName: customerOptions.find(o => o.value === values.customerId)?.label,
+      customerPartNo: values.customerPartNo as string | undefined,
+      drawingNo: values.drawingNo as string | undefined,
+      drawingRevision: values.drawingRevision as string | undefined,
+      drawingFileName: values.drawingFileName as string | undefined,
+      materialGrade: values.materialGrade as string | undefined,
+      weight: values.weight as number | undefined,
+      price: values.price as number | undefined,
+    } satisfies FinishedGoodInput
+
+    try {
+      if (isEdit && finishedGood) {
+        await updateFinishedGood({ id: finishedGood.id, payload })
+      } else {
+        await createFinishedGood(payload)
+      }
+      message.success(`Finished good ${isEdit ? 'updated' : 'created'} successfully`)
+      navigate('/masters/finished-goods')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title={isEdit ? 'Edit Finished Good' : 'Add Finished Good'}
+        breadcrumbs={[
+          { label: 'Masters', href: '/masters' },
+          { label: 'Finished Goods', href: '/masters/finished-goods' },
+          { label: isEdit ? 'Edit' : 'New' },
+        ]}
+        actions={
+          <Space>
+            <Button onClick={() => navigate('/masters/finished-goods')}>Cancel</Button>
+            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+              {isEdit ? 'Update' : 'Save'} Finished Good
+            </Button>
+          </Space>
+        }
+      />
+
+      <Card>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleFinish}
+          initialValues={{ status: 'active' }}
+          style={{ maxWidth: 900 }}
+        >
+          <Typography.Title level={5}>Basic Info</Typography.Title>
+          {isEdit && <FormField label="Item Code" name="code" disabled />}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <FormField
+              label="Item Name"
+              name="name"
+              rules={[{ required: true, message: 'Item name is required' }]}
+            />
+            <FormField
+              label="Category"
+              name="category"
+              rules={[{ required: true, message: 'Category is required' }]}
+            />
+            <FormField label="Brand" name="brand" />
+            <FormField
+              label="UOM"
+              name="uom"
+              rules={[{ required: true, message: 'UOM is required' }]}
+            />
+            <FormField label="Alternate UOM" name="alternateUom" />
+            <FormField label="HSN Code" name="hsnCode" />
+            <FormField label="GST %" name="gstPercent" fieldType="number" />
+            <FormField
+              label="Status"
+              name="status"
+              fieldType="select"
+              options={MASTER_STATUS_OPTIONS}
+            />
+          </div>
+
+          <Divider />
+          <Typography.Title level={5}>Description</Typography.Title>
+          <FormField label="Description" name="description" fieldType="textarea" />
+
+          <Divider />
+          <Typography.Title level={5}>Customer & Drawing</Typography.Title>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <FormField
+              label="Customer"
+              name="customerId"
+              fieldType="select"
+              options={customerOptions}
+            />
+            <FormField label="Customer Part No" name="customerPartNo" />
+            <FormField label="Drawing No" name="drawingNo" />
+            <FormField label="Drawing Revision" name="drawingRevision" />
+          </div>
+          <FormField label="Drawing File" name="drawingFileName">
+            <UploadField mode="file" accept=".pdf,.dwg,.dxf" />
+          </FormField>
+
+          <Divider />
+          <Typography.Title level={5}>Specs</Typography.Title>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <FormField label="Material Grade" name="materialGrade" />
+            <FormField label="Weight" name="weight" fieldType="number" />
+            <FormField label="Price" name="price" fieldType="number" />
+          </div>
+
+          <Divider />
+          <Typography.Title level={5}>Image</Typography.Title>
+          <FormField label="Image" name="imageUrl">
+            <UploadField mode="image" accept="image/*" />
+          </FormField>
+        </Form>
+      </Card>
+    </div>
+  )
+}

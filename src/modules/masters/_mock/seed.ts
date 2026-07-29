@@ -1,166 +1,216 @@
-import type { Customer, Supplier, Vendor } from '@/types/masters'
+import type {
+  Consumable,
+  DieBlock,
+  Fixture,
+  FinishedGood,
+  GaugeInstrument,
+  Machine,
+  PackingMaterial,
+  RawMaterial,
+} from '@/types/masters'
 
-// Demo-only country/state/city labels for seeding mock party records.
-// These are no longer backed by local master data (see the `world` API
-// hooks in ../hooks), so seeded records carry no resolvable id — just a
-// display name — until re-saved through a form against the real API.
-const DEMO_LOCATIONS = [
-  { countryName: 'India', stateName: 'Maharashtra', cityName: 'Mumbai' },
-  { countryName: 'India', stateName: 'Maharashtra', cityName: 'Pune' },
-  { countryName: 'India', stateName: 'Maharashtra', cityName: 'Nashik' },
-  { countryName: 'India', stateName: 'Gujarat', cityName: 'Ahmedabad' },
-  { countryName: 'India', stateName: 'Gujarat', cityName: 'Surat' },
-  { countryName: 'India', stateName: 'Karnataka', cityName: 'Bengaluru' },
-  { countryName: 'India', stateName: 'Delhi', cityName: 'New Delhi' },
-  { countryName: 'India', stateName: 'Tamil Nadu', cityName: 'Chennai' },
-  { countryName: 'India', stateName: 'Telangana', cityName: 'Hyderabad' },
-  { countryName: 'India', stateName: 'West Bengal', cityName: 'Kolkata' },
-  { countryName: 'India', stateName: 'Rajasthan', cityName: 'Jaipur' },
-  { countryName: 'India', stateName: 'Punjab', cityName: 'Ludhiana' },
-  { countryName: 'India', stateName: 'Kerala', cityName: 'Kochi' },
-  { countryName: 'United States', stateName: 'California', cityName: 'Los Angeles' },
-]
-
-const CUSTOMER_NAMES = [
-  'Shree Balaji Traders',
-  'Sunrise Retail Chain',
-  'Om Enterprises',
-  'Green Valley Distributors',
-  'Nova Corporate Solutions',
-  'Metro Wholesale Mart',
-  'Prime Foods Pvt Ltd',
-  'Skyline Textiles',
-  'Everest Hardware Co',
-  'Coastal Agro Traders',
-  'Silverline Electronics',
-  'Horizon Government Supplies',
-]
-
-const CUSTOMER_TYPES = ['retail', 'wholesale', 'distributor', 'corporate', 'government'] as const
-const GST_TYPES = ['regular', 'composition', 'unregistered', 'sez', 'consumer'] as const
 const STATUSES = ['active', 'active', 'active', 'inactive'] as const
 
-export const MOCK_CUSTOMERS: Customer[] = Array.from({ length: 12 }, (_, i) => {
-  const location = DEMO_LOCATIONS[i % DEMO_LOCATIONS.length]
-  return {
-    id: `customer-${i + 1}`,
-    code: `CUST-${String(i + 1).padStart(4, '0')}`,
-    name: CUSTOMER_NAMES[i % CUSTOMER_NAMES.length],
-    customerType: CUSTOMER_TYPES[i % CUSTOMER_TYPES.length],
-    status: STATUSES[i % STATUSES.length],
-    contactPerson: 'Rakesh Sharma',
-    mobile: `9${String(800000000 + i)}`,
-    email: `contact${i + 1}@${CUSTOMER_NAMES[i % CUSTOMER_NAMES.length].toLowerCase().replace(/[^a-z]/g, '')}.com`,
-    website: undefined,
-    address: `${100 + i} Industrial Area`,
-    countryId: null,
-    countryName: location.countryName,
-    stateId: null,
-    stateName: location.stateName,
-    cityId: null,
-    cityName: location.cityName,
-    pincode: `4${String(10000 + i * 11).slice(0, 5)}`,
-    gstNumber: undefined,
-    panNumber: undefined,
-    gstType: GST_TYPES[i % GST_TYPES.length],
-    creditLimit: 100000 + i * 25000,
-    creditDays: [15, 30, 45, 60][i % 4],
-    openingBalance: i * 5000,
-    paymentTerms: ['due_on_receipt', 'net_15', 'net_30', 'net_45', 'net_60'][i % 5],
-    bankName: 'State Bank of India',
-    bankBranch: undefined,
-    accountHolder: undefined,
-    accountNumber: undefined,
-    ifscCode: undefined,
-    upiId: undefined,
-    createdAt: '2023-01-01',
-    updatedAt: '2024-01-01',
-  }
-})
+// Demo-only display name for FinishedGood's denormalized customer reference —
+// Customer records now come from the real party_master API, not this file.
+const DEMO_CUSTOMER_NAMES = ['Shree Balaji Traders', 'Sunrise Retail Chain', 'Om Enterprises']
 
-const SUPPLIER_NAMES = [
-  'Ganesh Raw Materials',
-  'Vishwa Packaging Co',
-  'Anand Steel Suppliers',
-  'Krishna Chemicals',
-  'Lakshmi Paper Mills',
-  'Bharat Plastics',
-  'National Fasteners',
-  'Deccan Cotton Mills',
-  'Aravali Minerals',
-  'Ganga Timber Traders',
+const FG_NAMES = [
+  'Precision Gear Assembly',
+  'Hydraulic Cylinder Unit',
+  'Bearing Housing MK2',
+  'Drive Shaft Coupling',
+  'Valve Body Casting',
+  'Motor Mount Bracket',
 ]
 
-export const MOCK_SUPPLIERS: Supplier[] = Array.from({ length: 10 }, (_, i) => {
-  const location = DEMO_LOCATIONS[(i + 3) % DEMO_LOCATIONS.length]
+export const MOCK_FINISHED_GOODS: FinishedGood[] = Array.from({ length: 8 }, (_, i) => {
   return {
-    id: `supplier-${i + 1}`,
-    code: `SUPP-${String(i + 1).padStart(4, '0')}`,
-    name: SUPPLIER_NAMES[i % SUPPLIER_NAMES.length],
-    contactPerson: 'Suresh Patel',
-    mobile: `9${String(700000000 + i)}`,
-    email: `procurement${i + 1}@${SUPPLIER_NAMES[i % SUPPLIER_NAMES.length].toLowerCase().replace(/[^a-z]/g, '')}.com`,
-    address: `${200 + i} Supplier Estate`,
-    countryId: null,
-    countryName: location.countryName,
-    stateId: null,
-    stateName: location.stateName,
-    cityId: null,
-    cityName: location.cityName,
-    pincode: `5${String(10000 + i * 13).slice(0, 5)}`,
-    gstNumber: undefined,
-    panNumber: undefined,
-    paymentTerms: ['net_15', 'net_30', 'net_45'][i % 3],
-    creditDays: [15, 30, 45][i % 3],
-    bankName: 'HDFC Bank',
-    accountNumber: undefined,
-    ifscCode: undefined,
-    remarks: undefined,
+    id: `fg-${i + 1}`,
+    code: `FG-${String(i + 1).padStart(4, '0')}`,
+    name: FG_NAMES[i % FG_NAMES.length],
+    category: 'Finished Good',
+    brand: undefined,
+    uom: ['NOS', 'PCS', 'SET'][i % 3],
+    alternateUom: undefined,
+    hsnCode: `84${String(830000 + i)}`,
+    gstPercent: [5, 12, 18][i % 3],
+    description: `${FG_NAMES[i % FG_NAMES.length]} manufactured to customer drawing spec`,
     status: STATUSES[i % STATUSES.length],
-    createdAt: '2023-01-01',
+    imageUrl: undefined,
+    customerId: undefined,
+    customerName: DEMO_CUSTOMER_NAMES[i % DEMO_CUSTOMER_NAMES.length],
+    customerPartNo: `CP-${String(1000 + i)}`,
+    drawingNo: `DWG-${String(2000 + i)}`,
+    drawingRevision: ['A', 'B', 'C'][i % 3],
+    drawingFileName: undefined,
+    materialGrade: ['EN8', 'EN19', 'SS304'][i % 3],
+    weight: 0.5 + i * 0.25,
+    price: 500 + i * 150,
+    createdAt: '2024-01-01',
     updatedAt: '2024-01-01',
   }
 })
 
-const VENDOR_NAMES = [
-  'Apex Facility Services',
-  'Reliable Logistics Partners',
-  'Quantum IT Consultants',
-  'Trustline Security Services',
-  'Vertex Maintenance Works',
-  'Crest Transport Co',
-  'Meridian Legal Advisors',
-  'Zenith Cleaning Solutions',
+const RM_NAMES = [
+  'MS Round Bar',
+  'SS304 Sheet',
+  'Aluminium Billet',
+  'Brass Rod',
+  'Copper Wire Coil',
+  'Cast Iron Ingot',
 ]
 
-export const MOCK_VENDORS: Vendor[] = Array.from({ length: 8 }, (_, i) => {
-  const location = DEMO_LOCATIONS[(i + 6) % DEMO_LOCATIONS.length]
-  return {
-    id: `vendor-${i + 1}`,
-    code: `VEND-${String(i + 1).padStart(4, '0')}`,
-    name: VENDOR_NAMES[i % VENDOR_NAMES.length],
-    vendorType: (['service', 'contractor', 'consultant', 'transporter', 'other'] as const)[i % 5],
-    contactPerson: 'Meera Nair',
-    mobile: `9${String(600000000 + i)}`,
-    email: `hello${i + 1}@${VENDOR_NAMES[i % VENDOR_NAMES.length].toLowerCase().replace(/[^a-z]/g, '')}.com`,
-    address: `${300 + i} Business Park`,
-    countryId: null,
-    countryName: location.countryName,
-    stateId: null,
-    stateName: location.stateName,
-    cityId: null,
-    cityName: location.cityName,
-    pincode: `6${String(10000 + i * 17).slice(0, 5)}`,
-    gstNumber: undefined,
-    serviceCategory: ['Facility Management', 'Logistics', 'IT Services', 'Security', 'Maintenance'][
-      i % 5
-    ],
-    bankName: 'ICICI Bank',
-    accountNumber: undefined,
-    ifscCode: undefined,
-    remarks: undefined,
-    status: STATUSES[i % STATUSES.length],
-    createdAt: '2023-01-01',
-    updatedAt: '2024-01-01',
-  }
-})
+export const MOCK_RAW_MATERIALS: RawMaterial[] = Array.from({ length: 8 }, (_, i) => ({
+  id: `rm-${i + 1}`,
+  code: `RM-${String(i + 1).padStart(4, '0')}`,
+  name: RM_NAMES[i % RM_NAMES.length],
+  category: 'Raw Material',
+  brand: undefined,
+  uom: ['KG', 'MTR', 'NOS'][i % 3],
+  alternateUom: undefined,
+  hsnCode: `72${String(140000 + i)}`,
+  gstPercent: [5, 12, 18][i % 3],
+  description: `${RM_NAMES[i % RM_NAMES.length]} stock material`,
+  status: STATUSES[i % STATUSES.length],
+  imageUrl: undefined,
+  materialGrade: ['EN8', 'EN19', 'SS304'][i % 3],
+  materialType: ['Ferrous', 'Non-Ferrous'][i % 2],
+  shape: ['Round', 'Sheet', 'Rod', 'Ingot'][i % 4],
+  diameter: 10 + i * 2,
+  width: undefined,
+  thickness: undefined,
+  length: 1000 + i * 100,
+  density: 7.85,
+  color: undefined,
+  price: 60 + i * 5,
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+}))
+
+const CONSUMABLE_NAMES = [
+  'Cutting Oil',
+  'Safety Gloves',
+  'Welding Rod',
+  'Grinding Wheel',
+  'Machine Grease',
+  'Cotton Waste',
+]
+
+export const MOCK_CONSUMABLES: Consumable[] = Array.from({ length: 6 }, (_, i) => ({
+  id: `cons-${i + 1}`,
+  code: `CONS-${String(i + 1).padStart(4, '0')}`,
+  name: CONSUMABLE_NAMES[i % CONSUMABLE_NAMES.length],
+  category: 'Consumable',
+  uom: ['LTR', 'PC', 'KG'][i % 3],
+  alternateUom: undefined,
+  hsnCode: `34${String(20000 + i)}`,
+  gstPercent: [12, 18][i % 2],
+  description: `${CONSUMABLE_NAMES[i % CONSUMABLE_NAMES.length]} for shop-floor use`,
+  status: STATUSES[i % STATUSES.length],
+  imageUrl: undefined,
+  price: 100 + i * 20,
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+}))
+
+const MACHINE_NAMES = [
+  'CNC Lathe',
+  'VMC Machine',
+  'Hydraulic Press',
+  'Surface Grinder',
+  'Power Press',
+  'Welding Machine',
+]
+
+export const MOCK_MACHINES: Machine[] = Array.from({ length: 6 }, (_, i) => ({
+  id: `machine-${i + 1}`,
+  code: `MACH-${String(i + 1).padStart(4, '0')}`,
+  name: MACHINE_NAMES[i % MACHINE_NAMES.length],
+  machineMake: ['HMT', 'Lokesh', 'Bharat Fritz Werner', 'Ace Micromatic'][i % 4],
+  model: `M-${2018 + i}`,
+  serialNumber: `SN-${String(100000 + i)}`,
+  capacity: ['5 Ton', '10 Ton', '50 Ton', '500 Ton'][i % 4],
+  powerRating: `${5 + i * 2} kW`,
+  installationDate: '2022-03-15',
+  purchaseDate: '2022-02-01',
+  warrantyExpiry: '2025-02-01',
+  amcExpiry: '2026-02-01',
+  maintenanceInterval: 'Quarterly',
+  machineLocation: `Shop Floor ${(i % 3) + 1}`,
+  price: 500000 + i * 75000,
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+}))
+
+const GAUGE_NAMES = [
+  'Digital Vernier Caliper',
+  'Micrometer',
+  'Dial Gauge',
+  'Height Gauge',
+  'Bore Gauge',
+  'Surface Plate',
+]
+
+export const MOCK_GAUGE_INSTRUMENTS: GaugeInstrument[] = Array.from({ length: 6 }, (_, i) => ({
+  id: `gauge-${i + 1}`,
+  code: `GI-${String(i + 1).padStart(4, '0')}`,
+  name: GAUGE_NAMES[i % GAUGE_NAMES.length],
+  gaugeType: ['Caliper', 'Micrometer', 'Dial', 'Height', 'Bore', 'Plate'][i % 6],
+  instrumentRange: ['0-150mm', '0-25mm', '0-10mm', '0-300mm', '18-35mm', '300x300mm'][i % 6],
+  accuracy: '±0.01mm',
+  leastCount: '0.01mm',
+  calibrationFrequency: 'Annual',
+  calibrationDueDate: '2026-06-30',
+  certificateNumber: `CAL-${String(5000 + i)}`,
+  manufacturer: ['Mitutoyo', 'Insize', 'Baker'][i % 3],
+  category: 'Gauge & Instrument',
+  price: 2000 + i * 500,
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+}))
+
+const PACKING_NAMES = [
+  'Corrugated Box',
+  'Bubble Wrap Roll',
+  'Wooden Pallet',
+  'Stretch Film',
+  'PP Strap Roll',
+]
+
+export const MOCK_PACKING_MATERIALS: PackingMaterial[] = Array.from({ length: 5 }, (_, i) => ({
+  id: `packing-${i + 1}`,
+  code: `PACK-${String(i + 1).padStart(4, '0')}`,
+  name: PACKING_NAMES[i % PACKING_NAMES.length],
+  category: 'Packing Material',
+  uom: ['PC', 'ROLL', 'PC', 'ROLL', 'ROLL'][i % 5],
+  price: 30 + i * 10,
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+}))
+
+const FIXTURE_NAMES = ['Drilling Fixture A1', 'Welding Jig B2', 'Assembly Fixture C3']
+
+export const MOCK_FIXTURES: Fixture[] = Array.from({ length: 3 }, (_, i) => ({
+  id: `fixture-${i + 1}`,
+  code: `FIX-${String(i + 1).padStart(4, '0')}`,
+  name: FIXTURE_NAMES[i % FIXTURE_NAMES.length],
+  category: 'Fixture',
+  uom: 'NOS',
+  price: 15000 + i * 5000,
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+}))
+
+const DIE_BLOCK_NAMES = ['Punch Die Set D1', 'Blanking Die D2', 'Forming Die D3']
+
+export const MOCK_DIE_BLOCKS: DieBlock[] = Array.from({ length: 3 }, (_, i) => ({
+  id: `die-${i + 1}`,
+  code: `DIE-${String(i + 1).padStart(4, '0')}`,
+  name: DIE_BLOCK_NAMES[i % DIE_BLOCK_NAMES.length],
+  category: 'Die/Block',
+  uom: 'NOS',
+  price: 25000 + i * 8000,
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+}))
