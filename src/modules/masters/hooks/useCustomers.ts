@@ -1,30 +1,14 @@
-import type { Customer } from '@/types/masters'
 import type { CustomerInput } from '../store/mastersStore'
 import { useMastersStore } from '../store/mastersStore'
-import { useLocationLookups } from './useLocationLookups'
-
-function composeCustomer(
-  customer: Customer,
-  lookups: ReturnType<typeof useLocationLookups>,
-): Customer {
-  return {
-    ...customer,
-    country: customer.countryId ? lookups.countryById.get(customer.countryId) : undefined,
-    state: customer.stateId ? lookups.stateById.get(customer.stateId) : undefined,
-    city: customer.cityId ? lookups.cityById.get(customer.cityId) : undefined,
-  }
-}
 
 export function useCustomers() {
   const customers = useMastersStore(s => s.customers)
-  const lookups = useLocationLookups()
-  const data = customers.map(c => composeCustomer(c, lookups))
-  return { data, isLoading: lookups.isLoading }
+  return { data: customers, isLoading: false }
 }
 
 export function useCustomer(id: string | undefined) {
-  const { data, isLoading } = useCustomers()
-  return { data: id ? data.find(c => c.id === id) : undefined, isLoading }
+  const { data } = useCustomers()
+  return { data: id ? data.find(c => c.id === id) : undefined, isLoading: false }
 }
 
 export function useCreateCustomer() {

@@ -27,14 +27,13 @@ export const VendorForm: FC = () => {
   const isEdit = !!id
 
   const { data: vendor } = useVendor(id)
+  const countryId = Form.useWatch('countryId', form) as string | undefined
+  const stateId = Form.useWatch('stateId', form) as string | undefined
   const { data: countries = [] } = useCountries()
-  const { data: states = [] } = useStates()
-  const { data: cities = [] } = useCities()
+  const { data: states = [] } = useStates(countryId)
+  const { data: cities = [] } = useCities(stateId)
   const { mutateAsync: createVendor, isPending: creating } = useCreateVendor()
   const { mutateAsync: updateVendor, isPending: updating } = useUpdateVendor()
-
-  const countryId = Form.useWatch('countryId', form)
-  const stateId = Form.useWatch('stateId', form)
 
   useEffect(() => {
     if (isEdit && vendor) {
@@ -66,13 +65,9 @@ export const VendorForm: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, vendor?.id, form])
 
-  const countryOptions = countries.map(c => ({ label: c.name, value: c.id }))
-  const stateOptions = states
-    .filter(s => !countryId || s.countryId === countryId)
-    .map(s => ({ label: s.name, value: s.id }))
-  const cityOptions = cities
-    .filter(c => !stateId || c.stateId === stateId)
-    .map(c => ({ label: c.name, value: c.id }))
+  const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
+  const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
 
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
@@ -85,8 +80,11 @@ export const VendorForm: FC = () => {
       serviceCategory: values.serviceCategory as string | undefined,
       address: values.address as string,
       countryId: (values.countryId as string | undefined) ?? null,
+      countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
+      stateName: stateOptions.find(o => o.value === values.stateId)?.label,
       cityId: (values.cityId as string | undefined) ?? null,
+      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       bankName: values.bankName as string | undefined,

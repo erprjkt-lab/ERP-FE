@@ -1,27 +1,14 @@
-import type { Vendor } from '@/types/masters'
 import type { VendorInput } from '../store/mastersStore'
 import { useMastersStore } from '../store/mastersStore'
-import { useLocationLookups } from './useLocationLookups'
-
-function composeVendor(vendor: Vendor, lookups: ReturnType<typeof useLocationLookups>): Vendor {
-  return {
-    ...vendor,
-    country: vendor.countryId ? lookups.countryById.get(vendor.countryId) : undefined,
-    state: vendor.stateId ? lookups.stateById.get(vendor.stateId) : undefined,
-    city: vendor.cityId ? lookups.cityById.get(vendor.cityId) : undefined,
-  }
-}
 
 export function useVendors() {
   const vendors = useMastersStore(s => s.vendors)
-  const lookups = useLocationLookups()
-  const data = vendors.map(v => composeVendor(v, lookups))
-  return { data, isLoading: lookups.isLoading }
+  return { data: vendors, isLoading: false }
 }
 
 export function useVendor(id: string | undefined) {
-  const { data, isLoading } = useVendors()
-  return { data: id ? data.find(v => v.id === id) : undefined, isLoading }
+  const { data } = useVendors()
+  return { data: id ? data.find(v => v.id === id) : undefined, isLoading: false }
 }
 
 export function useCreateVendor() {

@@ -33,7 +33,7 @@ const getColumns = (
     ),
   },
   { title: 'Mobile', dataIndex: 'mobile', key: 'mobile' },
-  { title: 'City', dataIndex: ['city', 'name'], key: 'city' },
+  { title: 'City', dataIndex: 'cityName', key: 'city' },
   {
     title: 'Status',
     dataIndex: 'status',

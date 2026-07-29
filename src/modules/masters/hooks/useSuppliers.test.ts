@@ -31,15 +31,14 @@ describe('useSuppliers', () => {
     resetMastersStore()
   })
 
-  it('resolves the linked city onto each supplier', async () => {
-    const city = useMastersStore.getState().createCity({ name: 'Ahmedabad', stateId: null })
+  it('stores the denormalized city name as given', async () => {
     const { result: create } = renderHook(() => useCreateSupplier())
     await act(async () => {
-      await create.current.mutateAsync({ ...baseInput, cityId: city.id })
+      await create.current.mutateAsync({ ...baseInput, cityId: '46727', cityName: 'Ahmedabad' })
     })
 
     const { result } = renderHook(() => useSuppliers())
-    expect(result.current.data[0].city?.name).toBe('Ahmedabad')
+    expect(result.current.data[0].cityName).toBe('Ahmedabad')
   })
 
   it('auto-generates a SUPP- code', async () => {

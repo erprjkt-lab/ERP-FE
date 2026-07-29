@@ -30,15 +30,14 @@ describe('useVendors', () => {
     resetMastersStore()
   })
 
-  it('resolves the linked country/state/city onto each vendor', async () => {
-    const country = useMastersStore.getState().createCountry({ name: 'India' })
+  it('stores the denormalized country name as given', async () => {
     const { result: create } = renderHook(() => useCreateVendor())
     await act(async () => {
-      await create.current.mutateAsync({ ...baseInput, countryId: country.id })
+      await create.current.mutateAsync({ ...baseInput, countryId: '102', countryName: 'India' })
     })
 
     const { result } = renderHook(() => useVendors())
-    expect(result.current.data[0].country?.name).toBe('India')
+    expect(result.current.data[0].countryName).toBe('India')
   })
 
   it('auto-generates a VEND- code', async () => {

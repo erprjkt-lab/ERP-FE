@@ -2,9 +2,6 @@ import { useMastersStore } from './store/mastersStore'
 
 export function resetMastersStore() {
   useMastersStore.setState({
-    countries: [],
-    states: [],
-    cities: [],
     customers: [],
     suppliers: [],
     vendors: [],

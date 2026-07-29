@@ -1,6 +1,3 @@
-export { CountryList } from './pages/CountryList'
-export { StateList } from './pages/StateList'
-export { CityList } from './pages/CityList'
 export { CustomerList } from './pages/CustomerList'
 export { CustomerDetail } from './pages/CustomerDetail'
 export { CustomerForm } from './pages/CustomerForm'

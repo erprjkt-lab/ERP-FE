@@ -44,7 +44,6 @@ export const EmployeeForm: FC = () => {
         employeeCode: employee.employeeId,
         fullName: employee.fullName,
         email: employee.email,
-        username: employee.username,
         phone: employee.phone,
         gender: employee.gender,
         dateOfBirth: employee.dateOfBirth ? dayjs(employee.dateOfBirth, DATE_FORMAT) : undefined,
@@ -81,7 +80,6 @@ export const EmployeeForm: FC = () => {
     const basePayload: UpdateEmployeePayload = {
       name: values.fullName as string,
       email: values.email as string,
-      username: values.username as string,
       phone_number: values.phone as string,
       gender: (values.gender as UpdateEmployeePayload['gender']) ?? null,
       date_of_birth: values.dateOfBirth
@@ -161,20 +159,12 @@ export const EmployeeForm: FC = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Email"
-              name="email"
-              placeholder="employee@company.com"
-              rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
-            />
-            <FormField
-              label="Username"
-              name="username"
-              placeholder="username"
-              rules={[{ required: true, message: 'Username is required' }]}
-            />
-          </div>
+          <FormField
+            label="Email"
+            name="email"
+            placeholder="employee@company.com"
+            rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
+          />
 
           <FormField
             label={isEdit ? 'New Password (leave blank to keep current)' : 'Password'}

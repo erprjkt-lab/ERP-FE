@@ -1,62 +1,38 @@
-import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { useMastersStore } from '../store/mastersStore'
-import { resetMastersStore } from '../testUtils'
-import { useCreateState, useDeleteState, useStates, useUpdateState } from './useStates'
+import { renderHook, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createQueryWrapper } from '@/test-utils/queryWrapper'
+
+vi.mock('@/api/world', () => ({
+  listCountries: vi.fn(),
+  listStates: vi.fn(),
+  listCities: vi.fn(),
+}))
+
+import { listStates } from '@/api/world'
+import { useStates } from './useStates'
 
 describe('useStates', () => {
   beforeEach(() => {
-    resetMastersStore()
+    vi.mocked(listStates).mockReset()
   })
 
-  it('resolves the linked country onto each state', async () => {
-    const country = useMastersStore.getState().createCountry({ name: 'India' })
-    const { result: create } = renderHook(() => useCreateState())
-    await act(async () => {
-      await create.current.mutateAsync({ name: 'Maharashtra', countryId: country.id })
-    })
-
-    const { result } = renderHook(() => useStates())
-    expect(result.current.data[0].country?.name).toBe('India')
+  it('does not fetch when no countryId is given', () => {
+    const { result } = renderHook(() => useStates(undefined), { wrapper: createQueryWrapper() })
+    expect(result.current.data).toEqual([])
+    expect(listStates).not.toHaveBeenCalled()
   })
 
-  it('leaves country undefined when countryId is null', async () => {
-    const { result: create } = renderHook(() => useCreateState())
-    await act(async () => {
-      await create.current.mutateAsync({ name: 'Nowhereland', countryId: null })
+  it('fetches states scoped to the given countryId', async () => {
+    vi.mocked(listStates).mockResolvedValue({
+      success: true,
+      message: 'states',
+      data: [{ id: 1660, name: 'Maharashtra' }],
     })
 
-    const { result } = renderHook(() => useStates())
-    expect(result.current.data[0].country).toBeUndefined()
-  })
+    const { result } = renderHook(() => useStates('102'), { wrapper: createQueryWrapper() })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-  it('re-resolves the country after updateState changes the link', async () => {
-    const india = useMastersStore.getState().createCountry({ name: 'India' })
-    const usa = useMastersStore.getState().createCountry({ name: 'USA' })
-    const state = useMastersStore
-      .getState()
-      .createState({ name: 'Border State', countryId: india.id })
-
-    const { result: update } = renderHook(() => useUpdateState())
-    await act(async () => {
-      await update.current.mutateAsync({
-        id: state.id,
-        payload: { name: state.name, countryId: usa.id },
-      })
-    })
-
-    const { result } = renderHook(() => useStates())
-    expect(result.current.data[0].country?.name).toBe('USA')
-  })
-
-  it('reflects a delete via useDeleteState', async () => {
-    const state = useMastersStore.getState().createState({ name: 'Maharashtra', countryId: null })
-    const { result: del } = renderHook(() => useDeleteState())
-    await act(async () => {
-      await del.current.mutateAsync(state.id)
-    })
-
-    const { result } = renderHook(() => useStates())
-    expect(result.current.data).toHaveLength(0)
+    expect(result.current.data).toEqual([{ id: 1660, name: 'Maharashtra' }])
+    expect(listStates).toHaveBeenCalledWith(102)
   })
 })

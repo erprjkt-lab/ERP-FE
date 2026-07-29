@@ -35,27 +35,24 @@ describe('useCustomers', () => {
     resetMastersStore()
   })
 
-  it('resolves country/state/city onto each customer', async () => {
-    const country = useMastersStore.getState().createCountry({ name: 'India' })
-    const state = useMastersStore
-      .getState()
-      .createState({ name: 'Maharashtra', countryId: country.id })
-    const city = useMastersStore.getState().createCity({ name: 'Mumbai', stateId: state.id })
-
+  it('stores the denormalized country/state/city names as given', async () => {
     const { result: create } = renderHook(() => useCreateCustomer())
     await act(async () => {
       await create.current.mutateAsync({
         ...baseInput,
-        countryId: country.id,
-        stateId: state.id,
-        cityId: city.id,
+        countryId: '102',
+        countryName: 'India',
+        stateId: '1660',
+        stateName: 'Maharashtra',
+        cityId: '46728',
+        cityName: 'Mumbai',
       })
     })
 
     const { result } = renderHook(() => useCustomers())
-    expect(result.current.data[0].country?.name).toBe('India')
-    expect(result.current.data[0].state?.name).toBe('Maharashtra')
-    expect(result.current.data[0].city?.name).toBe('Mumbai')
+    expect(result.current.data[0].countryName).toBe('India')
+    expect(result.current.data[0].stateName).toBe('Maharashtra')
+    expect(result.current.data[0].cityName).toBe('Mumbai')
   })
 
   it('assigns an auto-generated code visible through the composed record', async () => {

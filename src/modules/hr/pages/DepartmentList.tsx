@@ -24,10 +24,7 @@ export const DepartmentList: FC = () => {
       addButtonLabel="Add Department"
       data={departments}
       loading={isLoading}
-      columns={[
-        { title: 'Name', dataIndex: 'name', key: 'name' },
-        { title: 'Head Count', dataIndex: 'headCount', key: 'headCount' },
-      ]}
+      columns={[{ title: 'Name', dataIndex: 'name', key: 'name' }]}
       renderFields={() => (
         <FormField
           label="Department Name"

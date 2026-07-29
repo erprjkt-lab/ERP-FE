@@ -12,12 +12,9 @@ import {
   ShiftList,
 } from '@/modules/hr'
 import {
-  CityList,
-  CountryList,
   CustomerDetail,
   CustomerForm,
   CustomerList,
-  StateList,
   SupplierDetail,
   SupplierForm,
   SupplierList,
@@ -37,9 +34,6 @@ const IMPLEMENTED_PATHS = new Set([
   '/hr/departments',
   '/hr/designations',
   '/hr/shifts',
-  '/masters/countries',
-  '/masters/states',
-  '/masters/cities',
   '/masters/customers',
   '/masters/suppliers',
   '/masters/vendors',
@@ -62,10 +56,6 @@ function App() {
                 <Route path="/hr/departments" element={<DepartmentList />} />
                 <Route path="/hr/designations" element={<DesignationList />} />
                 <Route path="/hr/shifts" element={<ShiftList />} />
-
-                <Route path="/masters/countries" element={<CountryList />} />
-                <Route path="/masters/states" element={<StateList />} />
-                <Route path="/masters/cities" element={<CityList />} />
 
                 <Route path="/masters/customers" element={<CustomerList />} />
                 <Route path="/masters/customers/new" element={<CustomerForm />} />

@@ -1,30 +1,14 @@
-import type { Supplier } from '@/types/masters'
 import type { SupplierInput } from '../store/mastersStore'
 import { useMastersStore } from '../store/mastersStore'
-import { useLocationLookups } from './useLocationLookups'
-
-function composeSupplier(
-  supplier: Supplier,
-  lookups: ReturnType<typeof useLocationLookups>,
-): Supplier {
-  return {
-    ...supplier,
-    country: supplier.countryId ? lookups.countryById.get(supplier.countryId) : undefined,
-    state: supplier.stateId ? lookups.stateById.get(supplier.stateId) : undefined,
-    city: supplier.cityId ? lookups.cityById.get(supplier.cityId) : undefined,
-  }
-}
 
 export function useSuppliers() {
   const suppliers = useMastersStore(s => s.suppliers)
-  const lookups = useLocationLookups()
-  const data = suppliers.map(s => composeSupplier(s, lookups))
-  return { data, isLoading: lookups.isLoading }
+  return { data: suppliers, isLoading: false }
 }
 
 export function useSupplier(id: string | undefined) {
-  const { data, isLoading } = useSuppliers()
-  return { data: id ? data.find(s => s.id === id) : undefined, isLoading }
+  const { data } = useSuppliers()
+  return { data: id ? data.find(s => s.id === id) : undefined, isLoading: false }
 }
 
 export function useCreateSupplier() {

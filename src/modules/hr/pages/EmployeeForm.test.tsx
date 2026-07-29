@@ -162,7 +162,6 @@ describe('EmployeeForm page — create mode', () => {
     await user.type(await screen.findByLabelText('Employee Name'), 'New Person')
     await user.type(screen.getByLabelText('Mobile Number'), '9876543210')
     await user.type(screen.getByLabelText('Email'), 'new@company.com')
-    await user.type(screen.getByLabelText('Username'), 'newperson')
     await user.type(screen.getByLabelText('Password'), 'secret123')
 
     await user.click(buttonByText('Save Employee'))
@@ -173,7 +172,6 @@ describe('EmployeeForm page — create mode', () => {
         name: 'New Person',
         phone_number: '9876543210',
         email: 'new@company.com',
-        username: 'newperson',
         password: 'secret123',
       }),
     )

@@ -1,197 +1,24 @@
-import type { City, Country, Customer, Supplier, State, Vendor } from '@/types/masters'
+import type { Customer, Supplier, Vendor } from '@/types/masters'
 
-export const MOCK_COUNTRIES: Country[] = [
-  { id: 'country-1', name: 'India', createdAt: '2023-01-01', updatedAt: '2023-01-01' },
-  { id: 'country-2', name: 'United States', createdAt: '2023-01-01', updatedAt: '2023-01-01' },
-  { id: 'country-3', name: 'United Kingdom', createdAt: '2023-01-01', updatedAt: '2023-01-01' },
-  {
-    id: 'country-4',
-    name: 'United Arab Emirates',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  { id: 'country-5', name: 'Singapore', createdAt: '2023-01-01', updatedAt: '2023-01-01' },
-]
-
-export const MOCK_STATES: State[] = [
-  {
-    id: 'state-1',
-    name: 'Maharashtra',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-2',
-    name: 'Gujarat',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-3',
-    name: 'Karnataka',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-4',
-    name: 'Delhi',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-5',
-    name: 'Tamil Nadu',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-6',
-    name: 'Telangana',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-7',
-    name: 'West Bengal',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-8',
-    name: 'Rajasthan',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-9',
-    name: 'Punjab',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-10',
-    name: 'Kerala',
-    countryId: 'country-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'state-11',
-    name: 'California',
-    countryId: 'country-2',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-]
-
-export const MOCK_CITIES: City[] = [
-  {
-    id: 'city-1',
-    name: 'Mumbai',
-    stateId: 'state-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-2',
-    name: 'Pune',
-    stateId: 'state-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-3',
-    name: 'Nashik',
-    stateId: 'state-1',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-4',
-    name: 'Ahmedabad',
-    stateId: 'state-2',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-5',
-    name: 'Surat',
-    stateId: 'state-2',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-6',
-    name: 'Bengaluru',
-    stateId: 'state-3',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-7',
-    name: 'New Delhi',
-    stateId: 'state-4',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-8',
-    name: 'Chennai',
-    stateId: 'state-5',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-9',
-    name: 'Hyderabad',
-    stateId: 'state-6',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-10',
-    name: 'Kolkata',
-    stateId: 'state-7',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-11',
-    name: 'Jaipur',
-    stateId: 'state-8',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-12',
-    name: 'Ludhiana',
-    stateId: 'state-9',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-13',
-    name: 'Kochi',
-    stateId: 'state-10',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
-  {
-    id: 'city-14',
-    name: 'Los Angeles',
-    stateId: 'state-11',
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01',
-  },
+// Demo-only country/state/city labels for seeding mock party records.
+// These are no longer backed by local master data (see the `world` API
+// hooks in ../hooks), so seeded records carry no resolvable id — just a
+// display name — until re-saved through a form against the real API.
+const DEMO_LOCATIONS = [
+  { countryName: 'India', stateName: 'Maharashtra', cityName: 'Mumbai' },
+  { countryName: 'India', stateName: 'Maharashtra', cityName: 'Pune' },
+  { countryName: 'India', stateName: 'Maharashtra', cityName: 'Nashik' },
+  { countryName: 'India', stateName: 'Gujarat', cityName: 'Ahmedabad' },
+  { countryName: 'India', stateName: 'Gujarat', cityName: 'Surat' },
+  { countryName: 'India', stateName: 'Karnataka', cityName: 'Bengaluru' },
+  { countryName: 'India', stateName: 'Delhi', cityName: 'New Delhi' },
+  { countryName: 'India', stateName: 'Tamil Nadu', cityName: 'Chennai' },
+  { countryName: 'India', stateName: 'Telangana', cityName: 'Hyderabad' },
+  { countryName: 'India', stateName: 'West Bengal', cityName: 'Kolkata' },
+  { countryName: 'India', stateName: 'Rajasthan', cityName: 'Jaipur' },
+  { countryName: 'India', stateName: 'Punjab', cityName: 'Ludhiana' },
+  { countryName: 'India', stateName: 'Kerala', cityName: 'Kochi' },
+  { countryName: 'United States', stateName: 'California', cityName: 'Los Angeles' },
 ]
 
 const CUSTOMER_NAMES = [
@@ -212,14 +39,9 @@ const CUSTOMER_NAMES = [
 const CUSTOMER_TYPES = ['retail', 'wholesale', 'distributor', 'corporate', 'government'] as const
 const GST_TYPES = ['regular', 'composition', 'unregistered', 'sez', 'consumer'] as const
 const STATUSES = ['active', 'active', 'active', 'inactive'] as const
-const CITY_IDS = MOCK_CITIES.map(c => c.id)
-const STATE_BY_CITY = new Map(MOCK_CITIES.map(c => [c.id, c.stateId]))
-const COUNTRY_BY_STATE = new Map(MOCK_STATES.map(s => [s.id, s.countryId]))
 
 export const MOCK_CUSTOMERS: Customer[] = Array.from({ length: 12 }, (_, i) => {
-  const cityId = CITY_IDS[i % CITY_IDS.length]
-  const stateId = STATE_BY_CITY.get(cityId) ?? null
-  const countryId = stateId ? (COUNTRY_BY_STATE.get(stateId) ?? null) : null
+  const location = DEMO_LOCATIONS[i % DEMO_LOCATIONS.length]
   return {
     id: `customer-${i + 1}`,
     code: `CUST-${String(i + 1).padStart(4, '0')}`,
@@ -231,9 +53,12 @@ export const MOCK_CUSTOMERS: Customer[] = Array.from({ length: 12 }, (_, i) => {
     email: `contact${i + 1}@${CUSTOMER_NAMES[i % CUSTOMER_NAMES.length].toLowerCase().replace(/[^a-z]/g, '')}.com`,
     website: undefined,
     address: `${100 + i} Industrial Area`,
-    countryId,
-    stateId,
-    cityId,
+    countryId: null,
+    countryName: location.countryName,
+    stateId: null,
+    stateName: location.stateName,
+    cityId: null,
+    cityName: location.cityName,
     pincode: `4${String(10000 + i * 11).slice(0, 5)}`,
     gstNumber: undefined,
     panNumber: undefined,
@@ -267,9 +92,7 @@ const SUPPLIER_NAMES = [
 ]
 
 export const MOCK_SUPPLIERS: Supplier[] = Array.from({ length: 10 }, (_, i) => {
-  const cityId = CITY_IDS[(i + 3) % CITY_IDS.length]
-  const stateId = STATE_BY_CITY.get(cityId) ?? null
-  const countryId = stateId ? (COUNTRY_BY_STATE.get(stateId) ?? null) : null
+  const location = DEMO_LOCATIONS[(i + 3) % DEMO_LOCATIONS.length]
   return {
     id: `supplier-${i + 1}`,
     code: `SUPP-${String(i + 1).padStart(4, '0')}`,
@@ -278,9 +101,12 @@ export const MOCK_SUPPLIERS: Supplier[] = Array.from({ length: 10 }, (_, i) => {
     mobile: `9${String(700000000 + i)}`,
     email: `procurement${i + 1}@${SUPPLIER_NAMES[i % SUPPLIER_NAMES.length].toLowerCase().replace(/[^a-z]/g, '')}.com`,
     address: `${200 + i} Supplier Estate`,
-    countryId,
-    stateId,
-    cityId,
+    countryId: null,
+    countryName: location.countryName,
+    stateId: null,
+    stateName: location.stateName,
+    cityId: null,
+    cityName: location.cityName,
     pincode: `5${String(10000 + i * 13).slice(0, 5)}`,
     gstNumber: undefined,
     panNumber: undefined,
@@ -308,9 +134,7 @@ const VENDOR_NAMES = [
 ]
 
 export const MOCK_VENDORS: Vendor[] = Array.from({ length: 8 }, (_, i) => {
-  const cityId = CITY_IDS[(i + 6) % CITY_IDS.length]
-  const stateId = STATE_BY_CITY.get(cityId) ?? null
-  const countryId = stateId ? (COUNTRY_BY_STATE.get(stateId) ?? null) : null
+  const location = DEMO_LOCATIONS[(i + 6) % DEMO_LOCATIONS.length]
   return {
     id: `vendor-${i + 1}`,
     code: `VEND-${String(i + 1).padStart(4, '0')}`,
@@ -320,9 +144,12 @@ export const MOCK_VENDORS: Vendor[] = Array.from({ length: 8 }, (_, i) => {
     mobile: `9${String(600000000 + i)}`,
     email: `hello${i + 1}@${VENDOR_NAMES[i % VENDOR_NAMES.length].toLowerCase().replace(/[^a-z]/g, '')}.com`,
     address: `${300 + i} Business Park`,
-    countryId,
-    stateId,
-    cityId,
+    countryId: null,
+    countryName: location.countryName,
+    stateId: null,
+    stateName: location.stateName,
+    cityId: null,
+    cityName: location.cityName,
     pincode: `6${String(10000 + i * 17).slice(0, 5)}`,
     gstNumber: undefined,
     serviceCategory: ['Facility Management', 'Logistics', 'IT Services', 'Security', 'Maintenance'][

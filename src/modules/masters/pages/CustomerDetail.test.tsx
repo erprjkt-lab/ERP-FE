@@ -55,16 +55,14 @@ describe('CustomerDetail page', () => {
   })
 
   it('resolves and displays the linked city/state/country in the Address tab', async () => {
-    const country = useMastersStore.getState().createCountry({ name: 'India' })
-    const state = useMastersStore
-      .getState()
-      .createState({ name: 'Maharashtra', countryId: country.id })
-    const city = useMastersStore.getState().createCity({ name: 'Mumbai', stateId: state.id })
     const customer = useMastersStore.getState().createCustomer({
       ...baseInput,
-      countryId: country.id,
-      stateId: state.id,
-      cityId: city.id,
+      countryId: '102',
+      countryName: 'India',
+      stateId: '1660',
+      stateName: 'Maharashtra',
+      cityId: '46728',
+      cityName: 'Mumbai',
     })
 
     const user = userEvent.setup()

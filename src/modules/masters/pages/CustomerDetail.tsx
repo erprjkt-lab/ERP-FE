@@ -102,14 +102,12 @@ export const CustomerDetail: FC = () => {
                       <Descriptions.Item label="Address" span={2}>
                         {customer.address}
                       </Descriptions.Item>
-                      <Descriptions.Item label="City">
-                        {customer.city?.name ?? '—'}
-                      </Descriptions.Item>
+                      <Descriptions.Item label="City">{customer.cityName ?? '—'}</Descriptions.Item>
                       <Descriptions.Item label="State">
-                        {customer.state?.name ?? '—'}
+                        {customer.stateName ?? '—'}
                       </Descriptions.Item>
                       <Descriptions.Item label="Country">
-                        {customer.country?.name ?? '—'}
+                        {customer.countryName ?? '—'}
                       </Descriptions.Item>
                       <Descriptions.Item label="Pincode">{customer.pincode}</Descriptions.Item>
                     </Descriptions>

@@ -29,7 +29,7 @@ describe('DepartmentList page', () => {
     vi.mocked(createDepartment).mockReset()
   })
 
-  it('renders departments from the API, including the head count column', async () => {
+  it('renders departments from the API', async () => {
     vi.mocked(listDepartments).mockResolvedValue({
       status: 'success',
       message: 'ok',
@@ -39,7 +39,6 @@ describe('DepartmentList page', () => {
 
     renderPage(<DepartmentList />)
     expect(await screen.findByText('Engineering')).toBeInTheDocument()
-    expect(screen.getByText('0')).toBeInTheDocument() // headCount is always 0 (no backend field)
   })
 
   it('creates a department through the modal', async () => {

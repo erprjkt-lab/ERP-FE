@@ -1,21 +1,5 @@
 import type { BaseEntity, ID, Status } from './index'
 
-export interface Country extends BaseEntity {
-  name: string
-}
-
-export interface State extends BaseEntity {
-  name: string
-  countryId: ID | null
-  country?: Country
-}
-
-export interface City extends BaseEntity {
-  name: string
-  stateId: ID | null
-  state?: State
-}
-
 export type CustomerType = 'retail' | 'wholesale' | 'distributor' | 'corporate' | 'government'
 export type GstType = 'regular' | 'composition' | 'unregistered' | 'sez' | 'consumer'
 export type VendorType = 'service' | 'contractor' | 'consultant' | 'transporter' | 'other'
@@ -31,11 +15,11 @@ export interface Customer extends BaseEntity {
   website?: string
   address: string
   countryId: ID | null
-  country?: Country
+  countryName?: string
   stateId: ID | null
-  state?: State
+  stateName?: string
   cityId: ID | null
-  city?: City
+  cityName?: string
   pincode: string
   gstNumber?: string
   panNumber?: string
@@ -60,11 +44,11 @@ export interface Supplier extends BaseEntity {
   email: string
   address: string
   countryId: ID | null
-  country?: Country
+  countryName?: string
   stateId: ID | null
-  state?: State
+  stateName?: string
   cityId: ID | null
-  city?: City
+  cityName?: string
   pincode: string
   gstNumber?: string
   panNumber?: string
@@ -86,11 +70,11 @@ export interface Vendor extends BaseEntity {
   email: string
   address: string
   countryId: ID | null
-  country?: Country
+  countryName?: string
   stateId: ID | null
-  state?: State
+  stateName?: string
   cityId: ID | null
-  city?: City
+  cityName?: string
   pincode: string
   gstNumber?: string
   serviceCategory?: string

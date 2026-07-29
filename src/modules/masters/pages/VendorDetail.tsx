@@ -104,12 +104,10 @@ export const VendorDetail: FC = () => {
                       <Descriptions.Item label="Address" span={2}>
                         {vendor.address}
                       </Descriptions.Item>
-                      <Descriptions.Item label="City">{vendor.city?.name ?? '—'}</Descriptions.Item>
-                      <Descriptions.Item label="State">
-                        {vendor.state?.name ?? '—'}
-                      </Descriptions.Item>
+                      <Descriptions.Item label="City">{vendor.cityName ?? '—'}</Descriptions.Item>
+                      <Descriptions.Item label="State">{vendor.stateName ?? '—'}</Descriptions.Item>
                       <Descriptions.Item label="Country">
-                        {vendor.country?.name ?? '—'}
+                        {vendor.countryName ?? '—'}
                       </Descriptions.Item>
                       <Descriptions.Item label="Pincode">{vendor.pincode}</Descriptions.Item>
                     </Descriptions>

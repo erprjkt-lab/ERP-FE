@@ -1,10 +1,18 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buttonByText, renderPage } from '@/test-utils/renderPage'
 import type { SupplierInput } from '../store/mastersStore'
 import { useMastersStore } from '../store/mastersStore'
 import { resetMastersStore } from '../testUtils'
+
+vi.mock('@/api/world', () => ({
+  listCountries: vi.fn(),
+  listStates: vi.fn(),
+  listCities: vi.fn(),
+}))
+
+import { listCities, listCountries, listStates } from '@/api/world'
 import { SupplierForm } from './SupplierForm'
 
 const baseInput: SupplierInput = {
@@ -22,6 +30,24 @@ const baseInput: SupplierInput = {
   paymentTerms: null,
 }
 
+function mockWorldApi() {
+  vi.mocked(listCountries).mockResolvedValue({
+    success: true,
+    message: 'countries',
+    data: [{ id: 102, name: 'India' }],
+  })
+  vi.mocked(listStates).mockResolvedValue({
+    success: true,
+    message: 'states',
+    data: [{ id: 1660, name: 'Maharashtra' }],
+  })
+  vi.mocked(listCities).mockResolvedValue({
+    success: true,
+    message: 'cities',
+    data: [{ id: 46728, name: 'Mumbai' }],
+  })
+}
+
 async function selectOption(user: ReturnType<typeof userEvent.setup>, label: string, text: string) {
   await user.click(screen.getByLabelText(label))
   await user.click(await screen.findByText(text))
@@ -30,6 +56,10 @@ async function selectOption(user: ReturnType<typeof userEvent.setup>, label: str
 describe('SupplierForm page — create mode', () => {
   beforeEach(() => {
     resetMastersStore()
+    vi.mocked(listCountries).mockReset()
+    vi.mocked(listStates).mockReset()
+    vi.mocked(listCities).mockReset()
+    mockWorldApi()
   })
 
   it('renders section headings and the Save Supplier action', () => {
@@ -49,11 +79,6 @@ describe('SupplierForm page — create mode', () => {
 
   it('creates a supplier with cascading country/state/city selection', async () => {
     const user = userEvent.setup()
-    const country = useMastersStore.getState().createCountry({ name: 'India' })
-    const state = useMastersStore
-      .getState()
-      .createState({ name: 'Maharashtra', countryId: country.id })
-    useMastersStore.getState().createCity({ name: 'Mumbai', stateId: state.id })
 
     renderPage(<SupplierForm />)
 
@@ -76,8 +101,12 @@ describe('SupplierForm page — create mode', () => {
       contactPerson: 'John Smith',
       mobile: '9876543210',
       email: 'john@newco.com',
-      countryId: country.id,
-      stateId: state.id,
+      countryId: '102',
+      countryName: 'India',
+      stateId: '1660',
+      stateName: 'Maharashtra',
+      cityId: '46728',
+      cityName: 'Mumbai',
     })
   })
 
@@ -92,20 +121,22 @@ describe('SupplierForm page — create mode', () => {
 describe('SupplierForm page — edit mode', () => {
   beforeEach(() => {
     resetMastersStore()
+    vi.mocked(listCountries).mockReset()
+    vi.mocked(listStates).mockReset()
+    vi.mocked(listCities).mockReset()
+    mockWorldApi()
   })
 
-  // Country/State/City are required fields on this form, so any test that
-  // submits needs a real supplier with valid location ids — otherwise
-  // client-side validation silently blocks the submit and onFinish never runs.
   function createSupplierWithLocation() {
-    const country = useMastersStore.getState().createCountry({ name: 'India' })
-    const state = useMastersStore
-      .getState()
-      .createState({ name: 'Maharashtra', countryId: country.id })
-    const city = useMastersStore.getState().createCity({ name: 'Mumbai', stateId: state.id })
-    return useMastersStore
-      .getState()
-      .createSupplier({ ...baseInput, countryId: country.id, stateId: state.id, cityId: city.id })
+    return useMastersStore.getState().createSupplier({
+      ...baseInput,
+      countryId: '102',
+      countryName: 'India',
+      stateId: '1660',
+      stateName: 'Maharashtra',
+      cityId: '46728',
+      cityName: 'Mumbai',
+    })
   }
 
   it('pre-fills the form and shows a disabled Supplier Code field', async () => {
