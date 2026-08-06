@@ -10,12 +10,19 @@ import {
   useDeleteConsumable,
   useUpdateConsumable,
 } from '../../hooks/useConsumables'
+import { useItemCategories } from '../../hooks/useItemCategories'
+import { useUoms } from '../../hooks/useUoms'
 
 export const ConsumableList: FC = () => {
   const { data: consumables = [], isLoading } = useConsumables()
   const { mutateAsync: createConsumable } = useCreateConsumable()
   const { mutateAsync: updateConsumable } = useUpdateConsumable()
   const { mutateAsync: deleteConsumable } = useDeleteConsumable()
+  const { data: categories = [] } = useItemCategories()
+  const { data: uoms = [] } = useUoms()
+
+  const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
+  const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
 
   return (
     <SimpleMasterList<Consumable>
@@ -44,16 +51,25 @@ export const ConsumableList: FC = () => {
             />
             <FormField
               label="Category"
-              name="category"
+              name="categoryId"
+              fieldType="select"
+              options={categoryOptions}
               rules={[{ required: true, message: 'Category is required' }]}
             />
             <FormField label="Brand" name="brand" />
             <FormField
               label="UOM"
-              name="uom"
+              name="uomId"
+              fieldType="select"
+              options={uomOptions}
               rules={[{ required: true, message: 'UOM is required' }]}
             />
-            <FormField label="Alternate UOM" name="alternateUom" />
+            <FormField
+              label="Alternate UOM"
+              name="alternateUomId"
+              fieldType="select"
+              options={uomOptions}
+            />
             <FormField label="HSN Code" name="hsnCode" />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField label="Price" name="price" fieldType="number" />
@@ -74,9 +90,12 @@ export const ConsumableList: FC = () => {
       onSubmit={async (values, editing) => {
         const payload = {
           name: values.name as string,
-          category: values.category as string,
-          uom: values.uom as string,
-          alternateUom: values.alternateUom as string | undefined,
+          categoryId: values.categoryId as string,
+          category: categoryOptions.find(o => o.value === values.categoryId)?.label ?? '',
+          uomId: values.uomId as string,
+          uom: uomOptions.find(o => o.value === values.uomId)?.label ?? '',
+          alternateUomId: values.alternateUomId as string | undefined,
+          alternateUom: uomOptions.find(o => o.value === values.alternateUomId)?.label,
           hsnCode: values.hsnCode as string | undefined,
           gstPercent: values.gstPercent as number | undefined,
           description: values.description as string | undefined,

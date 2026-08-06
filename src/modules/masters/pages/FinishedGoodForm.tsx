@@ -12,6 +12,9 @@ import {
   useFinishedGood,
   useUpdateFinishedGood,
 } from '../hooks/useFinishedGoods'
+import { useItemCategories } from '../hooks/useItemCategories'
+import { useMaterialGrades } from '../hooks/useMaterialGrades'
+import { useUoms } from '../hooks/useUoms'
 import type { FinishedGoodInput } from '../store/mastersStore'
 
 export const FinishedGoodForm: FC = () => {
@@ -23,20 +26,29 @@ export const FinishedGoodForm: FC = () => {
 
   const { data: finishedGood } = useFinishedGood(id)
   const { data: customers = [] } = useCustomers()
+  const { data: categories = [] } = useItemCategories()
+  const { data: uoms = [] } = useUoms()
+  const { data: materialGrades = [] } = useMaterialGrades()
   const { mutateAsync: createFinishedGood, isPending: creating } = useCreateFinishedGood()
   const { mutateAsync: updateFinishedGood, isPending: updating } = useUpdateFinishedGood()
 
   const customerOptions = customers.map(c => ({ label: c.name, value: c.id }))
+  const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
+  const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
+  const materialGradeOptions = materialGrades.map(m => ({
+    label: m.material_grade,
+    value: String(m.id),
+  }))
 
   useEffect(() => {
     if (isEdit && finishedGood) {
       form.setFieldsValue({
         code: finishedGood.code,
         name: finishedGood.name,
-        category: finishedGood.category,
+        categoryId: finishedGood.categoryId ?? undefined,
         brand: finishedGood.brand,
-        uom: finishedGood.uom,
-        alternateUom: finishedGood.alternateUom,
+        uomId: finishedGood.uomId ?? undefined,
+        alternateUomId: finishedGood.alternateUomId ?? undefined,
         hsnCode: finishedGood.hsnCode,
         gstPercent: finishedGood.gstPercent,
         description: finishedGood.description,
@@ -47,7 +59,7 @@ export const FinishedGoodForm: FC = () => {
         drawingNo: finishedGood.drawingNo,
         drawingRevision: finishedGood.drawingRevision,
         drawingFileName: finishedGood.drawingFileName,
-        materialGrade: finishedGood.materialGrade,
+        materialGradeId: finishedGood.materialGradeId ?? undefined,
         weight: finishedGood.weight,
         price: finishedGood.price,
       })
@@ -61,10 +73,13 @@ export const FinishedGoodForm: FC = () => {
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
       name: values.name as string,
-      category: values.category as string,
+      categoryId: values.categoryId as string,
+      category: categoryOptions.find(o => o.value === values.categoryId)?.label ?? '',
       brand: values.brand as string | undefined,
-      uom: values.uom as string,
-      alternateUom: values.alternateUom as string | undefined,
+      uomId: values.uomId as string,
+      uom: uomOptions.find(o => o.value === values.uomId)?.label ?? '',
+      alternateUomId: values.alternateUomId as string | undefined,
+      alternateUom: uomOptions.find(o => o.value === values.alternateUomId)?.label,
       hsnCode: values.hsnCode as string | undefined,
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
@@ -76,7 +91,8 @@ export const FinishedGoodForm: FC = () => {
       drawingNo: values.drawingNo as string | undefined,
       drawingRevision: values.drawingRevision as string | undefined,
       drawingFileName: values.drawingFileName as string | undefined,
-      materialGrade: values.materialGrade as string | undefined,
+      materialGradeId: values.materialGradeId as string | undefined,
+      materialGrade: materialGradeOptions.find(o => o.value === values.materialGradeId)?.label,
       weight: values.weight as number | undefined,
       price: values.price as number | undefined,
     } satisfies FinishedGoodInput
@@ -131,16 +147,25 @@ export const FinishedGoodForm: FC = () => {
             />
             <FormField
               label="Category"
-              name="category"
+              name="categoryId"
+              fieldType="select"
+              options={categoryOptions}
               rules={[{ required: true, message: 'Category is required' }]}
             />
             <FormField label="Brand" name="brand" />
             <FormField
               label="UOM"
-              name="uom"
+              name="uomId"
+              fieldType="select"
+              options={uomOptions}
               rules={[{ required: true, message: 'UOM is required' }]}
             />
-            <FormField label="Alternate UOM" name="alternateUom" />
+            <FormField
+              label="Alternate UOM"
+              name="alternateUomId"
+              fieldType="select"
+              options={uomOptions}
+            />
             <FormField label="HSN Code" name="hsnCode" />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField
@@ -175,7 +200,12 @@ export const FinishedGoodForm: FC = () => {
           <Divider />
           <Typography.Title level={5}>Specs</Typography.Title>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Material Grade" name="materialGrade" />
+            <FormField
+              label="Material Grade"
+              name="materialGradeId"
+              fieldType="select"
+              options={materialGradeOptions}
+            />
             <FormField label="Weight" name="weight" fieldType="number" />
             <FormField label="Price" name="price" fieldType="number" />
           </div>

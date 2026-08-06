@@ -9,6 +9,7 @@ import {
   useGaugeInstruments,
   useUpdateGaugeInstrument,
 } from '../../hooks/useGaugeInstruments'
+import { useItemCategories } from '../../hooks/useItemCategories'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
@@ -17,6 +18,9 @@ export const GaugeInstrumentList: FC = () => {
   const { mutateAsync: createGaugeInstrument } = useCreateGaugeInstrument()
   const { mutateAsync: updateGaugeInstrument } = useUpdateGaugeInstrument()
   const { mutateAsync: deleteGaugeInstrument } = useDeleteGaugeInstrument()
+  const { data: categories = [] } = useItemCategories()
+
+  const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
 
   return (
     <SimpleMasterList<GaugeInstrument>
@@ -57,7 +61,12 @@ export const GaugeInstrumentList: FC = () => {
           <FormField label="Calibration Due Date" name="calibrationDueDate" fieldType="date" />
           <FormField label="Certificate Number" name="certificateNumber" />
           <FormField label="Manufacturer" name="manufacturer" />
-          <FormField label="Category" name="category" />
+          <FormField
+            label="Category"
+            name="categoryId"
+            fieldType="select"
+            options={categoryOptions}
+          />
           <FormField label="Price" name="price" fieldType="number" />
         </div>
       )}
@@ -74,7 +83,8 @@ export const GaugeInstrumentList: FC = () => {
             : undefined,
           certificateNumber: values.certificateNumber as string | undefined,
           manufacturer: values.manufacturer as string | undefined,
-          category: values.category as string | undefined,
+          categoryId: values.categoryId as string | undefined,
+          category: categoryOptions.find(o => o.value === values.categoryId)?.label,
           price: values.price as number | undefined,
         }
         if (editing) {

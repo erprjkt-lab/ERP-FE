@@ -9,6 +9,12 @@ interface MastersLocalState {
   removeCustomerType: (customerId: string) => void
   setVendorType: (vendorId: string, value: VendorType | null) => void
   removeVendorType: (vendorId: string) => void
+  // item_master.image is a plain string(255) column with no real file-upload
+  // endpoint on the backend — real image persistence isn't possible yet, so
+  // previews for the 6 item-master entities live only in this local overlay.
+  itemImages: Record<string, string>
+  setItemImage: (itemId: string, value: string | undefined) => void
+  removeItemImage: (itemId: string) => void
 }
 
 export const useMastersLocalStore = create<MastersLocalState>()(
@@ -31,6 +37,22 @@ export const useMastersLocalStore = create<MastersLocalState>()(
           const next = { ...state.vendorTypes }
           delete next[vendorId]
           return { vendorTypes: next }
+        }),
+      itemImages: {},
+      setItemImage: (itemId, value) =>
+        set(state => {
+          if (value === undefined) {
+            const next = { ...state.itemImages }
+            delete next[itemId]
+            return { itemImages: next }
+          }
+          return { itemImages: { ...state.itemImages, [itemId]: value } }
+        }),
+      removeItemImage: itemId =>
+        set(state => {
+          const next = { ...state.itemImages }
+          delete next[itemId]
+          return { itemImages: next }
         }),
     }),
     { name: 'erp-masters-local' },

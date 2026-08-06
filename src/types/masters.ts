@@ -85,14 +85,19 @@ export interface Vendor extends BaseEntity {
   status: Status
 }
 
-// category/uom are plain free-text for now — swap to a Select sourced from
-// /masters/categories and /masters/units once those masters exist.
+// category/uom/materialGrade are resolved display names, mirroring the
+// countryId+countryName pattern on Customer/Supplier/Vendor — the backend's
+// item_master API only accepts the *Id fields (integer FKs into item_categories/
+// uoms/material_grades), the plain-name fields are for display only.
 export interface FinishedGood extends BaseEntity {
   code: string
   name: string
+  categoryId?: ID | null
   category: string
   brand?: string
+  uomId?: ID | null
   uom: string
+  alternateUomId?: ID | null
   alternateUom?: string
   hsnCode?: string
   gstPercent?: number
@@ -105,6 +110,7 @@ export interface FinishedGood extends BaseEntity {
   drawingNo?: string
   drawingRevision?: string
   drawingFileName?: string
+  materialGradeId?: ID | null
   materialGrade?: string
   weight?: number
   price?: number
@@ -113,15 +119,19 @@ export interface FinishedGood extends BaseEntity {
 export interface RawMaterial extends BaseEntity {
   code: string
   name: string
+  categoryId?: ID | null
   category: string
   brand?: string
+  uomId?: ID | null
   uom: string
+  alternateUomId?: ID | null
   alternateUom?: string
   hsnCode?: string
   gstPercent?: number
   description?: string
   status: Status
   imageUrl?: string
+  materialGradeId?: ID | null
   materialGrade?: string
   materialType?: string
   shape?: string
@@ -137,8 +147,11 @@ export interface RawMaterial extends BaseEntity {
 export interface Consumable extends BaseEntity {
   code: string
   name: string
+  categoryId?: ID | null
   category: string
+  uomId?: ID | null
   uom: string
+  alternateUomId?: ID | null
   alternateUom?: string
   hsnCode?: string
   gstPercent?: number
@@ -176,6 +189,7 @@ export interface GaugeInstrument extends BaseEntity {
   calibrationDueDate?: string
   certificateNumber?: string
   manufacturer?: string
+  categoryId?: ID | null
   category?: string
   price?: number
 }
@@ -183,7 +197,9 @@ export interface GaugeInstrument extends BaseEntity {
 export interface PackingMaterial extends BaseEntity {
   code: string
   name: string
+  categoryId?: ID | null
   category: string
+  uomId?: ID | null
   uom: string
   price?: number
 }

@@ -2,18 +2,25 @@ import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import type { PackingMaterial } from '@/types/masters'
+import { useItemCategories } from '../../hooks/useItemCategories'
 import {
   useCreatePackingMaterial,
   useDeletePackingMaterial,
   usePackingMaterials,
   useUpdatePackingMaterial,
 } from '../../hooks/usePackingMaterials'
+import { useUoms } from '../../hooks/useUoms'
 
 export const PackingMaterialList: FC = () => {
   const { data: packingMaterials = [], isLoading } = usePackingMaterials()
   const { mutateAsync: createPackingMaterial } = useCreatePackingMaterial()
   const { mutateAsync: updatePackingMaterial } = useUpdatePackingMaterial()
   const { mutateAsync: deletePackingMaterial } = useDeletePackingMaterial()
+  const { data: categories = [] } = useItemCategories()
+  const { data: uoms = [] } = useUoms()
+
+  const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
+  const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
 
   return (
     <SimpleMasterList<PackingMaterial>
@@ -40,12 +47,16 @@ export const PackingMaterialList: FC = () => {
           />
           <FormField
             label="Category"
-            name="category"
+            name="categoryId"
+            fieldType="select"
+            options={categoryOptions}
             rules={[{ required: true, message: 'Category is required' }]}
           />
           <FormField
             label="UOM"
-            name="uom"
+            name="uomId"
+            fieldType="select"
+            options={uomOptions}
             rules={[{ required: true, message: 'UOM is required' }]}
           />
           <FormField label="Price" name="price" fieldType="number" />
@@ -54,8 +65,10 @@ export const PackingMaterialList: FC = () => {
       onSubmit={async (values, editing) => {
         const payload = {
           name: values.name as string,
-          category: values.category as string,
-          uom: values.uom as string,
+          categoryId: values.categoryId as string,
+          category: categoryOptions.find(o => o.value === values.categoryId)?.label ?? '',
+          uomId: values.uomId as string,
+          uom: uomOptions.find(o => o.value === values.uomId)?.label ?? '',
           price: values.price as number | undefined,
         }
         if (editing) {

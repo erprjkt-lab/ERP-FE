@@ -16,16 +16,7 @@ import type {
   Vendor,
   VendorType,
 } from '@/types/masters'
-import {
-  MOCK_CONSUMABLES,
-  MOCK_DIE_BLOCKS,
-  MOCK_FIXTURES,
-  MOCK_FINISHED_GOODS,
-  MOCK_GAUGE_INSTRUMENTS,
-  MOCK_MACHINES,
-  MOCK_PACKING_MATERIALS,
-  MOCK_RAW_MATERIALS,
-} from '../_mock/seed'
+import { MOCK_DIE_BLOCKS, MOCK_FIXTURES } from '../_mock/seed'
 import { generateId, generateSequentialCode } from '../utils/generateCode'
 
 const nowIso = () => new Date().toISOString()
@@ -63,41 +54,13 @@ interface MastersState {
   setVendorFilter: (key: 'search' | 'status' | 'vendorType', value: string | null) => void
   resetVendorFilters: () => void
 
-  finishedGoods: FinishedGood[]
-  createFinishedGood: (input: FinishedGoodInput) => FinishedGood
-  updateFinishedGood: (id: string, input: Partial<FinishedGoodInput>) => void
-  deleteFinishedGood: (id: string) => void
   finishedGoodFilters: MasterListFilters
   setFinishedGoodFilter: (key: 'search' | 'status', value: string | null) => void
   resetFinishedGoodFilters: () => void
 
-  rawMaterials: RawMaterial[]
-  createRawMaterial: (input: RawMaterialInput) => RawMaterial
-  updateRawMaterial: (id: string, input: Partial<RawMaterialInput>) => void
-  deleteRawMaterial: (id: string) => void
   rawMaterialFilters: MasterListFilters
   setRawMaterialFilter: (key: 'search' | 'status', value: string | null) => void
   resetRawMaterialFilters: () => void
-
-  consumables: Consumable[]
-  createConsumable: (input: ConsumableInput) => Consumable
-  updateConsumable: (id: string, input: Partial<ConsumableInput>) => void
-  deleteConsumable: (id: string) => void
-
-  machines: Machine[]
-  createMachine: (input: MachineInput) => Machine
-  updateMachine: (id: string, input: Partial<MachineInput>) => void
-  deleteMachine: (id: string) => void
-
-  gaugeInstruments: GaugeInstrument[]
-  createGaugeInstrument: (input: GaugeInstrumentInput) => GaugeInstrument
-  updateGaugeInstrument: (id: string, input: Partial<GaugeInstrumentInput>) => void
-  deleteGaugeInstrument: (id: string) => void
-
-  packingMaterials: PackingMaterial[]
-  createPackingMaterial: (input: PackingMaterialInput) => PackingMaterial
-  updatePackingMaterial: (id: string, input: Partial<PackingMaterialInput>) => void
-  deletePackingMaterial: (id: string) => void
 
   fixtures: Fixture[]
   createFixture: (input: FixtureInput) => Fixture
@@ -110,26 +73,17 @@ interface MastersState {
   deleteDieBlock: (id: string) => void
 }
 
-type ArrayEntityKey =
-  | 'finishedGoods'
-  | 'rawMaterials'
-  | 'consumables'
-  | 'machines'
-  | 'gaugeInstruments'
-  | 'packingMaterials'
-  | 'fixtures'
-  | 'dieBlocks'
+type ArrayEntityKey = 'fixtures' | 'dieBlocks'
 
 type SetMasters = (fn: (state: MastersState) => Partial<MastersState>) => void
 
-// Shared CRUD builder for the 8 item-master entities below — they're all a
-// plain { id, code, createdAt, updatedAt, ...fields } array with identical
-// create/update/delete semantics, so this avoids ~160 lines of copy-pasted
-// boilerplate. Customer/Supplier/Vendor no longer live in this store — they're
-// wired to the real party_master API (see modules/masters/hooks/useCustomers.ts
-// etc.); only their filter UI state remains here. The external MastersState
-// interface still exposes fully explicit, named fields/actions (finishedGoods,
-// createFinishedGood, ...) — genericity is internal only.
+// Shared CRUD builder for the remaining mock item-master entities (Fixture,
+// Die/Block) — the backend has no API for these at all, so they stay
+// Zustand-backed. Customer/Supplier/Vendor and the other 6 item-master types
+// (Finished Goods, Raw Material, Consumables, Machine, Gauge & Instrument,
+// Packing Material) no longer live in this store — they're wired to the real
+// backend (see modules/masters/hooks/useCustomers.ts, useFinishedGoods.ts,
+// etc.); only Finished Goods'/Raw Material's filter UI state remains here.
 function makeCrudActions<K extends ArrayEntityKey>(
   set: SetMasters,
   arrayKey: K,
@@ -179,12 +133,6 @@ function makeCrudActions<K extends ArrayEntityKey>(
 export const useMastersStore = create<MastersState>()(
   persist(
     set => {
-      const finishedGoodCrud = makeCrudActions(set, 'finishedGoods', 'fg', 'FG')
-      const rawMaterialCrud = makeCrudActions(set, 'rawMaterials', 'rm', 'RM')
-      const consumableCrud = makeCrudActions(set, 'consumables', 'cons', 'CONS')
-      const machineCrud = makeCrudActions(set, 'machines', 'machine', 'MACH')
-      const gaugeInstrumentCrud = makeCrudActions(set, 'gaugeInstruments', 'gauge', 'GI')
-      const packingMaterialCrud = makeCrudActions(set, 'packingMaterials', 'packing', 'PACK')
       const fixtureCrud = makeCrudActions(set, 'fixtures', 'fixture', 'FIX')
       const dieBlockCrud = makeCrudActions(set, 'dieBlocks', 'die', 'DIE')
 
@@ -205,43 +153,15 @@ export const useMastersStore = create<MastersState>()(
           set(s => ({ vendorFilters: { ...s.vendorFilters, [key]: value } })),
         resetVendorFilters: () => set({ vendorFilters: { ...DEFAULT_FILTERS, vendorType: null } }),
 
-        finishedGoods: MOCK_FINISHED_GOODS,
-        createFinishedGood: input => finishedGoodCrud.create(input),
-        updateFinishedGood: (id, input) => finishedGoodCrud.update(id, input),
-        deleteFinishedGood: id => finishedGoodCrud.delete(id),
         finishedGoodFilters: { ...DEFAULT_FILTERS },
         setFinishedGoodFilter: (key, value) =>
           set(s => ({ finishedGoodFilters: { ...s.finishedGoodFilters, [key]: value } })),
         resetFinishedGoodFilters: () => set({ finishedGoodFilters: { ...DEFAULT_FILTERS } }),
 
-        rawMaterials: MOCK_RAW_MATERIALS,
-        createRawMaterial: input => rawMaterialCrud.create(input),
-        updateRawMaterial: (id, input) => rawMaterialCrud.update(id, input),
-        deleteRawMaterial: id => rawMaterialCrud.delete(id),
         rawMaterialFilters: { ...DEFAULT_FILTERS },
         setRawMaterialFilter: (key, value) =>
           set(s => ({ rawMaterialFilters: { ...s.rawMaterialFilters, [key]: value } })),
         resetRawMaterialFilters: () => set({ rawMaterialFilters: { ...DEFAULT_FILTERS } }),
-
-        consumables: MOCK_CONSUMABLES,
-        createConsumable: input => consumableCrud.create(input),
-        updateConsumable: (id, input) => consumableCrud.update(id, input),
-        deleteConsumable: id => consumableCrud.delete(id),
-
-        machines: MOCK_MACHINES,
-        createMachine: input => machineCrud.create(input),
-        updateMachine: (id, input) => machineCrud.update(id, input),
-        deleteMachine: id => machineCrud.delete(id),
-
-        gaugeInstruments: MOCK_GAUGE_INSTRUMENTS,
-        createGaugeInstrument: input => gaugeInstrumentCrud.create(input),
-        updateGaugeInstrument: (id, input) => gaugeInstrumentCrud.update(id, input),
-        deleteGaugeInstrument: id => gaugeInstrumentCrud.delete(id),
-
-        packingMaterials: MOCK_PACKING_MATERIALS,
-        createPackingMaterial: input => packingMaterialCrud.create(input),
-        updatePackingMaterial: (id, input) => packingMaterialCrud.update(id, input),
-        deletePackingMaterial: id => packingMaterialCrud.delete(id),
 
         fixtures: MOCK_FIXTURES,
         createFixture: input => fixtureCrud.create(input),
@@ -254,6 +174,6 @@ export const useMastersStore = create<MastersState>()(
         deleteDieBlock: id => dieBlockCrud.delete(id),
       } satisfies MastersState
     },
-    { name: 'erp-masters', version: 3 },
+    { name: 'erp-masters', version: 4 },
   ),
 )

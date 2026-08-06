@@ -6,11 +6,14 @@ import { FormField } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { UploadField } from '@/components/ui/UploadField'
 import { MASTER_STATUS_OPTIONS } from '../constants'
+import { useItemCategories } from '../hooks/useItemCategories'
+import { useMaterialGrades } from '../hooks/useMaterialGrades'
 import {
   useCreateRawMaterial,
   useRawMaterial,
   useUpdateRawMaterial,
 } from '../hooks/useRawMaterials'
+import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
 
 export const RawMaterialForm: FC = () => {
@@ -23,22 +26,32 @@ export const RawMaterialForm: FC = () => {
   const { data: rawMaterial } = useRawMaterial(id)
   const { mutateAsync: createRawMaterial, isPending: creating } = useCreateRawMaterial()
   const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
+  const { data: categories = [] } = useItemCategories()
+  const { data: uoms = [] } = useUoms()
+  const { data: materialGrades = [] } = useMaterialGrades()
+
+  const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
+  const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
+  const materialGradeOptions = materialGrades.map(m => ({
+    label: m.material_grade,
+    value: String(m.id),
+  }))
 
   useEffect(() => {
     if (isEdit && rawMaterial) {
       form.setFieldsValue({
         code: rawMaterial.code,
         name: rawMaterial.name,
-        category: rawMaterial.category,
+        categoryId: rawMaterial.categoryId ?? undefined,
         brand: rawMaterial.brand,
-        uom: rawMaterial.uom,
-        alternateUom: rawMaterial.alternateUom,
+        uomId: rawMaterial.uomId ?? undefined,
+        alternateUomId: rawMaterial.alternateUomId ?? undefined,
         hsnCode: rawMaterial.hsnCode,
         gstPercent: rawMaterial.gstPercent,
         description: rawMaterial.description,
         status: rawMaterial.status,
         imageUrl: rawMaterial.imageUrl,
-        materialGrade: rawMaterial.materialGrade,
+        materialGradeId: rawMaterial.materialGradeId ?? undefined,
         materialType: rawMaterial.materialType,
         shape: rawMaterial.shape,
         diameter: rawMaterial.diameter,
@@ -59,16 +72,20 @@ export const RawMaterialForm: FC = () => {
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
       name: values.name as string,
-      category: values.category as string,
+      categoryId: values.categoryId as string,
+      category: categoryOptions.find(o => o.value === values.categoryId)?.label ?? '',
       brand: values.brand as string | undefined,
-      uom: values.uom as string,
-      alternateUom: values.alternateUom as string | undefined,
+      uomId: values.uomId as string,
+      uom: uomOptions.find(o => o.value === values.uomId)?.label ?? '',
+      alternateUomId: values.alternateUomId as string | undefined,
+      alternateUom: uomOptions.find(o => o.value === values.alternateUomId)?.label,
       hsnCode: values.hsnCode as string | undefined,
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
       imageUrl: values.imageUrl as string | undefined,
-      materialGrade: values.materialGrade as string | undefined,
+      materialGradeId: values.materialGradeId as string | undefined,
+      materialGrade: materialGradeOptions.find(o => o.value === values.materialGradeId)?.label,
       materialType: values.materialType as string | undefined,
       shape: values.shape as string | undefined,
       diameter: values.diameter as number | undefined,
@@ -130,16 +147,25 @@ export const RawMaterialForm: FC = () => {
             />
             <FormField
               label="Category"
-              name="category"
+              name="categoryId"
+              fieldType="select"
+              options={categoryOptions}
               rules={[{ required: true, message: 'Category is required' }]}
             />
             <FormField label="Brand" name="brand" />
             <FormField
               label="UOM"
-              name="uom"
+              name="uomId"
+              fieldType="select"
+              options={uomOptions}
               rules={[{ required: true, message: 'UOM is required' }]}
             />
-            <FormField label="Alternate UOM" name="alternateUom" />
+            <FormField
+              label="Alternate UOM"
+              name="alternateUomId"
+              fieldType="select"
+              options={uomOptions}
+            />
             <FormField label="HSN Code" name="hsnCode" />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField
@@ -157,7 +183,12 @@ export const RawMaterialForm: FC = () => {
           <Divider />
           <Typography.Title level={5}>Physical Specs</Typography.Title>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Material Grade" name="materialGrade" />
+            <FormField
+              label="Material Grade"
+              name="materialGradeId"
+              fieldType="select"
+              options={materialGradeOptions}
+            />
             <FormField label="Material Type" name="materialType" />
             <FormField label="Shape" name="shape" />
             <FormField label="Diameter" name="diameter" fieldType="number" />
