@@ -33,6 +33,20 @@ import {
   VendorForm,
   VendorList,
 } from '@/modules/masters'
+import {
+  PurchaseEnquiryCompare,
+  PurchaseEnquiryDetail,
+  PurchaseEnquiryForm,
+  PurchaseEnquiryList,
+  PurchaseOrderDetail,
+  PurchaseOrderForm,
+  PurchaseOrderList,
+  PurchaseRequisitionDetail,
+  PurchaseRequisitionForm,
+  PurchaseRequisitionList,
+  SupplierQuotationForm,
+  SupplierQuotationList,
+} from '@/modules/procurement'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { Dashboard } from '@/pages/Dashboard'
 import { Login } from '@/pages/Login'
@@ -51,6 +65,10 @@ const IMPLEMENTED_PATHS = new Set([
   '/masters/finished-goods',
   '/masters/raw-materials',
   '/masters/items',
+  '/purchase/requisitions',
+  '/purchase/enquiries',
+  '/purchase/quotations',
+  '/purchase/orders',
 ])
 
 function App() {
@@ -103,6 +121,32 @@ function App() {
                   <Route path="fixtures" element={<FixtureList />} />
                   <Route path="dies-blocks" element={<DieBlockList />} />
                 </Route>
+
+                <Route path="/purchase/requisitions" element={<PurchaseRequisitionList />} />
+                <Route path="/purchase/requisitions/new" element={<PurchaseRequisitionForm />} />
+                <Route path="/purchase/requisitions/:id" element={<PurchaseRequisitionDetail />} />
+                <Route
+                  path="/purchase/requisitions/:id/edit"
+                  element={<PurchaseRequisitionForm />}
+                />
+
+                <Route path="/purchase/enquiries" element={<PurchaseEnquiryList />} />
+                <Route path="/purchase/enquiries/new" element={<PurchaseEnquiryForm />} />
+                <Route path="/purchase/enquiries/:id" element={<PurchaseEnquiryDetail />} />
+                <Route
+                  path="/purchase/enquiries/:id/compare"
+                  element={<PurchaseEnquiryCompare />}
+                />
+                <Route
+                  path="/purchase/enquiries/:id/quotations/:peSupplierId"
+                  element={<SupplierQuotationForm />}
+                />
+
+                <Route path="/purchase/quotations" element={<SupplierQuotationList />} />
+
+                <Route path="/purchase/orders" element={<PurchaseOrderList />} />
+                <Route path="/purchase/orders/new" element={<PurchaseOrderForm />} />
+                <Route path="/purchase/orders/:id" element={<PurchaseOrderDetail />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route
