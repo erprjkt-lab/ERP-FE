@@ -62,7 +62,8 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: <ShoppingCartOutlined />,
     label: 'Purchase',
     children: [
-      { path: '/purchase/rfq', label: 'RFQ' },
+      { path: '/purchase/requisitions', label: 'Purchase Requisition' },
+      { path: '/purchase/enquiries', label: 'Purchase Enquiry' },
       { path: '/purchase/orders', label: 'Purchase Order' },
       { path: '/purchase/grn', label: 'GRN' },
       { path: '/purchase/invoices', label: 'Purchase Invoice' },
