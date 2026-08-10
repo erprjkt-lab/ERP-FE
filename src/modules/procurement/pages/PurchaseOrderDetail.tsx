@@ -1,31 +1,19 @@
 import { ArrowLeftOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Select, Space, Table, Typography } from 'antd'
+import { Button, Card, Col, Descriptions, Row, Space, Table, Typography } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { PurchaseOrder, PurchaseOrderItem } from '@/types/procurement'
+import type { PurchaseOrderItem } from '@/types/procurement'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
 import { usePurchaseEnquiries } from '../hooks/usePurchaseEnquiries'
-import { usePurchaseOrder, useUpdatePurchaseOrderStatus } from '../hooks/usePurchaseOrders'
-
-const NEXT_STATUS_OPTIONS: Record<PurchaseOrder['status'], PurchaseOrder['status'][]> = {
-  DRAFT: ['APPROVED', 'CANCELLED'],
-  APPROVED: ['SENT', 'CANCELLED'],
-  SENT: ['PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED'],
-  PARTIALLY_RECEIVED: ['RECEIVED', 'CLOSED'],
-  RECEIVED: ['CLOSED'],
-  CLOSED: [],
-  CANCELLED: [],
-}
+import { usePurchaseOrder } from '../hooks/usePurchaseOrders'
 
 export const PurchaseOrderDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { message } = App.useApp()
   const { data: order, isLoading } = usePurchaseOrder(id)
   const { data: enquiries } = usePurchaseEnquiries()
-  const { mutateAsync: updateStatus, isPending: updatingStatus } = useUpdatePurchaseOrderStatus()
 
   if (!order) {
     return (
@@ -39,16 +27,6 @@ export const PurchaseOrderDetail: FC = () => {
   }
 
   const sourceEnquiry = enquiries.find(e => e.id === order.purchaseEnquiryId)
-  const nextStatuses = NEXT_STATUS_OPTIONS[order.status]
-
-  const handleStatusChange = async (status: PurchaseOrder['status']) => {
-    try {
-      await updateStatus({ id: order.id, status })
-      message.success(`Purchase order marked ${PO_STATUS_LABELS[status]}`)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
-    }
-  }
 
   const columns = [
     {
@@ -90,18 +68,6 @@ export const PurchaseOrderDetail: FC = () => {
                 View Source Enquiry
               </Button>
             )}
-            {nextStatuses.length > 0 && (
-              <Select
-                placeholder="Change status"
-                style={{ width: 180 }}
-                loading={updatingStatus}
-                options={nextStatuses.map(status => ({
-                  label: PO_STATUS_LABELS[status],
-                  value: status,
-                }))}
-                onChange={handleStatusChange}
-              />
-            )}
           </Space>
         }
       />
@@ -123,7 +89,6 @@ export const PurchaseOrderDetail: FC = () => {
               <Descriptions.Item label="Source">
                 {sourceEnquiry ? `Enquiry ${sourceEnquiry.enquiryNumber}` : 'Direct'}
               </Descriptions.Item>
-              <Descriptions.Item label="Currency">{order.currency}</Descriptions.Item>
               <Descriptions.Item label="Created By">{order.createdBy}</Descriptions.Item>
               <Descriptions.Item label="Payment Terms">
                 {order.paymentTerms ?? '—'}
@@ -137,9 +102,7 @@ export const PurchaseOrderDetail: FC = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Tax Amount">{order.taxAmount.toFixed(2)}</Descriptions.Item>
               <Descriptions.Item label="Net Amount">
-                <Typography.Text strong>
-                  {order.currency} {order.netAmount.toFixed(2)}
-                </Typography.Text>
+                <Typography.Text strong>{order.netAmount.toFixed(2)}</Typography.Text>
               </Descriptions.Item>
             </Descriptions>
           </Card>

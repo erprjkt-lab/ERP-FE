@@ -4,17 +4,19 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
-import type { PurchaseEnquiryItem, SupplierQuotation } from '@/types/procurement'
-import { usePurchaseEnquiry } from '../hooks/usePurchaseEnquiries'
+import { usePurchaseEnquiry, useQuotationComparison } from '../hooks/usePurchaseEnquiries'
+import type {
+  QuotationComparisonQuote,
+  QuotationComparisonRow,
+} from '../hooks/usePurchaseEnquiries'
 import { useSelectSupplierForEnquiry } from '../hooks/usePurchaseOrders'
-import { useQuotationsForEnquiry } from '../hooks/useSupplierQuotations'
 
 export const PurchaseEnquiryCompare: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message } = App.useApp()
   const { data: enquiry, isLoading } = usePurchaseEnquiry(id)
-  const { data: quotations } = useQuotationsForEnquiry(id)
+  const { data: rows } = useQuotationComparison(id)
   const { mutateAsync: selectSupplier, isPending: selecting } = useSelectSupplierForEnquiry()
 
   if (!enquiry) {
@@ -28,96 +30,102 @@ export const PurchaseEnquiryCompare: FC = () => {
     )
   }
 
-  const respondedSuppliers = enquiry.suppliers.filter(sup =>
-    quotations.some(q => q.purchaseEnquirySupplierId === sup.id),
-  )
+  // A quotation can in principle be re-recorded for the same supplier, so key
+  // everything by the specific quotation id (not supplier id) — the union of
+  // quotations seen across all item rows becomes the comparison columns.
+  const quotationsById = new Map<string, QuotationComparisonQuote>()
+  rows.forEach(row => row.quotes.forEach(q => quotationsById.set(q.supplierQuotationId, q)))
+  const distinctQuotations = Array.from(quotationsById.values())
 
-  const handleSelect = async (peSupplierId: string) => {
+  const totalForQuotation = (quotationId: string) => {
+    const lineSum = rows.reduce((sum, row) => {
+      const line = row.quotes.find(q => q.supplierQuotationId === quotationId)
+      return sum + (line?.lineTotal ?? 0)
+    }, 0)
+    const meta = quotationsById.get(quotationId)
+    return lineSum + (meta?.freightAmount ?? 0) + (meta?.otherCharges ?? 0)
+  }
+
+  const isSupplierSelected = (supplierId: string) =>
+    enquiry.suppliers.find(sup => sup.supplierId === supplierId)?.supplierStatus === 'SELECTED'
+
+  const handleSelect = async (quote: QuotationComparisonQuote) => {
     try {
-      await selectSupplier({ enquiryId: enquiry.id, peSupplierId })
+      await selectSupplier({
+        enquiryId: enquiry.id,
+        supplierId: quote.supplierId,
+        quotationId: quote.supplierQuotationId,
+      })
       message.success('Supplier selected for this enquiry')
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Something went wrong')
     }
   }
 
-  const itemColumns: TableColumnsType<PurchaseEnquiryItem> = [
+  const itemColumns: TableColumnsType<QuotationComparisonRow> = [
     {
       title: 'Item',
       key: 'item',
       fixed: 'left',
       width: 200,
-      render: (_, item) => (
+      render: (_, row) => (
         <div>
-          <div style={{ fontWeight: 500 }}>{item.itemName}</div>
-          <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
-            Required: {item.requiredQty} {item.uomName}
-          </div>
+          <div style={{ fontWeight: 500 }}>{row.itemName}</div>
+          <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>Required: {row.requiredQty}</div>
+          {row.sourcePrNumber && (
+            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>from {row.sourcePrNumber}</div>
+          )}
         </div>
       ),
     },
-    ...respondedSuppliers.map(sup => {
-      const quotation = quotations.find(q => q.purchaseEnquirySupplierId === sup.id)
-      return {
-        title: (
+    ...distinctQuotations.map(quote => ({
+      title: (
+        <div>
+          <div style={{ fontWeight: 600 }}>{quote.supplierName}</div>
+          {isSupplierSelected(quote.supplierId) && <Tag color="green">Selected</Tag>}
+        </div>
+      ),
+      key: quote.supplierQuotationId,
+      width: 180,
+      render: (_: unknown, row: QuotationComparisonRow) => {
+        const line = row.quotes.find(q => q.supplierQuotationId === quote.supplierQuotationId)
+        if (!line) return '—'
+        return (
           <div>
-            <div style={{ fontWeight: 600 }}>{sup.supplierName}</div>
-            {sup.supplierStatus === 'SELECTED' && <Tag color="green">Selected</Tag>}
-          </div>
-        ),
-        key: sup.id,
-        width: 180,
-        render: (_: unknown, item: PurchaseEnquiryItem) => {
-          const line = quotation?.items.find(i => i.purchaseEnquiryItemId === item.id)
-          if (!line) return '—'
-          return (
             <div>
-              <div>
-                {line.quotedQty} × {line.rate}
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
-                Disc {line.discountPercent}% · Tax {line.taxPercent}%
-              </div>
-              <div style={{ fontWeight: 500 }}>{line.lineTotal.toFixed(2)}</div>
+              {line.quotedQty} × {line.rate}
             </div>
-          )
-        },
-      }
-    }),
+            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+              Disc {line.discountPercent}% · Tax {line.taxPercent}%
+            </div>
+            <div style={{ fontWeight: 500 }}>{line.lineTotal.toFixed(2)}</div>
+          </div>
+        )
+      },
+    })),
   ]
 
-  const summaryColumns: TableColumnsType<{
-    supplier: (typeof respondedSuppliers)[number]
-    quotation: SupplierQuotation
-  }> = [
-    { title: 'Supplier', key: 'supplier', render: (_, r) => r.supplier.supplierName },
-    {
-      title: 'Payment Terms',
-      key: 'paymentTerms',
-      render: (_, r) => r.quotation.paymentTerms ?? '—',
-    },
-    {
-      title: 'Delivery Terms',
-      key: 'deliveryTerms',
-      render: (_, r) => r.quotation.deliveryTerms ?? '—',
-    },
-    { title: 'Valid Until', key: 'validUntil', render: (_, r) => r.quotation.validUntil ?? '—' },
-    { title: 'Freight', key: 'freight', render: (_, r) => r.quotation.freightAmount },
-    { title: 'Other Charges', key: 'other', render: (_, r) => r.quotation.otherCharges },
+  const summaryColumns: TableColumnsType<QuotationComparisonQuote> = [
+    { title: 'Supplier', key: 'supplier', render: (_, q) => q.supplierName },
+    { title: 'Payment Terms', key: 'paymentTerms', render: (_, q) => q.paymentTerms ?? '—' },
+    { title: 'Delivery Terms', key: 'deliveryTerms', render: (_, q) => q.deliveryTerms ?? '—' },
+    { title: 'Valid Until', key: 'validUntil', render: (_, q) => q.validUntil ?? '—' },
+    { title: 'Freight', key: 'freight', render: (_, q) => q.freightAmount },
+    { title: 'Other Charges', key: 'other', render: (_, q) => q.otherCharges },
     {
       title: 'Total Amount',
       key: 'total',
-      render: (_, r) => (
+      render: (_, q) => (
         <Typography.Text strong>
-          {r.quotation.currency} {r.quotation.totalAmount.toFixed(2)}
+          {totalForQuotation(q.supplierQuotationId).toFixed(2)}
         </Typography.Text>
       ),
     },
     {
       title: 'Action',
       key: 'action',
-      render: (_, r) =>
-        r.supplier.supplierStatus === 'SELECTED' ? (
+      render: (_, q) =>
+        isSupplierSelected(q.supplierId) ? (
           <Tag icon={<CheckCircleOutlined />} color="green">
             Selected
           </Tag>
@@ -127,25 +135,13 @@ export const PurchaseEnquiryCompare: FC = () => {
             type="primary"
             loading={selecting}
             disabled={enquiry.status === 'PO_CREATED'}
-            onClick={() => handleSelect(r.supplier.id)}
+            onClick={() => handleSelect(q)}
           >
             Select
           </Button>
         ),
     },
   ]
-
-  const summaryData = respondedSuppliers
-    .map(supplier => {
-      const quotation = quotations.find(q => q.purchaseEnquirySupplierId === supplier.id)
-      return quotation ? { supplier, quotation } : undefined
-    })
-    .filter(
-      (
-        row,
-      ): row is { supplier: (typeof respondedSuppliers)[number]; quotation: SupplierQuotation } =>
-        !!row,
-    )
 
   return (
     <div>
@@ -167,7 +163,7 @@ export const PurchaseEnquiryCompare: FC = () => {
         }
       />
 
-      {respondedSuppliers.length === 0 ? (
+      {distinctQuotations.length === 0 ? (
         <Card>
           <Typography.Text>No supplier quotations have been recorded yet.</Typography.Text>
         </Card>
@@ -183,8 +179,8 @@ export const PurchaseEnquiryCompare: FC = () => {
           >
             <Table
               columns={itemColumns}
-              dataSource={enquiry.items}
-              rowKey="id"
+              dataSource={rows}
+              rowKey="purchaseEnquiryItemId"
               pagination={false}
               size="small"
               scroll={{ x: 'max-content' }}
@@ -199,8 +195,8 @@ export const PurchaseEnquiryCompare: FC = () => {
           >
             <Table
               columns={summaryColumns}
-              dataSource={summaryData}
-              rowKey={r => r.supplier.id}
+              dataSource={distinctQuotations}
+              rowKey="supplierQuotationId"
               pagination={false}
               size="small"
             />

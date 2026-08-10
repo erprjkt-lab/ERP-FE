@@ -26,7 +26,7 @@ const getColumns = (onView: (record: PurchaseOrder) => void): TableColumnsType<P
   {
     title: 'Net Amount',
     key: 'netAmount',
-    render: (_, r) => `${r.currency} ${r.netAmount.toFixed(2)}`,
+    render: (_, r) => r.netAmount.toFixed(2),
   },
   {
     title: 'Status',

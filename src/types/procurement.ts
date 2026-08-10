@@ -48,7 +48,6 @@ export interface PurchaseRequisition extends BaseEntity {
   createdBy: string
   approvedBy?: string | null
   approvedAt?: string | null
-  rejectionReason?: string | null
 }
 
 export interface PurchaseEnquiryItem {
@@ -108,13 +107,15 @@ export interface SupplierQuotationItem {
   remarks?: string
 }
 
+export type SupplierQuotationStatus = 'RECEIVED' | 'SELECTED' | 'NOT_SELECTED'
+
 export interface SupplierQuotation extends BaseEntity {
   purchaseEnquiryId: ID
   purchaseEnquirySupplierId: ID
   quotationNumber: string
   quotationDate: string
   validUntil?: string | null
-  currency: string
+  status: SupplierQuotationStatus
   paymentTerms?: string
   deliveryTerms?: string
   freightAmount: number
@@ -151,7 +152,6 @@ export interface PurchaseOrder extends BaseEntity {
   supplierName?: string
   purchaseEnquiryId?: ID | null
   purchaseEnquirySupplierId?: ID | null
-  currency: string
   paymentTerms?: string
   deliveryTerms?: string
   freightAmount: number

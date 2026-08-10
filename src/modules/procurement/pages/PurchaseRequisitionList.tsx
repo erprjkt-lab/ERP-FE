@@ -32,7 +32,6 @@ const getColumns = (
     render: v => v ?? '—',
   },
   { title: 'Priority', dataIndex: 'priority', key: 'priority' },
-  { title: 'Items', key: 'items', width: 80, render: (_, r) => r.items.length },
   {
     title: 'Status',
     dataIndex: 'status',

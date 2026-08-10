@@ -1,27 +1,15 @@
-import {
-  App,
-  Button,
-  Card,
-  DatePicker,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Space,
-  Typography,
-} from 'antd'
+import { App, Button, Card, DatePicker, Form, Input, InputNumber, Space, Typography } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { CURRENCY_OPTIONS } from '../constants'
 import { usePurchaseEnquiry } from '../hooks/usePurchaseEnquiries'
 import {
   useRecordSupplierQuotation,
   useSupplierQuotationByPeSupplier,
 } from '../hooks/useSupplierQuotations'
-import type { SupplierQuotationItemInput } from '../store/procurementStore'
+import type { SupplierQuotationItemInput } from '../hooks/useSupplierQuotations'
 
 interface ItemRowValues {
   quotedQty: number
@@ -39,7 +27,7 @@ export const SupplierQuotationForm: FC = () => {
   const [form] = Form.useForm()
 
   const { data: enquiry } = usePurchaseEnquiry(enquiryId)
-  const { data: existingQuotation } = useSupplierQuotationByPeSupplier(peSupplierId)
+  const { data: existingQuotation } = useSupplierQuotationByPeSupplier(enquiryId, peSupplierId)
   const { mutateAsync: recordQuotation, isPending: saving } = useRecordSupplierQuotation()
 
   const peSupplier = enquiry?.suppliers.find(sup => sup.id === peSupplierId)
@@ -50,7 +38,6 @@ export const SupplierQuotationForm: FC = () => {
         quotationNumber: existingQuotation.quotationNumber,
         quotationDate: dayjs(existingQuotation.quotationDate),
         validUntil: existingQuotation.validUntil ? dayjs(existingQuotation.validUntil) : undefined,
-        currency: existingQuotation.currency,
         paymentTerms: existingQuotation.paymentTerms,
         deliveryTerms: existingQuotation.deliveryTerms,
         freightAmount: existingQuotation.freightAmount,
@@ -87,7 +74,6 @@ export const SupplierQuotationForm: FC = () => {
     quotationNumber: string
     quotationDate: dayjs.Dayjs
     validUntil?: dayjs.Dayjs
-    currency: string
     paymentTerms?: string
     deliveryTerms?: string
     freightAmount: number
@@ -119,7 +105,6 @@ export const SupplierQuotationForm: FC = () => {
         quotationNumber: values.quotationNumber,
         quotationDate: values.quotationDate.format('YYYY-MM-DD'),
         validUntil: values.validUntil ? values.validUntil.format('YYYY-MM-DD') : null,
-        currency: values.currency,
         paymentTerms: values.paymentTerms,
         deliveryTerms: values.deliveryTerms,
         freightAmount: values.freightAmount ?? 0,
@@ -162,7 +147,6 @@ export const SupplierQuotationForm: FC = () => {
           onFinish={handleFinish}
           initialValues={{
             quotationDate: dayjs(),
-            currency: 'INR',
             freightAmount: 0,
             otherCharges: 0,
             items: enquiry.items.map(peItem => ({
@@ -192,10 +176,7 @@ export const SupplierQuotationForm: FC = () => {
               <DatePicker style={{ width: '100%' }} />
             </Form.Item>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
-            <Form.Item label="Currency" name="currency">
-              <Select options={CURRENCY_OPTIONS} />
-            </Form.Item>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
             <Form.Item label="Payment Terms" name="paymentTerms">
               <Input />
             </Form.Item>

@@ -64,7 +64,6 @@ export const NAV_GROUPS: NavGroup[] = [
     children: [
       { path: '/purchase/requisitions', label: 'Purchase Requisition' },
       { path: '/purchase/enquiries', label: 'Purchase Enquiry' },
-      { path: '/purchase/quotations', label: 'Supplier Quotation' },
       { path: '/purchase/orders', label: 'Purchase Order' },
       { path: '/purchase/grn', label: 'GRN' },
       { path: '/purchase/invoices', label: 'Purchase Invoice' },

@@ -4,6 +4,7 @@ import type {
   PurchaseEnquiryStatus,
   PurchaseOrderStatus,
   PurchaseRequisitionStatus,
+  SupplierQuotationStatus,
 } from '@/types/procurement'
 import type { StatusBadgeStatus } from '@/components/ui/StatusBadge'
 
@@ -12,14 +13,6 @@ export const PRIORITY_OPTIONS: { label: string; value: Priority }[] = [
   { label: 'Normal', value: 'NORMAL' },
   { label: 'High', value: 'HIGH' },
   { label: 'Urgent', value: 'URGENT' },
-]
-
-// No currencies master exists on the backend yet (confirmed against ERP-BE) —
-// placeholder list until one is built.
-export const CURRENCY_OPTIONS = [
-  { label: 'INR', value: 'INR' },
-  { label: 'USD', value: 'USD' },
-  { label: 'EUR', value: 'EUR' },
 ]
 
 export const REQUISITION_STATUS_LABELS: Record<PurchaseRequisitionStatus, string> = {
@@ -102,4 +95,16 @@ export const PO_STATUS_BADGE: Record<PurchaseOrderStatus, StatusBadgeStatus> = {
   RECEIVED: 'active',
   CLOSED: 'archived',
   CANCELLED: 'cancelled',
+}
+
+export const QUOTATION_STATUS_LABELS: Record<SupplierQuotationStatus, string> = {
+  RECEIVED: 'Received',
+  SELECTED: 'Selected',
+  NOT_SELECTED: 'Not Selected',
+}
+
+export const QUOTATION_STATUS_BADGE: Record<SupplierQuotationStatus, StatusBadgeStatus> = {
+  RECEIVED: 'active',
+  SELECTED: 'approved',
+  NOT_SELECTED: 'inactive',
 }

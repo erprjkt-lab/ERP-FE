@@ -25,11 +25,11 @@ import {
   useCreatePurchaseEnquiryFromRequisitions,
   useCreatePurchaseEnquiryManual,
 } from '../hooks/usePurchaseEnquiries'
-import { usePurchaseRequisitions } from '../hooks/usePurchaseRequisitions'
 import type {
   PurchaseEnquiryItemInput,
   PurchaseEnquirySupplierInput,
-} from '../store/procurementStore'
+} from '../hooks/usePurchaseEnquiries'
+import { usePurchaseRequisitions } from '../hooks/usePurchaseRequisitions'
 
 type Mode = 'manual' | 'fromRequisitions'
 

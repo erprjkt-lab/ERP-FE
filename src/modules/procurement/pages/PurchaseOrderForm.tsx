@@ -16,10 +16,9 @@ import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
-import { CURRENCY_OPTIONS } from '../constants'
 import { useProcurementItems } from '../hooks/useProcurementItems'
 import { useCreatePurchaseOrderDirect } from '../hooks/usePurchaseOrders'
-import type { PurchaseOrderItemInput } from '../store/procurementStore'
+import type { PurchaseOrderItemInput } from '../hooks/usePurchaseOrders'
 
 interface ItemRowValues {
   itemId: string
@@ -46,7 +45,6 @@ export const PurchaseOrderForm: FC = () => {
   const handleFinish = async (values: {
     poDate: dayjs.Dayjs
     supplierId: string
-    currency: string
     paymentTerms?: string
     deliveryTerms?: string
     freightAmount: number
@@ -76,7 +74,6 @@ export const PurchaseOrderForm: FC = () => {
         poDate: values.poDate.format('YYYY-MM-DD'),
         supplierId: values.supplierId,
         supplierName: supplier?.name,
-        currency: values.currency,
         paymentTerms: values.paymentTerms,
         deliveryTerms: values.deliveryTerms,
         freightAmount: values.freightAmount ?? 0,
@@ -118,13 +115,12 @@ export const PurchaseOrderForm: FC = () => {
           onFinish={handleFinish}
           initialValues={{
             poDate: dayjs(),
-            currency: 'INR',
             freightAmount: 0,
             otherCharges: 0,
             items: [],
           }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
             <Form.Item
               label="PO Date"
               name="poDate"
@@ -147,9 +143,6 @@ export const PurchaseOrderForm: FC = () => {
                     .includes(input.toLowerCase())
                 }
               />
-            </Form.Item>
-            <Form.Item label="Currency" name="currency">
-              <Select options={CURRENCY_OPTIONS} />
             </Form.Item>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>

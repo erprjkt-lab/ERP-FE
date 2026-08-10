@@ -7,7 +7,6 @@ export { PurchaseEnquiryForm } from './pages/PurchaseEnquiryForm'
 export { PurchaseEnquiryDetail } from './pages/PurchaseEnquiryDetail'
 export { PurchaseEnquiryCompare } from './pages/PurchaseEnquiryCompare'
 
-export { SupplierQuotationList } from './pages/SupplierQuotationList'
 export { SupplierQuotationForm } from './pages/SupplierQuotationForm'
 
 export { PurchaseOrderList } from './pages/PurchaseOrderList'

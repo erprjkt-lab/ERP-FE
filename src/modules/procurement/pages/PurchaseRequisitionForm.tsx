@@ -27,7 +27,7 @@ import {
   usePurchaseRequisition,
   useUpdatePurchaseRequisition,
 } from '../hooks/usePurchaseRequisitions'
-import type { PurchaseRequisitionItemInput } from '../store/procurementStore'
+import type { PurchaseRequisitionItemInput } from '../hooks/usePurchaseRequisitions'
 
 interface ItemRowValues {
   itemId: string

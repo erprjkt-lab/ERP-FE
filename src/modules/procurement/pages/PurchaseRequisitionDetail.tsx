@@ -190,11 +190,6 @@ export const PurchaseRequisitionDetail: FC = () => {
               <Descriptions.Item label="Approved By">
                 {requisition.approvedBy ?? '—'}
               </Descriptions.Item>
-              {requisition.status === 'REJECTED' && (
-                <Descriptions.Item label="Rejection Reason" span={3}>
-                  {requisition.rejectionReason ?? '—'}
-                </Descriptions.Item>
-              )}
               <Descriptions.Item label="Remarks" span={3}>
                 {requisition.remarks ?? '—'}
               </Descriptions.Item>

@@ -22,7 +22,6 @@ const getColumns = (
   { title: 'Enquiry #', dataIndex: 'enquiryNumber', key: 'enquiryNumber', width: 140 },
   { title: 'Date', dataIndex: 'enquiryDate', key: 'enquiryDate', width: 120 },
   { title: 'Due Date', dataIndex: 'enquiryDueDate', key: 'enquiryDueDate', render: v => v ?? '—' },
-  { title: 'Items', key: 'items', width: 80, render: (_, r) => r.items.length },
   { title: 'Suppliers', key: 'suppliers', width: 90, render: (_, r) => r.suppliers.length },
   {
     title: 'Status',

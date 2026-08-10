@@ -45,7 +45,6 @@ import {
   PurchaseRequisitionForm,
   PurchaseRequisitionList,
   SupplierQuotationForm,
-  SupplierQuotationList,
 } from '@/modules/procurement'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { Dashboard } from '@/pages/Dashboard'
@@ -67,7 +66,6 @@ const IMPLEMENTED_PATHS = new Set([
   '/masters/items',
   '/purchase/requisitions',
   '/purchase/enquiries',
-  '/purchase/quotations',
   '/purchase/orders',
 ])
 
@@ -141,8 +139,6 @@ function App() {
                   path="/purchase/enquiries/:id/quotations/:peSupplierId"
                   element={<SupplierQuotationForm />}
                 />
-
-                <Route path="/purchase/quotations" element={<SupplierQuotationList />} />
 
                 <Route path="/purchase/orders" element={<PurchaseOrderList />} />
                 <Route path="/purchase/orders/new" element={<PurchaseOrderForm />} />
