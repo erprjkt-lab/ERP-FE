@@ -108,7 +108,18 @@ export interface ApiItemCategory {
   parent_id: number | null
   is_final: boolean
   status: number
+  created_at?: string
 }
+
+export interface CreateItemCategoryPayload {
+  name: string
+  code?: string | null
+  parent_id?: number | null
+  is_final?: boolean
+  status?: number
+}
+
+export type UpdateItemCategoryPayload = Partial<CreateItemCategoryPayload>
 
 export interface ApiMaterialGrade {
   id: number
@@ -117,7 +128,46 @@ export interface ApiMaterialGrade {
   standard: string | null
   specification: string | null
   status: number
+  created_at?: string
 }
+
+export interface CreateMaterialGradePayload {
+  material_grade: string
+  material_type?: string | null
+  standard?: string | null
+  specification?: string | null
+  status?: number
+}
+
+export type UpdateMaterialGradePayload = Partial<CreateMaterialGradePayload>
+
+// Tax master keyed by HSN code — GST/CGST/SGST/IGST/CESS percentages applied to
+// items via their `hsn_code` string field (see ApiItemMaster below).
+export interface ApiHsnCode {
+  id: number
+  hsn: string
+  description: string | null
+  gst_rate: number | null
+  cgst_rate: number | null
+  sgst_rate: number | null
+  igst_rate: number | null
+  cess_rate: number | null
+  status: number
+  created_at?: string
+}
+
+export interface CreateHsnCodePayload {
+  hsn: string
+  description?: string | null
+  gst_rate?: number | null
+  cgst_rate?: number | null
+  sgst_rate?: number | null
+  igst_rate?: number | null
+  cess_rate?: number | null
+  status?: number
+}
+
+export type UpdateHsnCodePayload = Partial<CreateHsnCodePayload>
 
 // Backing table `item_master` is one shared table with an `item_type` discriminator
 // (1=Finished Goods, 2=Raw Material, 3=Consumables, 4=Machine, 5=Gauge & Instrument,

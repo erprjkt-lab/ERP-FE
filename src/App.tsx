@@ -21,8 +21,11 @@ import {
   FinishedGoodList,
   FixtureList,
   GaugeInstrumentList,
+  HsnCodeList,
+  ItemCategoryList,
   ItemsLayout,
   MachineList,
+  MaterialGradeList,
   PackingMaterialList,
   RawMaterialForm,
   RawMaterialList,
@@ -64,6 +67,9 @@ const IMPLEMENTED_PATHS = new Set([
   '/masters/finished-goods',
   '/masters/raw-materials',
   '/masters/items',
+  '/hsn-category-grade/hsn-codes',
+  '/hsn-category-grade/item-categories',
+  '/hsn-category-grade/material-grades',
   '/purchase/requisitions',
   '/purchase/enquiries',
   '/purchase/orders',
@@ -119,6 +125,10 @@ function App() {
                   <Route path="fixtures" element={<FixtureList />} />
                   <Route path="dies-blocks" element={<DieBlockList />} />
                 </Route>
+
+                <Route path="/hsn-category-grade/hsn-codes" element={<HsnCodeList />} />
+                <Route path="/hsn-category-grade/item-categories" element={<ItemCategoryList />} />
+                <Route path="/hsn-category-grade/material-grades" element={<MaterialGradeList />} />
 
                 <Route path="/purchase/requisitions" element={<PurchaseRequisitionList />} />
                 <Route path="/purchase/requisitions/new" element={<PurchaseRequisitionForm />} />

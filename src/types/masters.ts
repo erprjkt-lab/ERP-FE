@@ -221,3 +221,33 @@ export interface DieBlock extends BaseEntity {
   uom: string
   price?: number
 }
+
+export interface ItemCategory extends BaseEntity {
+  name: string
+  code?: string
+  parentId: ID | null
+  parentName?: string
+  isFinal: boolean
+  status: Status
+}
+
+export interface MaterialGrade extends BaseEntity {
+  materialGrade: string
+  materialType?: string
+  standard?: string
+  specification?: string
+  status: Status
+}
+
+// Tax master — GST/CGST/SGST/IGST/CESS percentages per HSN code, referenced by
+// items via the plain `hsnCode` string field on FinishedGood/RawMaterial/etc.
+export interface HsnCode extends BaseEntity {
+  hsn: string
+  description?: string
+  gstRate?: number
+  cgstRate?: number
+  sgstRate?: number
+  igstRate?: number
+  cessRate?: number
+  status: Status
+}

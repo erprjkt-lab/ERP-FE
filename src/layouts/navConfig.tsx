@@ -5,6 +5,7 @@ import {
   InboxOutlined,
   ShopOutlined,
   ShoppingCartOutlined,
+  TagsOutlined,
   TeamOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
@@ -55,6 +56,16 @@ export const NAV_GROUPS: NavGroup[] = [
       { path: '/masters/categories', label: 'Category' },
       { path: '/masters/units', label: 'Unit' },
       { path: '/masters/terms', label: 'Terms & Conditions' },
+    ],
+  },
+  {
+    key: '/hsn-category-grade',
+    icon: <TagsOutlined />,
+    label: 'Hsn & Category & Grade',
+    children: [
+      { path: '/hsn-category-grade/hsn-codes', label: 'HSN Master' },
+      { path: '/hsn-category-grade/item-categories', label: 'Item Category' },
+      { path: '/hsn-category-grade/material-grades', label: 'Material Grade' },
     ],
   },
   {
