@@ -114,6 +114,9 @@ export interface FinishedGood extends BaseEntity {
   materialGrade?: string
   weight?: number
   price?: number
+  batchTracking?: boolean
+  heatTracking?: boolean
+  serialTracking?: boolean
 }
 
 export interface RawMaterial extends BaseEntity {
@@ -142,6 +145,9 @@ export interface RawMaterial extends BaseEntity {
   density?: number
   color?: string
   price?: number
+  batchTracking?: boolean
+  heatTracking?: boolean
+  serialTracking?: boolean
 }
 
 export interface Consumable extends BaseEntity {
@@ -159,6 +165,9 @@ export interface Consumable extends BaseEntity {
   status: Status
   imageUrl?: string
   price?: number
+  batchTracking?: boolean
+  heatTracking?: boolean
+  serialTracking?: boolean
 }
 
 export interface Machine extends BaseEntity {

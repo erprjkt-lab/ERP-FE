@@ -1,4 +1,6 @@
 import type {
+  GrnLineStatus,
+  GrnStatus,
   Priority,
   PurchaseEnquirySupplierStatus,
   PurchaseEnquiryStatus,
@@ -107,4 +109,36 @@ export const QUOTATION_STATUS_BADGE: Record<SupplierQuotationStatus, StatusBadge
   RECEIVED: 'active',
   SELECTED: 'approved',
   NOT_SELECTED: 'inactive',
+}
+
+export const GRN_STATUS_LABELS: Record<GrnStatus, string> = {
+  0: 'Draft',
+  1: 'Received',
+  2: 'QC Pending',
+  3: 'Completed',
+  4: 'Cancelled',
+}
+
+export const GRN_STATUS_BADGE: Record<GrnStatus, StatusBadgeStatus> = {
+  0: 'draft',
+  1: 'pending',
+  2: 'pending',
+  3: 'approved',
+  4: 'cancelled',
+}
+
+export const GRN_LINE_STATUS_LABELS: Record<GrnLineStatus, string> = {
+  0: 'Received (Blocked)',
+  1: 'QC Pending',
+  2: 'QC Done',
+  3: 'Stock Posted',
+  4: 'Cancelled',
+}
+
+export const GRN_LINE_STATUS_BADGE: Record<GrnLineStatus, StatusBadgeStatus> = {
+  0: 'pending',
+  1: 'pending',
+  2: 'active',
+  3: 'approved',
+  4: 'cancelled',
 }

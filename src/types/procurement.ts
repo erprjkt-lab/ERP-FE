@@ -165,3 +165,48 @@ export interface PurchaseOrder extends BaseEntity {
   createdBy: string
   approvedBy?: string | null
 }
+
+// Draft | Received | QC Pending | Completed | Cancelled
+export type GrnStatus = 0 | 1 | 2 | 3 | 4
+// Received(Blocked) | QC Pending | QC Done | Stock Posted | Cancelled
+export type GrnLineStatus = 0 | 1 | 2 | 3 | 4
+
+export interface GrnItem {
+  id: ID
+  grnId: ID
+  poItemId: ID
+  itemId: ID
+  itemName?: string
+  itemCode?: string
+  orderedQty?: number
+  gradeId?: ID | null
+  gradeName?: string
+  receivedQty: number
+  commercialUnit?: string | null
+  commercialQty?: number | null
+  rate?: number | null
+  batchNo?: string | null
+  heatNo?: string | null
+  heatVerified?: boolean | null
+  serialNo?: string | null
+  locationId: ID
+  locationName?: string
+  acceptedQty?: number | null
+  rejectedQty?: number | null
+  shortQty?: number | null
+  lineStatus: GrnLineStatus
+  remarks?: string
+}
+
+export interface Grn extends BaseEntity {
+  grnNo: string
+  supplierId: ID
+  supplierName?: string
+  supplierDocNo?: string | null
+  supplierDocDate?: string | null
+  grnDate: string
+  status: GrnStatus
+  remarks?: string
+  items: GrnItem[]
+  createdBy: string
+}

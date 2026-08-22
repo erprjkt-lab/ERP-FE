@@ -8,6 +8,9 @@ export interface ProcurementItemOption {
   name: string
   uomId: string | null
   uomName: string
+  batchTracking: boolean
+  heatTracking: boolean
+  serialTracking: boolean
 }
 
 // Purchase modules must source items from the existing Item Master rather
@@ -25,6 +28,9 @@ export function useProcurementItems() {
       name: item.name,
       uomId: item.uomId ?? null,
       uomName: item.uom,
+      batchTracking: item.batchTracking ?? false,
+      heatTracking: item.heatTracking ?? false,
+      serialTracking: item.serialTracking ?? false,
     }),
   )
 

@@ -36,6 +36,9 @@ function toConsumable(
     status: api.status === 0 ? 'inactive' : 'active',
     imageUrl,
     price: api.price ?? undefined,
+    batchTracking: api.batch_tracking,
+    heatTracking: api.heat_tracking,
+    serialTracking: api.serial_tracking,
     createdAt: api.created_at ?? '',
     updatedAt: api.updated_at ?? '',
   }
