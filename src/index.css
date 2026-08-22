@@ -37,6 +37,23 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Signature wayfinding cue: the active sidebar item gets a calibration-mark
+   tick on its leading edge instead of a full-bleed fill, echoing the
+   "instrument ledger" theme without spreading the accent color everywhere. */
+.app-sidebar-menu .ant-menu-item-selected {
+  position: relative;
+}
+.app-sidebar-menu .ant-menu-item-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: #b9812f;
+}
+
 /* DataTable is always rendered inside a zero-padding Card body, so the
    pagination row (page-size dropdown included) needs its own horizontal
    inset to avoid sitting flush against the card edge. */
