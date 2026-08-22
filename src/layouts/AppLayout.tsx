@@ -22,7 +22,7 @@ const NAV_ITEMS = [
 ]
 
 export const AppLayout: FC = () => {
-  const { sidebarCollapsed, toggleSidebar } = useAppStore()
+  const { sidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useAppStore()
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = antTheme.useToken()
@@ -47,6 +47,8 @@ export const AppLayout: FC = () => {
         collapsed={sidebarCollapsed}
         trigger={null}
         width={220}
+        breakpoint="md"
+        onBreakpoint={broken => setSidebarCollapsed(broken)}
         style={{
           background: SIDEBAR_BG,
           borderRight: `1px solid ${SIDEBAR_BORDER}`,
