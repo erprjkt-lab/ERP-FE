@@ -7,10 +7,11 @@ import {
   SendOutlined,
   ShoppingCartOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Select, Space, Table, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Select, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { DataTable } from '@/components/ui/DataTable'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -274,7 +275,7 @@ export const PurchaseEnquiryDetail: FC = () => {
               </Typography.Title>
             }
           >
-            <Table
+            <DataTable
               columns={itemColumns}
               dataSource={enquiry.items}
               rowKey="id"
@@ -302,7 +303,7 @@ export const PurchaseEnquiryDetail: FC = () => {
               )
             }
           >
-            <Table
+            <DataTable
               columns={supplierColumns}
               dataSource={enquiry.suppliers}
               rowKey="id"

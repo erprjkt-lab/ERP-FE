@@ -1,8 +1,9 @@
-import { App, Button, Card, Divider, Form, Select, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Form, Row, Select, Space } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import type { CustomerType, GstType } from '@/types/masters'
 import {
@@ -145,160 +146,207 @@ export const CustomerForm: FC = () => {
       />
 
       <Card>
-        <Form form={form} layout="vertical" onFinish={handleFinish} style={{ maxWidth: 900 }}>
-          <Typography.Title level={5}>Basic Info</Typography.Title>
-          {isEdit && <FormField label="Customer Code" name="code" disabled />}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Customer Name"
-              name="name"
-              rules={[{ required: true, message: 'Customer name is required' }]}
-            />
-            <FormField
-              label="Customer Type"
-              name="customerType"
-              fieldType="select"
-              options={CUSTOMER_TYPE_OPTIONS}
-            />
-            <FormField
-              label="Contact Person"
-              name="contactPerson"
-              rules={[{ required: true, message: 'Contact person is required' }]}
-            />
-            <FormField
-              label="Mobile"
-              name="mobile"
-              rules={[
-                { required: true, message: 'Mobile is required' },
-                { pattern: MOBILE_REGEX, message: 'Enter a valid 10-digit mobile number' },
-              ]}
-            />
-            <FormField
-              label="Email"
-              name="email"
-              rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
-            />
-            <FormField label="Website" name="website" />
-            <FormField
-              label="Status"
-              name="status"
-              fieldType="select"
-              options={MASTER_STATUS_OPTIONS}
-              initialValue="active"
-            />
-          </div>
+        <Form form={form} layout="vertical" onFinish={handleFinish}>
+          <FormSection title="Basic Info">
+            {isEdit && <FormField label="Customer Code" name="code" disabled />}
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Customer Name"
+                  name="name"
+                  rules={[{ required: true, message: 'Customer name is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Customer Type"
+                  name="customerType"
+                  fieldType="select"
+                  options={CUSTOMER_TYPE_OPTIONS}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Contact Person"
+                  name="contactPerson"
+                  rules={[{ required: true, message: 'Contact person is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Mobile"
+                  name="mobile"
+                  rules={[
+                    { required: true, message: 'Mobile is required' },
+                    { pattern: MOBILE_REGEX, message: 'Enter a valid 10-digit mobile number' },
+                  ]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Email"
+                  name="email"
+                  rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Website" name="website" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Status"
+                  name="status"
+                  fieldType="select"
+                  options={MASTER_STATUS_OPTIONS}
+                  initialValue="active"
+                />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Address</Typography.Title>
-          <FormField
-            label="Address"
-            name="address"
-            fieldType="textarea"
-            rules={[{ required: true, message: 'Address is required' }]}
-          />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
-            <Form.Item
-              label="Country"
-              name="countryId"
-              rules={[{ required: true, message: 'Country is required' }]}
-            >
-              <Select
-                placeholder="Select country"
-                options={countryOptions}
-                allowClear
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? '')
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                onChange={() => {
-                  form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
-                }}
-              />
-            </Form.Item>
-            <Form.Item
-              label="State"
-              name="stateId"
-              rules={[{ required: true, message: 'State is required' }]}
-            >
-              <Select
-                placeholder="Select state"
-                options={stateOptions}
-                allowClear
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? '')
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                onChange={() => form.setFieldValue('cityId', undefined)}
-              />
-            </Form.Item>
+          <FormSection title="Address">
             <FormField
-              label="City"
-              name="cityId"
-              fieldType="select"
-              options={cityOptions}
-              rules={[{ required: true, message: 'City is required' }]}
+              label="Address"
+              name="address"
+              fieldType="textarea"
+              rules={[{ required: true, message: 'Address is required' }]}
             />
-          </div>
-          <FormField
-            label="Pincode"
-            name="pincode"
-            rules={[{ pattern: PINCODE_REGEX, message: 'Enter a valid 6-digit pincode' }]}
-          />
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Country"
+                  name="countryId"
+                  rules={[{ required: true, message: 'Country is required' }]}
+                >
+                  <Select
+                    placeholder="Select country"
+                    options={countryOptions}
+                    allowClear
+                    showSearch
+                    filterOption={(input, option) =>
+                      String(option?.label ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    onChange={() => {
+                      form.setFieldValue('stateId', undefined)
+                      form.setFieldValue('cityId', undefined)
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="State"
+                  name="stateId"
+                  rules={[{ required: true, message: 'State is required' }]}
+                >
+                  <Select
+                    placeholder="Select state"
+                    options={stateOptions}
+                    allowClear
+                    showSearch
+                    filterOption={(input, option) =>
+                      String(option?.label ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    onChange={() => form.setFieldValue('cityId', undefined)}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="City"
+                  name="cityId"
+                  fieldType="select"
+                  options={cityOptions}
+                  rules={[{ required: true, message: 'City is required' }]}
+                />
+              </Col>
+            </Row>
+            <FormField
+              label="Pincode"
+              name="pincode"
+              rules={[{ pattern: PINCODE_REGEX, message: 'Enter a valid 6-digit pincode' }]}
+            />
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Tax & Compliance</Typography.Title>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="GST Number"
-              name="gstNumber"
-              rules={[{ pattern: GST_REGEX, message: 'Enter a valid GSTIN' }]}
-            />
-            <FormField
-              label="PAN Number"
-              name="panNumber"
-              rules={[{ pattern: PAN_REGEX, message: 'Enter a valid PAN' }]}
-            />
-            <FormField
-              label="GST Type"
-              name="gstType"
-              fieldType="select"
-              options={GST_TYPE_OPTIONS}
-            />
-          </div>
+          <FormSection title="Tax & Compliance">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="GST Number"
+                  name="gstNumber"
+                  rules={[{ pattern: GST_REGEX, message: 'Enter a valid GSTIN' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="PAN Number"
+                  name="panNumber"
+                  rules={[{ pattern: PAN_REGEX, message: 'Enter a valid PAN' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="GST Type"
+                  name="gstType"
+                  fieldType="select"
+                  options={GST_TYPE_OPTIONS}
+                />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Financial Terms</Typography.Title>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Credit Limit" name="creditLimit" fieldType="number" />
-            <FormField label="Credit Days" name="creditDays" fieldType="number" />
-            <FormField label="Opening Balance" name="openingBalance" fieldType="number" />
-            <FormField
-              label="Payment Terms"
-              name="paymentTerms"
-              fieldType="select"
-              options={PAYMENT_TERMS_OPTIONS}
-            />
-          </div>
+          <FormSection title="Financial Terms">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Credit Limit" name="creditLimit" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Credit Days" name="creditDays" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Opening Balance" name="openingBalance" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Payment Terms"
+                  name="paymentTerms"
+                  fieldType="select"
+                  options={PAYMENT_TERMS_OPTIONS}
+                />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Banking</Typography.Title>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Bank Name" name="bankName" />
-            <FormField label="Branch" name="bankBranch" />
-            <FormField label="Account Holder" name="accountHolder" />
-            <FormField label="Account Number" name="accountNumber" />
-            <FormField
-              label="IFSC Code"
-              name="ifscCode"
-              rules={[{ pattern: IFSC_REGEX, message: 'Enter a valid IFSC code' }]}
-            />
-            <FormField label="UPI ID" name="upiId" />
-          </div>
+          <FormSection title="Banking">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Bank Name" name="bankName" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Branch" name="bankBranch" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Account Holder" name="accountHolder" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Account Number" name="accountNumber" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="IFSC Code"
+                  name="ifscCode"
+                  rules={[{ pattern: IFSC_REGEX, message: 'Enter a valid IFSC code' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="UPI ID" name="upiId" />
+              </Col>
+            </Row>
+          </FormSection>
         </Form>
       </Card>
     </div>

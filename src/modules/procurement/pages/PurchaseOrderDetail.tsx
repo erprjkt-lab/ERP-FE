@@ -1,7 +1,8 @@
 import { ArrowLeftOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Descriptions, Row, Space, Table, Typography } from 'antd'
+import { Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseOrderItem } from '@/types/procurement'
@@ -115,7 +116,7 @@ export const PurchaseOrderDetail: FC = () => {
               </Typography.Title>
             }
           >
-            <Table
+            <DataTable
               columns={columns}
               dataSource={order.items}
               rowKey="id"

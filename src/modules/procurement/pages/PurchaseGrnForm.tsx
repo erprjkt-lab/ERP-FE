@@ -3,10 +3,12 @@ import {
   App,
   Button,
   Card,
+  Col,
   DatePicker,
   Form,
   Input,
   InputNumber,
+  Row,
   Select,
   Space,
   Typography,
@@ -16,6 +18,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
 import type { LocationOption } from '@/modules/inventory/hooks/useLocations'
@@ -147,155 +150,165 @@ export const PurchaseGrnForm: FC = () => {
           onFinish={handleFinish}
           initialValues={{ grnDate: dayjs(), items: [] }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
-            <Form.Item
-              label="Supplier"
-              name="supplierId"
-              rules={[{ required: true, message: 'Supplier is required' }]}
-            >
-              <Select
-                placeholder="Select supplier"
-                options={supplierOptions}
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? '')
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                onChange={() => {
-                  setSelectedPoId(undefined)
-                  setSelectedPoItemIds([])
-                }}
-              />
+          <FormSection title="GRN Details">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Supplier"
+                  name="supplierId"
+                  rules={[{ required: true, message: 'Supplier is required' }]}
+                >
+                  <Select
+                    placeholder="Select supplier"
+                    options={supplierOptions}
+                    showSearch
+                    filterOption={(input, option) =>
+                      String(option?.label ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    onChange={() => {
+                      setSelectedPoId(undefined)
+                      setSelectedPoItemIds([])
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="GRN Date"
+                  name="grnDate"
+                  rules={[{ required: true, message: 'GRN date is required' }]}
+                >
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item label="Supplier Doc No" name="supplierDocNo">
+                  <Input placeholder="Supplier challan no." />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item label="Supplier Doc Date" name="supplierDocDate">
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="Remarks" name="remarks">
+              <Input.TextArea rows={2} />
             </Form.Item>
-            <Form.Item
-              label="GRN Date"
-              name="grnDate"
-              rules={[{ required: true, message: 'GRN date is required' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item label="Supplier Doc No" name="supplierDocNo">
-              <Input placeholder="Supplier challan no." />
-            </Form.Item>
-            <Form.Item label="Supplier Doc Date" name="supplierDocDate">
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </div>
-          <Form.Item label="Remarks" name="remarks">
-            <Input.TextArea rows={2} />
-          </Form.Item>
+          </FormSection>
 
-          <Typography.Title level={5}>Items</Typography.Title>
-
-          <Form.List
-            name="items"
-            rules={[
-              {
-                validator: async (_, v) => {
-                  if (!v || v.length === 0) throw new Error('Add at least one item from a PO')
+          <FormSection title="Items">
+            <Form.List
+              name="items"
+              rules={[
+                {
+                  validator: async (_, v) => {
+                    if (!v || v.length === 0) throw new Error('Add at least one item from a PO')
+                  },
                 },
-              },
-            ]}
-          >
-            {(fields, { add, remove }, { errors }) => {
-              const existingPoItemIds = new Set(
-                fields.map(f => form.getFieldValue(['items', f.name, 'poItemId'])),
-              )
+              ]}
+            >
+              {(fields, { add, remove }, { errors }) => {
+                const existingPoItemIds = new Set(
+                  fields.map(f => form.getFieldValue(['items', f.name, 'poItemId'])),
+                )
 
-              const handleAddItems = () => {
-                selectedPoItemIds.forEach(poItemId => {
-                  if (existingPoItemIds.has(poItemId)) return
-                  const poItem = selectedPo?.items.find(i => i.id === poItemId)
-                  if (!poItem) return
-                  setPoItemInfo(prev => ({
-                    ...prev,
-                    [poItemId]: {
-                      itemName: poItem.itemName,
-                      uomName: poItem.uomName,
-                      orderedQty: poItem.orderedQty,
-                    },
-                  }))
-                  add({
-                    poItemId,
-                    itemId: poItem.itemId,
-                    receivedQty: poItem.orderedQty,
-                    rate: poItem.rate,
+                const handleAddItems = () => {
+                  selectedPoItemIds.forEach(poItemId => {
+                    if (existingPoItemIds.has(poItemId)) return
+                    const poItem = selectedPo?.items.find(i => i.id === poItemId)
+                    if (!poItem) return
+                    setPoItemInfo(prev => ({
+                      ...prev,
+                      [poItemId]: {
+                        itemName: poItem.itemName,
+                        uomName: poItem.uomName,
+                        orderedQty: poItem.orderedQty,
+                      },
+                    }))
+                    add({
+                      poItemId,
+                      itemId: poItem.itemId,
+                      receivedQty: poItem.orderedQty,
+                      rate: poItem.rate,
+                    })
                   })
-                })
-                setSelectedPoItemIds([])
-              }
+                  setSelectedPoItemIds([])
+                }
 
-              return (
-                <>
-                  <Card size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 2fr auto',
-                        gap: '0 8px',
-                        alignItems: 'end',
-                      }}
-                    >
-                      <div>
-                        <Typography.Text type="secondary">Purchase Order</Typography.Text>
-                        <Select
-                          placeholder="Select PO to receive against"
-                          value={selectedPoId}
-                          onChange={v => {
-                            setSelectedPoId(v)
-                            setSelectedPoItemIds([])
-                          }}
-                          options={poOptions}
-                          showSearch
-                          allowClear
-                          filterOption={(input, option) =>
-                            String(option?.label ?? '')
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-                      <div>
-                        <Typography.Text type="secondary">PO Items</Typography.Text>
-                        <Select
-                          mode="multiple"
-                          placeholder="Select items to receive"
-                          value={selectedPoItemIds}
-                          onChange={setSelectedPoItemIds}
-                          options={poItemOptions}
-                          disabled={!selectedPoId}
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-                      <Button
-                        type="dashed"
-                        disabled={selectedPoItemIds.length === 0}
-                        onClick={handleAddItems}
+                return (
+                  <>
+                    <Card size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 2fr auto',
+                          gap: '0 8px',
+                          alignItems: 'end',
+                        }}
                       >
-                        Add Selected Items
-                      </Button>
-                    </div>
-                  </Card>
+                        <div>
+                          <Typography.Text type="secondary">Purchase Order</Typography.Text>
+                          <Select
+                            placeholder="Select PO to receive against"
+                            value={selectedPoId}
+                            onChange={v => {
+                              setSelectedPoId(v)
+                              setSelectedPoItemIds([])
+                            }}
+                            options={poOptions}
+                            showSearch
+                            allowClear
+                            filterOption={(input, option) =>
+                              String(option?.label ?? '')
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                            style={{ width: '100%' }}
+                          />
+                        </div>
+                        <div>
+                          <Typography.Text type="secondary">PO Items</Typography.Text>
+                          <Select
+                            mode="multiple"
+                            placeholder="Select items to receive"
+                            value={selectedPoItemIds}
+                            onChange={setSelectedPoItemIds}
+                            options={poItemOptions}
+                            disabled={!selectedPoId}
+                            style={{ width: '100%' }}
+                          />
+                        </div>
+                        <Button
+                          type="dashed"
+                          disabled={selectedPoItemIds.length === 0}
+                          onClick={handleAddItems}
+                        >
+                          Add Selected Items
+                        </Button>
+                      </div>
+                    </Card>
 
-                  {fields.map(field => (
-                    <GrnItemRow
-                      key={field.key}
-                      field={field}
-                      form={form}
-                      items={items}
-                      locations={locations}
-                      grades={grades}
-                      poItemInfo={poItemInfo}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
-                  <Form.ErrorList errors={errors} />
-                </>
-              )
-            }}
-          </Form.List>
+                    {fields.map(field => (
+                      <GrnItemRow
+                        key={field.key}
+                        field={field}
+                        form={form}
+                        items={items}
+                        locations={locations}
+                        grades={grades}
+                        poItemInfo={poItemInfo}
+                        onRemove={() => remove(field.name)}
+                      />
+                    ))}
+                    <Form.ErrorList errors={errors} />
+                  </>
+                )
+              }}
+            </Form.List>
+          </FormSection>
         </Form>
       </Card>
     </div>

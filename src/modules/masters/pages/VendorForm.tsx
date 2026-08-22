@@ -1,8 +1,9 @@
-import { App, Button, Card, Divider, Form, Select, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Form, Row, Select, Space } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import type { VendorType } from '@/types/masters'
 import {
@@ -126,134 +127,161 @@ export const VendorForm: FC = () => {
       />
 
       <Card>
-        <Form form={form} layout="vertical" onFinish={handleFinish} style={{ maxWidth: 900 }}>
-          <Typography.Title level={5}>Basic Info</Typography.Title>
-          {isEdit && <FormField label="Vendor Code" name="code" disabled />}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Vendor Name"
-              name="name"
-              rules={[{ required: true, message: 'Vendor name is required' }]}
-            />
-            <FormField
-              label="Vendor Type"
-              name="vendorType"
-              fieldType="select"
-              options={VENDOR_TYPE_OPTIONS}
-            />
-            <FormField
-              label="Contact Person"
-              name="contactPerson"
-              rules={[{ required: true, message: 'Contact person is required' }]}
-            />
-            <FormField
-              label="Mobile"
-              name="mobile"
-              rules={[
-                { required: true, message: 'Mobile is required' },
-                { pattern: MOBILE_REGEX, message: 'Enter a valid 10-digit mobile number' },
-              ]}
-            />
-            <FormField
-              label="Email"
-              name="email"
-              rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
-            />
-            <FormField label="Service Category" name="serviceCategory" />
-            <FormField
-              label="Status"
-              name="status"
-              fieldType="select"
-              options={MASTER_STATUS_OPTIONS}
-              initialValue="active"
-            />
-          </div>
+        <Form form={form} layout="vertical" onFinish={handleFinish}>
+          <FormSection title="Basic Info">
+            {isEdit && <FormField label="Vendor Code" name="code" disabled />}
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Vendor Name"
+                  name="name"
+                  rules={[{ required: true, message: 'Vendor name is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Vendor Type"
+                  name="vendorType"
+                  fieldType="select"
+                  options={VENDOR_TYPE_OPTIONS}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Contact Person"
+                  name="contactPerson"
+                  rules={[{ required: true, message: 'Contact person is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Mobile"
+                  name="mobile"
+                  rules={[
+                    { required: true, message: 'Mobile is required' },
+                    { pattern: MOBILE_REGEX, message: 'Enter a valid 10-digit mobile number' },
+                  ]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Email"
+                  name="email"
+                  rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Service Category" name="serviceCategory" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Status"
+                  name="status"
+                  fieldType="select"
+                  options={MASTER_STATUS_OPTIONS}
+                  initialValue="active"
+                />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Address</Typography.Title>
-          <FormField
-            label="Address"
-            name="address"
-            fieldType="textarea"
-            rules={[{ required: true, message: 'Address is required' }]}
-          />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
-            <Form.Item
-              label="Country"
-              name="countryId"
-              rules={[{ required: true, message: 'Country is required' }]}
-            >
-              <Select
-                placeholder="Select country"
-                options={countryOptions}
-                allowClear
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? '')
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                onChange={() => {
-                  form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
-                }}
-              />
-            </Form.Item>
-            <Form.Item
-              label="State"
-              name="stateId"
-              rules={[{ required: true, message: 'State is required' }]}
-            >
-              <Select
-                placeholder="Select state"
-                options={stateOptions}
-                allowClear
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? '')
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                onChange={() => form.setFieldValue('cityId', undefined)}
-              />
-            </Form.Item>
+          <FormSection title="Address">
             <FormField
-              label="City"
-              name="cityId"
-              fieldType="select"
-              options={cityOptions}
-              rules={[{ required: true, message: 'City is required' }]}
+              label="Address"
+              name="address"
+              fieldType="textarea"
+              rules={[{ required: true, message: 'Address is required' }]}
             />
-          </div>
-          <FormField
-            label="Pincode"
-            name="pincode"
-            rules={[{ pattern: PINCODE_REGEX, message: 'Enter a valid 6-digit pincode' }]}
-          />
-
-          <Divider />
-          <Typography.Title level={5}>Tax</Typography.Title>
-          <FormField
-            label="GST Number"
-            name="gstNumber"
-            rules={[{ pattern: GST_REGEX, message: 'Enter a valid GSTIN' }]}
-          />
-
-          <Divider />
-          <Typography.Title level={5}>Banking</Typography.Title>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Bank Name" name="bankName" />
-            <FormField label="Account Number" name="accountNumber" />
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Country"
+                  name="countryId"
+                  rules={[{ required: true, message: 'Country is required' }]}
+                >
+                  <Select
+                    placeholder="Select country"
+                    options={countryOptions}
+                    allowClear
+                    showSearch
+                    filterOption={(input, option) =>
+                      String(option?.label ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    onChange={() => {
+                      form.setFieldValue('stateId', undefined)
+                      form.setFieldValue('cityId', undefined)
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="State"
+                  name="stateId"
+                  rules={[{ required: true, message: 'State is required' }]}
+                >
+                  <Select
+                    placeholder="Select state"
+                    options={stateOptions}
+                    allowClear
+                    showSearch
+                    filterOption={(input, option) =>
+                      String(option?.label ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    onChange={() => form.setFieldValue('cityId', undefined)}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="City"
+                  name="cityId"
+                  fieldType="select"
+                  options={cityOptions}
+                  rules={[{ required: true, message: 'City is required' }]}
+                />
+              </Col>
+            </Row>
             <FormField
-              label="IFSC Code"
-              name="ifscCode"
-              rules={[{ pattern: IFSC_REGEX, message: 'Enter a valid IFSC code' }]}
+              label="Pincode"
+              name="pincode"
+              rules={[{ pattern: PINCODE_REGEX, message: 'Enter a valid 6-digit pincode' }]}
             />
-          </div>
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Notes</Typography.Title>
-          <FormField label="Remarks" name="remarks" fieldType="textarea" />
+          <FormSection title="Tax">
+            <FormField
+              label="GST Number"
+              name="gstNumber"
+              rules={[{ pattern: GST_REGEX, message: 'Enter a valid GSTIN' }]}
+            />
+          </FormSection>
+
+          <FormSection title="Banking">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Bank Name" name="bankName" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Account Number" name="accountNumber" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="IFSC Code"
+                  name="ifscCode"
+                  rules={[{ pattern: IFSC_REGEX, message: 'Enter a valid IFSC code' }]}
+                />
+              </Col>
+            </Row>
+          </FormSection>
+
+          <FormSection title="Notes">
+            <FormField label="Remarks" name="remarks" fieldType="textarea" />
+          </FormSection>
         </Form>
       </Card>
     </div>

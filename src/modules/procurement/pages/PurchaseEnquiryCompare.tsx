@@ -1,8 +1,9 @@
 import { ArrowLeftOutlined, CheckCircleOutlined } from '@ant-design/icons'
-import { App, Button, Card, Table, Tag, Typography } from 'antd'
+import { App, Button, Card, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { usePurchaseEnquiry, useQuotationComparison } from '../hooks/usePurchaseEnquiries'
 import type {
@@ -177,7 +178,7 @@ export const PurchaseEnquiryCompare: FC = () => {
             }
             style={{ marginBottom: 16 }}
           >
-            <Table
+            <DataTable
               columns={itemColumns}
               dataSource={rows}
               rowKey="purchaseEnquiryItemId"
@@ -193,7 +194,7 @@ export const PurchaseEnquiryCompare: FC = () => {
               </Typography.Title>
             }
           >
-            <Table
+            <DataTable
               columns={summaryColumns}
               dataSource={distinctQuotations}
               rowKey="supplierQuotationId"

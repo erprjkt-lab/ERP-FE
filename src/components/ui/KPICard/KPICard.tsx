@@ -2,7 +2,7 @@ import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons'
 import { Card, Skeleton, Statistic, theme as antTheme } from 'antd'
 import type { FC, ReactNode } from 'react'
 import { SIDEBAR_BG } from '@/theme/sidebar'
-import { tabularNums } from '@/theme/typography'
+import { ledgerText } from '@/theme/typography'
 
 export interface KPICardProps {
   title: string
@@ -52,7 +52,7 @@ export const KPICard: FC<KPICardProps> = ({
           prefix={prefix}
           suffix={suffix}
           formatter={formatter ? val => formatter(val as number | string) : undefined}
-          valueStyle={{ color: valueColor, fontWeight: 600, fontSize: 28, ...tabularNums }}
+          styles={{ content: { color: valueColor, fontWeight: 600, fontSize: 28, ...ledgerText } }}
         />
         {trend && (
           <div

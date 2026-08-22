@@ -4,7 +4,7 @@ import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { tabularNums } from '@/theme/typography'
+import { ledgerText } from '@/theme/typography'
 import { useCustomer } from '../hooks/useCustomers'
 
 export const CustomerDetail: FC = () => {
@@ -136,7 +136,7 @@ export const CustomerDetail: FC = () => {
                   children: (
                     <Descriptions column={2} size="small" bordered>
                       <Descriptions.Item label="Credit Limit">
-                        <span style={tabularNums}>
+                        <span style={ledgerText}>
                           ₹{customer.creditLimit.toLocaleString('en-IN')}
                         </span>
                       </Descriptions.Item>
@@ -144,7 +144,7 @@ export const CustomerDetail: FC = () => {
                         {customer.creditDays}
                       </Descriptions.Item>
                       <Descriptions.Item label="Opening Balance">
-                        <span style={tabularNums}>
+                        <span style={ledgerText}>
                           ₹{customer.openingBalance.toLocaleString('en-IN')}
                         </span>
                       </Descriptions.Item>
