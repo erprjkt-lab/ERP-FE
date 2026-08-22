@@ -13,6 +13,9 @@ export type { DataTableProps } from './DataTable'
 export { FormField } from './FormField'
 export type { FormFieldProps } from './FormField'
 
+export { FormSection } from './FormSection'
+export type { FormSectionProps } from './FormSection'
+
 export { PageHeader } from './PageHeader'
 export type { PageHeaderProps } from './PageHeader'
 
