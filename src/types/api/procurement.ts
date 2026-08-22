@@ -1,5 +1,5 @@
 import type { ApiDepartment, ApiEmployee } from './hr'
-import type { ApiItemMaster, ApiParty, ApiUom } from './masters'
+import type { ApiItemMaster, ApiLocation, ApiParty, ApiUom } from './masters'
 
 // ---------- Purchase Requisition ----------
 
@@ -316,4 +316,83 @@ export interface PurchaseOrderPayload {
   other_charges?: number
   remarks?: string | null
   items: PurchaseOrderItemPayload[]
+}
+
+// ---------- GRN (Goods Receipt Note) ----------
+
+export interface ApiGrnItem {
+  id: number
+  grn_id: number
+  po_item_id: number
+  po_item?: ApiPurchaseOrderItem
+  item_id: number
+  item?: ApiItemMaster
+  grade_id: number | null
+  received_qty: number
+  commercial_unit: string | null
+  commercial_qty: number | null
+  rate: number | null
+  batch_no: string | null
+  heat_no: string | null
+  heat_verified: boolean | null
+  serial_no: string | null
+  location_id: number
+  location?: ApiLocation
+  accepted_qty: number | null
+  rejected_qty: number | null
+  short_qty: number | null
+  inspected_by: number | null
+  inspected_at: string | null
+  test_report_id: number | null
+  stock_movement_id: number | null
+  line_status: number
+  remark: string | null
+}
+
+export interface ApiGrn {
+  id: number
+  grn_no: string
+  supplier_id: number
+  supplier?: ApiParty
+  supplier_doc_no: string | null
+  supplier_doc_date: string | null
+  grn_date: string
+  status: number
+  remark: string | null
+  items?: ApiGrnItem[]
+  created_at: string | null
+  created_by: number | null
+  updated_by: number | null
+}
+
+export interface GrnItemPayload {
+  po_item_id: number
+  item_id: number
+  grade_id?: number | null
+  received_qty: number
+  commercial_unit?: string | null
+  commercial_qty?: number | null
+  rate?: number | null
+  batch_no?: string | null
+  heat_no?: string | null
+  serial_numbers?: string[] | null
+  location_id: number
+  remark?: string | null
+}
+
+export interface GrnPayload {
+  supplier_id: number
+  supplier_doc_no?: string | null
+  supplier_doc_date?: string | null
+  grn_date: string
+  remark?: string | null
+  items: GrnItemPayload[]
+}
+
+export interface QcResultPayload {
+  accepted_qty?: number | null
+  rejected_qty?: number | null
+  short_qty?: number | null
+  heat_verified?: boolean | null
+  remark?: string | null
 }

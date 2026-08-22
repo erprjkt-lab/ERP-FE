@@ -188,6 +188,9 @@ export interface ApiItemMaster {
   image: string | null
   price: number | null
   status: number
+  batch_tracking: boolean
+  heat_tracking: boolean
+  serial_tracking: boolean
   created_at: string | null
   updated_at: string | null
   // Finished Good fields
@@ -281,4 +284,31 @@ export interface ItemMasterPayload {
   calibration_due_date?: string
   certificate_number?: string
   manufacturer?: string
+}
+
+// Self-referencing hierarchy — a top-level row (no parent) acts as a warehouse.
+// location_type > 0 is system-generated and locked from edit/deactivate/delete.
+export interface ApiLocation {
+  id: number
+  code: string
+  name: string
+  parent_location_id: number | null
+  location_type: number
+  is_active: boolean
+  created_at: string | null
+  created_by: number | null
+  updated_by: number | null
+}
+
+// Raw item_stocks rows returned by GET /stock/balance when location_id is
+// omitted — not wrapped in an API Resource, decimal columns come back as strings.
+export interface ApiItemStockBalance {
+  id: number
+  item_id: number
+  location_id: number
+  batch_no: string
+  heat_no: string
+  serial_no: string
+  qty: number | string
+  avg_rate: number | string | null
 }

@@ -11,6 +11,7 @@ import {
   EmployeeList,
   ShiftList,
 } from '@/modules/hr'
+import { StockBalance } from '@/modules/inventory'
 import {
   ConsumableList,
   CustomerDetail,
@@ -41,6 +42,9 @@ import {
   PurchaseEnquiryDetail,
   PurchaseEnquiryForm,
   PurchaseEnquiryList,
+  PurchaseGrnDetail,
+  PurchaseGrnForm,
+  PurchaseGrnList,
   PurchaseOrderDetail,
   PurchaseOrderForm,
   PurchaseOrderList,
@@ -73,6 +77,8 @@ const IMPLEMENTED_PATHS = new Set([
   '/purchase/requisitions',
   '/purchase/enquiries',
   '/purchase/orders',
+  '/purchase/grn',
+  '/inventory/ledger',
 ])
 
 function App() {
@@ -153,6 +159,12 @@ function App() {
                 <Route path="/purchase/orders" element={<PurchaseOrderList />} />
                 <Route path="/purchase/orders/new" element={<PurchaseOrderForm />} />
                 <Route path="/purchase/orders/:id" element={<PurchaseOrderDetail />} />
+
+                <Route path="/purchase/grn" element={<PurchaseGrnList />} />
+                <Route path="/purchase/grn/new" element={<PurchaseGrnForm />} />
+                <Route path="/purchase/grn/:id" element={<PurchaseGrnDetail />} />
+
+                <Route path="/inventory/ledger" element={<StockBalance />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route

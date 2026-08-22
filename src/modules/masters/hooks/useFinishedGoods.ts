@@ -53,6 +53,9 @@ function toFinishedGood(
       : undefined,
     weight: api.weight ?? undefined,
     price: api.price ?? undefined,
+    batchTracking: api.batch_tracking,
+    heatTracking: api.heat_tracking,
+    serialTracking: api.serial_tracking,
     createdAt: api.created_at ?? '',
     updatedAt: api.updated_at ?? '',
   }

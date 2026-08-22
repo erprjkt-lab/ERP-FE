@@ -10,13 +10,14 @@ export interface ListFilters {
 }
 const DEFAULT_FILTERS: ListFilters = { search: '', status: null }
 
-type FilterKey = 'requisition' | 'enquiry' | 'quotation' | 'order'
+type FilterKey = 'requisition' | 'enquiry' | 'quotation' | 'order' | 'grn'
 
 interface ProcurementFilterState {
   requisitionFilters: ListFilters
   enquiryFilters: ListFilters
   quotationFilters: ListFilters
   orderFilters: ListFilters
+  grnFilters: ListFilters
   setFilter: (list: FilterKey, key: 'search' | 'status', value: string | null) => void
   resetFilter: (list: FilterKey) => void
 }
@@ -28,6 +29,7 @@ export const useProcurementStore = create<ProcurementFilterState>()(
       enquiryFilters: DEFAULT_FILTERS,
       quotationFilters: DEFAULT_FILTERS,
       orderFilters: DEFAULT_FILTERS,
+      grnFilters: DEFAULT_FILTERS,
 
       setFilter: (list, key, value) =>
         set(s => {
@@ -40,6 +42,8 @@ export const useProcurementStore = create<ProcurementFilterState>()(
               return { quotationFilters: { ...s.quotationFilters, [key]: value } }
             case 'order':
               return { orderFilters: { ...s.orderFilters, [key]: value } }
+            case 'grn':
+              return { grnFilters: { ...s.grnFilters, [key]: value } }
           }
         }),
       resetFilter: list => {
@@ -52,6 +56,8 @@ export const useProcurementStore = create<ProcurementFilterState>()(
             return set({ quotationFilters: DEFAULT_FILTERS })
           case 'order':
             return set({ orderFilters: DEFAULT_FILTERS })
+          case 'grn':
+            return set({ grnFilters: DEFAULT_FILTERS })
         }
       },
     }),
@@ -70,5 +76,7 @@ export const useProcurementFilters = (list: FilterKey): ListFilters =>
         return s.quotationFilters
       case 'order':
         return s.orderFilters
+      case 'grn':
+        return s.grnFilters
     }
   })

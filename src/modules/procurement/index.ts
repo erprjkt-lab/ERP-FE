@@ -12,3 +12,7 @@ export { SupplierQuotationForm } from './pages/SupplierQuotationForm'
 export { PurchaseOrderList } from './pages/PurchaseOrderList'
 export { PurchaseOrderForm } from './pages/PurchaseOrderForm'
 export { PurchaseOrderDetail } from './pages/PurchaseOrderDetail'
+
+export { PurchaseGrnList } from './pages/PurchaseGrnList'
+export { PurchaseGrnForm } from './pages/PurchaseGrnForm'
+export { PurchaseGrnDetail } from './pages/PurchaseGrnDetail'
