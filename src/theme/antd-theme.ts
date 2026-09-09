@@ -38,7 +38,11 @@ export const ANTD_THEME: ThemeConfig = {
       bodyBg: NEUTRAL_TOKENS.colorBgLayout,
     },
     Card: {
-      paddingLG: 20,
+      paddingLG: 16,
+    },
+    Form: {
+      itemMarginBottom: 14,
+      verticalLabelPadding: '0 0 4px',
     },
     Table: {
       headerBg: NEUTRAL_TOKENS.colorBgContainer,

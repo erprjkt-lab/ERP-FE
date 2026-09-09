@@ -1,9 +1,10 @@
 import { DownOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@ant-design/icons'
 import { App, Avatar, Button, Dropdown, Layout, Menu, Typography, theme as antTheme } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLogout } from '@/hooks/useAuth'
-import { DASHBOARD_ITEM, NAV_GROUPS } from '@/layouts/navConfig'
+import { DASHBOARD_ITEM, NAV_GROUPS, getActiveNav } from '@/layouts/navConfig'
 import { useAppStore } from '@/store'
 import { BRAND_GRADIENT_FROM, BRAND_GRADIENT_TO } from '@/theme/brand'
 import { SIDEBAR_BG, SIDEBAR_BORDER } from '@/theme/sidebar'
@@ -29,6 +30,22 @@ export const AppLayout: FC = () => {
   const { message } = App.useApp()
   const { mutate: submitLogout } = useLogout()
 
+  const activeNav = getActiveNav(location.pathname)
+  const isDashboard = location.pathname === '/'
+  const selectedKeys = activeNav ? [activeNav.leafKey] : isDashboard ? ['/'] : []
+
+  const [openKeys, setOpenKeys] = useState<string[]>(activeNav ? [activeNav.groupKey] : ['/hr'])
+  // Force the active route's group open only when navigation actually moves
+  // into a different group — tracked here so we can still let the user
+  // freely collapse it afterward without it snapping back open every render.
+  // Accordion behavior: only one group open at a time, so this replaces
+  // openKeys rather than appending to it.
+  const [lastActiveGroupKey, setLastActiveGroupKey] = useState(activeNav?.groupKey)
+  if (activeNav && activeNav.groupKey !== lastActiveGroupKey) {
+    setLastActiveGroupKey(activeNav.groupKey)
+    setOpenKeys([activeNav.groupKey])
+  }
+
   const handleUserMenuClick = ({ key }: { key: string }) => {
     if (key === 'logout') {
       submitLogout(undefined, {
@@ -49,6 +66,7 @@ export const AppLayout: FC = () => {
         width={220}
         breakpoint="md"
         onBreakpoint={broken => setSidebarCollapsed(broken)}
+        className="app-sidebar-scroll"
         style={{
           background: SIDEBAR_BG,
           borderRight: `1px solid ${SIDEBAR_BORDER}`,
@@ -98,8 +116,14 @@ export const AppLayout: FC = () => {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[location.pathname]}
-          defaultOpenKeys={['/hr']}
+          selectedKeys={selectedKeys}
+          openKeys={openKeys}
+          onOpenChange={keys => {
+            const nextKeys = keys as string[]
+            // Accordion behavior: keep only the most recently opened group,
+            // so expanding one collapses whichever other was open.
+            setOpenKeys(nextKeys.length > 1 ? [nextKeys[nextKeys.length - 1]] : nextKeys)
+          }}
           items={NAV_ITEMS}
           onClick={({ key }) => navigate(key)}
           className="app-sidebar-menu"
