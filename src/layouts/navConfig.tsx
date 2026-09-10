@@ -108,6 +108,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: <ToolOutlined />,
     label: 'Production',
     children: [
+      { path: '/production/process', label: 'Process' },
       { path: '/production/bom', label: 'BOM' },
       { path: '/production/work-orders', label: 'Work Order (Jobcard)' },
       { path: '/production/entries', label: 'Production Entry' },
