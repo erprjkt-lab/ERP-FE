@@ -22,10 +22,10 @@ export const PageHeader: FC<PageHeaderProps> = ({
   children,
 }) => {
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div style={{ marginBottom: 20 }}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumb
-          style={{ marginBottom: 8 }}
+          style={{ marginBottom: 6, fontSize: 13 }}
           items={breadcrumbs.map(b => ({
             title: b.href ? <a href={b.href}>{b.label}</a> : b.label,
           }))}
@@ -34,13 +34,14 @@ export const PageHeader: FC<PageHeaderProps> = ({
       <div
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
           gap: 16,
         }}
       >
-        <div>
-          <Typography.Title level={3} style={{ margin: 0 }}>
+        <div style={{ flex: '1 1 220px' }}>
+          <Typography.Title level={3} style={{ margin: 0, fontSize: 22 }}>
             {title}
           </Typography.Title>
           {subtitle && (
@@ -49,11 +50,15 @@ export const PageHeader: FC<PageHeaderProps> = ({
             </Typography.Text>
           )}
         </div>
-        {actions && <Space>{actions}</Space>}
+        {actions && (
+          <Space wrap style={{ flex: '0 0 auto' }}>
+            {actions}
+          </Space>
+        )}
       </div>
       {children && (
         <>
-          <Divider style={{ margin: '16px 0' }} />
+          <Divider style={{ margin: '14px 0' }} />
           {children}
         </>
       )}

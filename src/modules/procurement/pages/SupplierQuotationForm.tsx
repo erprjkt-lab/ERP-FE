@@ -1,8 +1,9 @@
-import { App, Button, Card, DatePicker, Form, Input, InputNumber, Space, Typography } from 'antd'
+import { App, Button, Card, Col, DatePicker, Form, Input, InputNumber, Row, Space } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { usePurchaseEnquiry } from '../hooks/usePurchaseEnquiries'
 import {
@@ -157,98 +158,116 @@ export const SupplierQuotationForm: FC = () => {
             })),
           }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
-            <Form.Item
-              label="Quotation Number"
-              name="quotationNumber"
-              rules={[{ required: true, message: 'Required' }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Quotation Date"
-              name="quotationDate"
-              rules={[{ required: true, message: 'Required' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item label="Valid Until" name="validUntil">
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <Form.Item label="Payment Terms" name="paymentTerms">
-              <Input />
-            </Form.Item>
-            <Form.Item label="Delivery Terms" name="deliveryTerms">
-              <Input />
-            </Form.Item>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <Form.Item label="Freight Amount" name="freightAmount">
-              <InputNumber min={0} style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item label="Other Charges" name="otherCharges">
-              <InputNumber min={0} style={{ width: '100%' }} />
-            </Form.Item>
-          </div>
-          <Form.Item label="Remarks" name="remarks">
-            <Input.TextArea rows={2} />
-          </Form.Item>
+          <FormSection title="Quotation Details">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Quotation Number"
+                  name="quotationNumber"
+                  rules={[{ required: true, message: 'Required' }]}
+                >
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Quotation Date"
+                  name="quotationDate"
+                  rules={[{ required: true, message: 'Required' }]}
+                >
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item label="Valid Until" name="validUntil">
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+            </Row>
+          </FormSection>
 
-          <Typography.Title level={5}>Items</Typography.Title>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
-              gap: '0 8px',
-              fontSize: 12,
-              color: 'rgba(0,0,0,0.45)',
-              marginBottom: 4,
-            }}
-          >
-            <div>Item</div>
-            <div>Qty</div>
-            <div>Rate</div>
-            <div>Disc %</div>
-            <div>Tax %</div>
-            <div>Delivery Date</div>
-            <div>Remarks</div>
-          </div>
-          {enquiry.items.map((peItem, index) => (
+          <FormSection title="Terms & Charges">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <Form.Item label="Payment Terms" name="paymentTerms">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <Form.Item label="Delivery Terms" name="deliveryTerms">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <Form.Item label="Freight Amount" name="freightAmount">
+                  <InputNumber min={0} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <Form.Item label="Other Charges" name="otherCharges">
+                  <InputNumber min={0} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="Remarks" name="remarks">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+          </FormSection>
+
+          <FormSection title="Items">
             <div
-              key={peItem.id}
               style={{
                 display: 'grid',
                 gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
                 gap: '0 8px',
-                alignItems: 'start',
+                fontSize: 12,
+                color: 'rgba(0,0,0,0.45)',
+                marginBottom: 4,
               }}
             >
-              <div style={{ paddingTop: 8 }}>
-                {peItem.itemName}{' '}
-                <span style={{ color: 'rgba(0,0,0,0.45)' }}>({peItem.uomName})</span>
-              </div>
-              <Form.Item name={['items', index, 'quotedQty']} rules={[{ required: true }]}>
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name={['items', index, 'rate']} rules={[{ required: true }]}>
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name={['items', index, 'discountPercent']}>
-                <InputNumber min={0} max={100} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name={['items', index, 'taxPercent']}>
-                <InputNumber min={0} max={100} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name={['items', index, 'deliveryDate']}>
-                <DatePicker style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name={['items', index, 'remarks']}>
-                <Input />
-              </Form.Item>
+              <div>Item</div>
+              <div>Qty</div>
+              <div>Rate</div>
+              <div>Disc %</div>
+              <div>Tax %</div>
+              <div>Delivery Date</div>
+              <div>Remarks</div>
             </div>
-          ))}
+            {enquiry.items.map((peItem, index) => (
+              <div
+                key={peItem.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
+                  gap: '0 8px',
+                  alignItems: 'start',
+                }}
+              >
+                <div style={{ paddingTop: 8 }}>
+                  {peItem.itemName}{' '}
+                  <span style={{ color: 'rgba(0,0,0,0.45)' }}>({peItem.uomName})</span>
+                </div>
+                <Form.Item name={['items', index, 'quotedQty']} rules={[{ required: true }]}>
+                  <InputNumber min={0} style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name={['items', index, 'rate']} rules={[{ required: true }]}>
+                  <InputNumber min={0} style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name={['items', index, 'discountPercent']}>
+                  <InputNumber min={0} max={100} style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name={['items', index, 'taxPercent']}>
+                  <InputNumber min={0} max={100} style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name={['items', index, 'deliveryDate']}>
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name={['items', index, 'remarks']}>
+                  <Input />
+                </Form.Item>
+              </div>
+            ))}
+          </FormSection>
         </Form>
       </Card>
     </div>

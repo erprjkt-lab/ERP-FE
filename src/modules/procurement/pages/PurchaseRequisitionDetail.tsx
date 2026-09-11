@@ -5,9 +5,10 @@ import {
   EditOutlined,
   SendOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Table, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseRequisitionItem } from '@/types/procurement'
@@ -204,7 +205,7 @@ export const PurchaseRequisitionDetail: FC = () => {
               </Typography.Title>
             }
           >
-            <Table
+            <DataTable
               columns={columns}
               dataSource={requisition.items}
               rowKey="id"

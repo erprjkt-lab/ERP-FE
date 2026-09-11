@@ -11,7 +11,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { MOCK_DEPARTMENTS, MOCK_EMPLOYEES } from '@/modules/hr/_mock/employees'
 import { getDepartmentColor } from '@/modules/hr/utils/departmentColor'
-import { tabularNums } from '@/theme/typography'
+import { ledgerText } from '@/theme/typography'
 
 const activeCount = MOCK_EMPLOYEES.filter(e => e.status === 'active').length
 const DEPARTMENTS_BY_HEADCOUNT = [...MOCK_DEPARTMENTS].sort((a, b) => b.headCount - a.headCount)
@@ -94,7 +94,7 @@ export const Dashboard: FC = () => {
               <div key={dept.id} style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <Typography.Text>{dept.name}</Typography.Text>
-                  <Typography.Text type="secondary" style={tabularNums}>
+                  <Typography.Text type="secondary" style={ledgerText}>
                     {dept.headCount} employees
                   </Typography.Text>
                 </div>

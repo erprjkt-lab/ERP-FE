@@ -3,10 +3,12 @@ import {
   App,
   Button,
   Card,
+  Col,
   DatePicker,
   Form,
   Input,
   InputNumber,
+  Row,
   Select,
   Space,
   Typography,
@@ -16,6 +18,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useDepartments } from '@/modules/hr/hooks/useDepartments'
 import type { Priority } from '@/types/procurement'
@@ -163,70 +166,79 @@ export const PurchaseRequisitionForm: FC = () => {
           onFinish={handleFinish}
           initialValues={{ requisitionDate: dayjs(), priority: 'NORMAL', items: [] }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
-            <Form.Item
-              label="Requisition Date"
-              name="requisitionDate"
-              rules={[{ required: true, message: 'Date is required' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item label="Department" name="departmentId">
-              <Select
-                placeholder="Select department"
-                options={departmentOptions}
-                allowClear
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? '')
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-            <Form.Item label="Priority" name="priority">
-              <Select options={PRIORITY_OPTIONS} />
-            </Form.Item>
-          </div>
-          <Form.Item label="Remarks" name="remarks">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Typography.Title level={5}>Items</Typography.Title>
-          <Form.List
-            name="items"
-            rules={[
-              {
-                validator: async (_, v) => {
-                  if (!v || v.length === 0) throw new Error('Add at least one item')
-                },
-              },
-            ]}
-          >
-            {(fields, { add, remove }, { errors }) => (
-              <>
-                {fields.map(field => (
-                  <RequisitionItemRow
-                    key={field.key}
-                    field={field}
-                    form={form}
-                    itemOptions={itemOptions}
-                    items={items}
-                    onRemove={() => remove(field.name)}
-                  />
-                ))}
-                <Form.ErrorList errors={errors} />
-                <Button
-                  type="dashed"
-                  icon={<PlusOutlined />}
-                  onClick={() => add()}
-                  style={{ width: '100%', marginTop: 8 }}
+          <FormSection title="Requisition Details">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Requisition Date"
+                  name="requisitionDate"
+                  rules={[{ required: true, message: 'Date is required' }]}
                 >
-                  Add Item
-                </Button>
-              </>
-            )}
-          </Form.List>
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item label="Department" name="departmentId">
+                  <Select
+                    placeholder="Select department"
+                    options={departmentOptions}
+                    allowClear
+                    showSearch
+                    filterOption={(input, option) =>
+                      String(option?.label ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item label="Priority" name="priority">
+                  <Select options={PRIORITY_OPTIONS} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="Remarks" name="remarks">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+          </FormSection>
+
+          <FormSection title="Items">
+            <Form.List
+              name="items"
+              rules={[
+                {
+                  validator: async (_, v) => {
+                    if (!v || v.length === 0) throw new Error('Add at least one item')
+                  },
+                },
+              ]}
+            >
+              {(fields, { add, remove }, { errors }) => (
+                <>
+                  {fields.map(field => (
+                    <RequisitionItemRow
+                      key={field.key}
+                      field={field}
+                      form={form}
+                      itemOptions={itemOptions}
+                      items={items}
+                      onRemove={() => remove(field.name)}
+                    />
+                  ))}
+                  <Form.ErrorList errors={errors} />
+                  <Button
+                    type="dashed"
+                    icon={<PlusOutlined />}
+                    onClick={() => add()}
+                    style={{ width: '100%', marginTop: 8 }}
+                  >
+                    Add Item
+                  </Button>
+                </>
+              )}
+            </Form.List>
+          </FormSection>
         </Form>
       </Card>
     </div>

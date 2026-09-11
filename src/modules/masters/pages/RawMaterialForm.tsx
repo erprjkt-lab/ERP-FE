@@ -1,8 +1,9 @@
-import { App, Button, Card, Divider, Form, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Form, Row, Space } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { UploadField } from '@/components/ui/UploadField'
 import { MASTER_STATUS_OPTIONS } from '../constants'
@@ -135,79 +136,113 @@ export const RawMaterialForm: FC = () => {
           layout="vertical"
           onFinish={handleFinish}
           initialValues={{ status: 'active' }}
-          style={{ maxWidth: 900 }}
         >
-          <Typography.Title level={5}>Basic Info</Typography.Title>
-          {isEdit && <FormField label="Item Code" name="code" disabled />}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Item Name"
-              name="name"
-              rules={[{ required: true, message: 'Item name is required' }]}
-            />
-            <FormField
-              label="Category"
-              name="categoryId"
-              fieldType="select"
-              options={categoryOptions}
-              rules={[{ required: true, message: 'Category is required' }]}
-            />
-            <FormField label="Brand" name="brand" />
-            <FormField
-              label="UOM"
-              name="uomId"
-              fieldType="select"
-              options={uomOptions}
-              rules={[{ required: true, message: 'UOM is required' }]}
-            />
-            <FormField
-              label="Alternate UOM"
-              name="alternateUomId"
-              fieldType="select"
-              options={uomOptions}
-            />
-            <FormField label="HSN Code" name="hsnCode" />
-            <FormField label="GST %" name="gstPercent" fieldType="number" />
-            <FormField
-              label="Status"
-              name="status"
-              fieldType="select"
-              options={MASTER_STATUS_OPTIONS}
-            />
-          </div>
+          <FormSection title="Basic Info">
+            {isEdit && <FormField label="Item Code" name="code" disabled />}
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Item Name"
+                  name="name"
+                  rules={[{ required: true, message: 'Item name is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Category"
+                  name="categoryId"
+                  fieldType="select"
+                  options={categoryOptions}
+                  rules={[{ required: true, message: 'Category is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Brand" name="brand" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="UOM"
+                  name="uomId"
+                  fieldType="select"
+                  options={uomOptions}
+                  rules={[{ required: true, message: 'UOM is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Alternate UOM"
+                  name="alternateUomId"
+                  fieldType="select"
+                  options={uomOptions}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="HSN Code" name="hsnCode" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="GST %" name="gstPercent" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Status"
+                  name="status"
+                  fieldType="select"
+                  options={MASTER_STATUS_OPTIONS}
+                />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Description</Typography.Title>
-          <FormField label="Description" name="description" fieldType="textarea" />
+          <FormSection title="Description">
+            <FormField label="Description" name="description" fieldType="textarea" />
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Physical Specs</Typography.Title>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Material Grade"
-              name="materialGradeId"
-              fieldType="select"
-              options={materialGradeOptions}
-            />
-            <FormField label="Material Type" name="materialType" />
-            <FormField label="Shape" name="shape" />
-            <FormField label="Diameter" name="diameter" fieldType="number" />
-            <FormField label="Width" name="width" fieldType="number" />
-            <FormField label="Thickness" name="thickness" fieldType="number" />
-            <FormField label="Length" name="length" fieldType="number" />
-            <FormField label="Density" name="density" fieldType="number" />
-            <FormField label="Color" name="color" />
-          </div>
+          <FormSection title="Physical Specs">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Material Grade"
+                  name="materialGradeId"
+                  fieldType="select"
+                  options={materialGradeOptions}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Material Type" name="materialType" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Shape" name="shape" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Diameter" name="diameter" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Width" name="width" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Thickness" name="thickness" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Length" name="length" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Density" name="density" fieldType="number" />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField label="Color" name="color" />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Price</Typography.Title>
-          <FormField label="Price" name="price" fieldType="number" />
+          <FormSection title="Price">
+            <FormField label="Price" name="price" fieldType="number" />
+          </FormSection>
 
-          <Divider />
-          <Typography.Title level={5}>Image</Typography.Title>
-          <FormField label="Image" name="imageUrl">
-            <UploadField mode="image" accept="image/*" />
-          </FormField>
+          <FormSection title="Image">
+            <FormField label="Image" name="imageUrl">
+              <UploadField mode="image" accept="image/*" />
+            </FormField>
+          </FormSection>
         </Form>
       </Card>
     </div>

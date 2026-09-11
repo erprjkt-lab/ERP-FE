@@ -1,9 +1,10 @@
-import { App, Button, Card, Form, Input, Select, Space } from 'antd'
+import { App, Button, Card, Col, Form, Input, Row, Select, Space } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useRoles } from '@/hooks/useRoles'
 import type { CreateEmployeePayload, UpdateEmployeePayload } from '@/types/api/hr'
@@ -141,128 +142,155 @@ export const EmployeeForm: FC = () => {
       />
 
       <Card>
-        <Form form={form} layout="vertical" onFinish={handleFinish} style={{ maxWidth: 720 }}>
-          {isEdit && <FormField label="Employee Code" name="employeeCode" disabled />}
+        <Form form={form} layout="vertical" onFinish={handleFinish}>
+          <FormSection title="Personal Information">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Employee Name"
+                  name="fullName"
+                  placeholder="Full name"
+                  rules={[{ required: true, message: 'Employee name is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Mobile Number"
+                  name="phone"
+                  placeholder="+91 9000000000"
+                  rules={[{ required: true, message: 'Mobile number is required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Email"
+                  name="email"
+                  placeholder="employee@company.com"
+                  rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Gender"
+                  name="gender"
+                  fieldType="select"
+                  options={GENDER_OPTIONS}
+                  placeholder="Select gender"
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField label="Date of Birth" name="dateOfBirth" fieldType="date" />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Employee Name"
-              name="fullName"
-              placeholder="Full name"
-              rules={[{ required: true, message: 'Employee name is required' }]}
-            />
-            <FormField
-              label="Mobile Number"
-              name="phone"
-              placeholder="+91 9000000000"
-              rules={[{ required: true, message: 'Mobile number is required' }]}
-            />
-          </div>
+          <FormSection title="Employment Information">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <FormField label="Department" name="departmentId">
+                  <Select
+                    placeholder="Select department"
+                    options={departmentOptions}
+                    allowClear
+                    showSearch
+                    filterOption={(input, option) =>
+                      String(option?.label ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    onChange={() => form.setFieldValue('designationId', undefined)}
+                  />
+                </FormField>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Designation"
+                  name="designationId"
+                  fieldType="select"
+                  placeholder="Select designation"
+                  options={designationOptions}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Branch"
+                  name="branch"
+                  fieldType="select"
+                  placeholder="Select branch"
+                  options={BRANCH_OPTIONS}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Shift"
+                  name="shiftId"
+                  fieldType="select"
+                  placeholder="Select shift"
+                  options={shiftOptions}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Employment Type"
+                  name="employmentType"
+                  fieldType="select"
+                  placeholder="Select type"
+                  options={EMPLOYMENT_TYPE_OPTIONS}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Role"
+                  name="role"
+                  fieldType="select"
+                  placeholder="Select role"
+                  options={roleOptions}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField label="Join Date" name="joinDate" fieldType="date" />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label="Status"
+                  name="status"
+                  fieldType="select"
+                  options={EMPLOYEE_STATUS_OPTIONS}
+                  initialValue="active"
+                />
+              </Col>
+            </Row>
+          </FormSection>
 
-          <FormField
-            label="Email"
-            name="email"
-            placeholder="employee@company.com"
-            rules={[{ required: true, type: 'email', message: 'Valid email required' }]}
-          />
-
-          <FormField
-            label={isEdit ? 'New Password (leave blank to keep current)' : 'Password'}
-            name="password"
-            placeholder={isEdit ? 'Leave blank to keep current password' : 'Set a password'}
-            rules={
-              isEdit
-                ? [{ min: 6, message: 'Minimum 6 characters' }]
-                : [{ required: true, min: 6, message: 'Minimum 6 characters' }]
-            }
-          >
-            <Input.Password />
-          </FormField>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Department" name="departmentId">
-              <Select
-                placeholder="Select department"
-                options={departmentOptions}
-                allowClear
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? '')
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                onChange={() => form.setFieldValue('designationId', undefined)}
-              />
-            </FormField>
-            <FormField
-              label="Designation"
-              name="designationId"
-              fieldType="select"
-              placeholder="Select designation"
-              options={designationOptions}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Branch"
-              name="branch"
-              fieldType="select"
-              placeholder="Select branch"
-              options={BRANCH_OPTIONS}
-            />
-            <FormField
-              label="Shift"
-              name="shiftId"
-              fieldType="select"
-              placeholder="Select shift"
-              options={shiftOptions}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Employment Type"
-              name="employmentType"
-              fieldType="select"
-              placeholder="Select type"
-              options={EMPLOYMENT_TYPE_OPTIONS}
-            />
-            <FormField
-              label="Role"
-              name="role"
-              fieldType="select"
-              placeholder="Select role"
-              options={roleOptions}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Join Date" name="joinDate" fieldType="date" />
-            <FormField label="Date of Birth" name="dateOfBirth" fieldType="date" />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField
-              label="Gender"
-              name="gender"
-              fieldType="select"
-              options={GENDER_OPTIONS}
-              placeholder="Select gender"
-            />
-            <FormField
-              label="Status"
-              name="status"
-              fieldType="select"
-              options={EMPLOYEE_STATUS_OPTIONS}
-              initialValue="active"
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-            <FormField label="Salary (INR)" name="salary" fieldType="number" placeholder="0" />
-            <FormField label="Location" name="location" placeholder="City / Office" />
-          </div>
+          <FormSection title="Compensation & Account">
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <FormField label="Salary (INR)" name="salary" fieldType="number" placeholder="0" />
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <FormField label="Location" name="location" placeholder="City / Office" />
+              </Col>
+              {isEdit && (
+                <Col xs={24} sm={12} md={8}>
+                  <FormField label="Employee Code" name="employeeCode" disabled />
+                </Col>
+              )}
+              <Col xs={24} sm={12} md={8}>
+                <FormField
+                  label={isEdit ? 'New Password (leave blank to keep current)' : 'Password'}
+                  name="password"
+                  placeholder={isEdit ? 'Leave blank to keep current password' : 'Set a password'}
+                  rules={
+                    isEdit
+                      ? [{ min: 6, message: 'Minimum 6 characters' }]
+                      : [{ required: true, min: 6, message: 'Minimum 6 characters' }]
+                  }
+                >
+                  <Input.Password />
+                </FormField>
+              </Col>
+            </Row>
+          </FormSection>
         </Form>
       </Card>
     </div>

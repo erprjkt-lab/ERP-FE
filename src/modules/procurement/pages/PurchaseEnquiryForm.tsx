@@ -3,19 +3,21 @@ import {
   App,
   Button,
   Card,
+  Col,
   DatePicker,
   Form,
   Input,
   InputNumber,
   Radio,
+  Row,
   Select,
   Space,
-  Typography,
 } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
 import type { Priority } from '@/types/procurement'
@@ -163,66 +165,75 @@ export const PurchaseEnquiryForm: FC = () => {
             requisitionIds: fromPr ? [fromPr] : [],
           }}
         >
-          <Form.Item label="Source">
-            <Radio.Group value={mode} onChange={e => setMode(e.target.value as Mode)}>
-              <Radio.Button value="manual">Manual Entry</Radio.Button>
-              <Radio.Button value="fromRequisitions">From Purchase Requisitions</Radio.Button>
-            </Radio.Group>
-          </Form.Item>
+          <FormSection title="Enquiry Details">
+            <Form.Item label="Source">
+              <Radio.Group value={mode} onChange={e => setMode(e.target.value as Mode)}>
+                <Radio.Button value="manual">Manual Entry</Radio.Button>
+                <Radio.Button value="fromRequisitions">From Purchase Requisitions</Radio.Button>
+              </Radio.Group>
+            </Form.Item>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 24px' }}>
+            <Row gutter={24}>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Enquiry Date"
+                  name="enquiryDate"
+                  rules={[{ required: true, message: 'Date is required' }]}
+                  initialValue={dayjs()}
+                >
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item label="Due Date" name="enquiryDueDate">
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item label="Priority" name="priority">
+                  <Select options={PRIORITY_OPTIONS} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="Remarks" name="remarks">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+
             <Form.Item
-              label="Enquiry Date"
-              name="enquiryDate"
-              rules={[{ required: true, message: 'Date is required' }]}
-              initialValue={dayjs()}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item label="Due Date" name="enquiryDueDate">
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item label="Priority" name="priority">
-              <Select options={PRIORITY_OPTIONS} />
-            </Form.Item>
-          </div>
-          <Form.Item label="Remarks" name="remarks">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Form.Item
-            label="Suppliers"
-            name="supplierIds"
-            rules={[{ required: true, message: 'Add at least one supplier' }]}
-          >
-            <Select
-              mode="multiple"
-              placeholder="Select suppliers"
-              options={supplierOptions}
-              showSearch
-              filterOption={(input, option) =>
-                String(option?.label ?? '')
-                  .toLowerCase()
-                  .includes(input.toLowerCase())
-              }
-            />
-          </Form.Item>
-
-          {mode === 'fromRequisitions' ? (
-            <Form.Item
-              label="Purchase Requisitions"
-              name="requisitionIds"
-              rules={[{ required: true, message: 'Select at least one requisition' }]}
+              label="Suppliers"
+              name="supplierIds"
+              rules={[{ required: true, message: 'Add at least one supplier' }]}
             >
               <Select
                 mode="multiple"
-                placeholder="Select approved requisitions with pending items"
-                options={requisitionOptions}
+                placeholder="Select suppliers"
+                options={supplierOptions}
+                showSearch
+                filterOption={(input, option) =>
+                  String(option?.label ?? '')
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
               />
             </Form.Item>
-          ) : (
-            <>
-              <Typography.Title level={5}>Items</Typography.Title>
+
+            {mode === 'fromRequisitions' && (
+              <Form.Item
+                label="Purchase Requisitions"
+                name="requisitionIds"
+                rules={[{ required: true, message: 'Select at least one requisition' }]}
+              >
+                <Select
+                  mode="multiple"
+                  placeholder="Select approved requisitions with pending items"
+                  options={requisitionOptions}
+                />
+              </Form.Item>
+            )}
+          </FormSection>
+
+          {mode !== 'fromRequisitions' && (
+            <FormSection title="Items">
               <Form.List
                 name="items"
                 rules={[
@@ -298,7 +309,7 @@ export const PurchaseEnquiryForm: FC = () => {
                   </>
                 )}
               </Form.List>
-            </>
+            </FormSection>
           )}
         </Form>
       </Card>

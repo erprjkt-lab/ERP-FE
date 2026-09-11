@@ -4,7 +4,7 @@ import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { tabularNums } from '@/theme/typography'
+import { ledgerText } from '@/theme/typography'
 import { getBranchLabel } from '../constants'
 import { useEmployee } from '../hooks/useEmployees'
 import { getDepartmentColor } from '../utils/departmentColor'
@@ -128,7 +128,7 @@ export const EmployeeDetail: FC = () => {
                   children: (
                     <Descriptions column={2} size="small" bordered>
                       <Descriptions.Item label="Monthly Salary">
-                        <span style={tabularNums}>
+                        <span style={ledgerText}>
                           ₹{(employee.salary ?? 0).toLocaleString('en-IN')}
                         </span>
                       </Descriptions.Item>

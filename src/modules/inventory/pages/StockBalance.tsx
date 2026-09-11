@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Card, Select, Table } from 'antd'
+import { Card, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
+import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useLocations } from '../hooks/useLocations'
 import { useStockBalance, type StockBalanceRow } from '../hooks/useStockBalance'
@@ -59,7 +60,7 @@ export function StockBalance() {
             label: `${item.code} — ${item.name}`,
           }))}
         />
-        <Table<StockBalanceRow>
+        <DataTable<StockBalanceRow>
           columns={getColumns(locationNameById)}
           dataSource={rows}
           rowKey={row => `${row.locationId}-${row.batchNo}-${row.heatNo}-${row.serialNo}`}

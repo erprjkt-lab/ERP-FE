@@ -108,6 +108,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: <ToolOutlined />,
     label: 'Production',
     children: [
+      { path: '/production/process', label: 'Process' },
       { path: '/production/bom', label: 'BOM' },
       { path: '/production/work-orders', label: 'Work Order (Jobcard)' },
       { path: '/production/entries', label: 'Production Entry' },
@@ -128,3 +129,26 @@ export const NAV_GROUPS: NavGroup[] = [
 ]
 
 export const ALL_NAV_LEAVES: NavLeaf[] = NAV_GROUPS.flatMap(group => group.children)
+
+export interface ActiveNav {
+  leafKey: string
+  groupKey: string
+}
+
+// Matches the current route to a nav leaf, picking the longest matching leaf
+// path so e.g. "/masters/finished-goods/new" still highlights "Finished Good"
+// (and its parent "Masters" group) instead of no selection at all.
+export function getActiveNav(pathname: string): ActiveNav | null {
+  let best: (ActiveNav & { length: number }) | null = null
+
+  for (const group of NAV_GROUPS) {
+    for (const leaf of group.children) {
+      const isMatch = pathname === leaf.path || pathname.startsWith(`${leaf.path}/`)
+      if (isMatch && (!best || leaf.path.length > best.length)) {
+        best = { leafKey: leaf.path, groupKey: group.key, length: leaf.path.length }
+      }
+    }
+  }
+
+  return best ? { leafKey: best.leafKey, groupKey: best.groupKey } : null
+}

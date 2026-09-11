@@ -37,6 +37,35 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* The sidebar scrolls when a group expands past viewport height, but the
+   scrollbar itself reserves layout width — letting it render/derender as
+   groups open and close made every menu label shift horizontally. Hiding it
+   keeps scrolling but removes that reflow. */
+.app-sidebar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.app-sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Signature wayfinding cue: the active sidebar item gets a calibration-mark
+   tick on its leading edge instead of a full-bleed fill, echoing the
+   "instrument ledger" theme without spreading the accent color everywhere. */
+.app-sidebar-menu .ant-menu-item-selected {
+  position: relative;
+}
+.app-sidebar-menu .ant-menu-item-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: #b9812f;
+}
+
 /* DataTable is always rendered inside a zero-padding Card body, so the
    pagination row (page-size dropdown included) needs its own horizontal
    inset to avoid sitting flush against the card edge. */
