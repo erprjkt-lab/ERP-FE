@@ -26,10 +26,10 @@ interface JobCardFormValues {
   jobCardDate: { format: (fmt: string) => string }
   targetDate: { format: (fmt: string) => string }
   itemId: string
-  itemRevision?: string
   orderedQty: number
   outputLocationId: string
   partyId?: string
+  salesOrderLineId?: string
   manufacturingRoute: 'standard' | 'rework' | 'sample'
   remark?: string
   overrideRoute?: boolean
@@ -75,7 +75,7 @@ export const JobCardForm: FC = () => {
         target_date: values.targetDate.format('YYYY-MM-DD'),
         party_id: values.partyId ? Number(values.partyId) : null,
         item_id: Number(values.itemId),
-        item_revision: values.itemRevision || undefined,
+        sales_order_line_id: values.salesOrderLineId ? Number(values.salesOrderLineId) : undefined,
         ordered_qty: values.orderedQty,
         manufacturing_route: MANUFACTURING_ROUTE_CODE[values.manufacturingRoute],
         output_location_id: Number(values.outputLocationId),
@@ -130,7 +130,14 @@ export const JobCardForm: FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
-                <FormField label="Item Revision" name="itemRevision" />
+                <FormField
+                  label="Sales Order"
+                  name="salesOrderLineId"
+                  fieldType="select"
+                  options={[]}
+                  disabled
+                  placeholder="Sales module not integrated yet"
+                />
               </Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField

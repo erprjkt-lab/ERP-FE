@@ -42,6 +42,9 @@ export const AcceptProductionModal: FC<AcceptProductionModalProps> = ({
   const { mutateAsync: acceptMovement, isPending } = useAcceptMovement(jobCardId)
 
   const pendingQty = step?.unacceptedQty ?? 0
+  const acceptedQty = Form.useWatch('acceptedQty', form) as number | undefined
+  const shortQty = Form.useWatch('shortQty', form) as number | undefined
+  const unaccounted = pendingQty - (acceptedQty ?? 0) - (shortQty ?? 0)
 
   useEffect(() => {
     if (open) form.setFieldsValue({ acceptedQty: pendingQty, shortQty: undefined })
@@ -142,7 +145,19 @@ export const AcceptProductionModal: FC<AcceptProductionModalProps> = ({
               name="acceptedQty"
               rules={[{ required: true, message: 'Accept quantity is required' }]}
             >
-              <InputNumber size="large" min={0} max={pendingQty} style={{ width: '100%' }} />
+              <InputNumber
+                size="large"
+                min={0}
+                max={pendingQty}
+                style={{ width: '100%' }}
+                onChange={value => {
+                  const accepted = value ?? 0
+                  const currentShort = form.getFieldValue('shortQty') ?? 0
+                  if (accepted + currentShort > pendingQty) {
+                    form.setFieldValue('shortQty', Math.max(pendingQty - accepted, 0))
+                  }
+                }}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
@@ -151,10 +166,32 @@ export const AcceptProductionModal: FC<AcceptProductionModalProps> = ({
               name="shortQty"
               tooltip="Qty that arrived short or damaged"
             >
-              <InputNumber size="large" min={0} max={pendingQty} style={{ width: '100%' }} />
+              <InputNumber
+                size="large"
+                min={0}
+                max={pendingQty}
+                style={{ width: '100%' }}
+                onChange={value => {
+                  const short = value ?? 0
+                  const currentAccepted = form.getFieldValue('acceptedQty') ?? 0
+                  if (currentAccepted + short > pendingQty) {
+                    form.setFieldValue('acceptedQty', Math.max(pendingQty - short, 0))
+                  }
+                }}
+              />
             </Form.Item>
           </Col>
         </Row>
+        {pendingQty > 0 && (
+          <Typography.Text
+            type={unaccounted > 0 ? 'warning' : 'secondary'}
+            style={{ fontSize: 12 }}
+          >
+            {unaccounted > 0
+              ? `${unaccounted} of ${pendingQty} still unaccounted for.`
+              : `All ${pendingQty} accounted for.`}
+          </Typography.Text>
+        )}
       </Form>
 
       <Typography.Title level={5}>Movements into this process</Typography.Title>

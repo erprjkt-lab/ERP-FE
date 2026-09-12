@@ -11,7 +11,7 @@ import {
   EmployeeList,
   ShiftList,
 } from '@/modules/hr'
-import { StockBalance } from '@/modules/inventory'
+import { IssueMaterialList, StockBalance } from '@/modules/inventory'
 import {
   ConsumableList,
   CustomerDetail,
@@ -88,6 +88,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/purchase/orders',
   '/purchase/grn',
   '/inventory/ledger',
+  '/inventory/issue-material',
   '/production/process',
   '/production/bom',
   '/production/work-orders',
@@ -177,6 +178,7 @@ function App() {
                 <Route path="/purchase/grn/:id" element={<PurchaseGrnDetail />} />
 
                 <Route path="/inventory/ledger" element={<StockBalance />} />
+                <Route path="/inventory/issue-material" element={<IssueMaterialList />} />
 
                 <Route path="/production/process" element={<ProcessList />} />
                 <Route path="/production/bom" element={<BomList />} />

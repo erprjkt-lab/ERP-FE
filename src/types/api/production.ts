@@ -224,6 +224,7 @@ export interface CreateJobCardPayload {
   party_id?: number | null
   item_id: number
   item_revision?: string | null
+  sales_order_line_id?: number | null
   ordered_qty: number
   manufacturing_route?: number
   output_location_id: number
