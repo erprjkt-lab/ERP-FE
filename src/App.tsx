@@ -53,7 +53,15 @@ import {
   PurchaseRequisitionList,
   SupplierQuotationForm,
 } from '@/modules/procurement'
-import { BomList, ItemBomForm, ItemProcessRouteForm, ProcessList } from '@/modules/production'
+import {
+  BomList,
+  ItemBomForm,
+  ItemProcessRouteForm,
+  JobCardDetail,
+  JobCardForm,
+  JobCardList,
+  ProcessList,
+} from '@/modules/production'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { Dashboard } from '@/pages/Dashboard'
 import { Login } from '@/pages/Login'
@@ -82,6 +90,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/inventory/ledger',
   '/production/process',
   '/production/bom',
+  '/production/work-orders',
 ])
 
 function App() {
@@ -176,6 +185,9 @@ function App() {
                   element={<ItemProcessRouteForm />}
                 />
                 <Route path="/production/bom/:itemId/item-bom" element={<ItemBomForm />} />
+                <Route path="/production/work-orders" element={<JobCardList />} />
+                <Route path="/production/work-orders/new" element={<JobCardForm />} />
+                <Route path="/production/work-orders/:id" element={<JobCardDetail />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route

@@ -2,7 +2,17 @@ import { Badge, Tag } from 'antd'
 import type { FC } from 'react'
 import type { Status } from '@/types'
 
-export type StatusBadgeStatus = Status | 'approved' | 'rejected' | 'paid' | 'draft' | 'overdue'
+export type StatusBadgeStatus =
+  | Status
+  | 'approved'
+  | 'rejected'
+  | 'paid'
+  | 'draft'
+  | 'overdue'
+  | 'in_progress'
+  | 'on_hold'
+  | 'completed'
+  | 'closed'
 
 const STATUS_CONFIG: Record<
   StatusBadgeStatus,
@@ -22,6 +32,10 @@ const STATUS_CONFIG: Record<
   paid: { color: 'blue', label: 'Paid', dotStatus: 'success' },
   draft: { color: 'default', label: 'Draft', dotStatus: 'default' },
   overdue: { color: 'red', label: 'Overdue', dotStatus: 'error' },
+  in_progress: { color: 'blue', label: 'In Progress', dotStatus: 'processing' },
+  on_hold: { color: 'orange', label: 'On Hold', dotStatus: 'warning' },
+  completed: { color: 'green', label: 'Completed', dotStatus: 'success' },
+  closed: { color: 'default', label: 'Closed', dotStatus: 'default' },
 }
 
 export interface StatusBadgeProps {

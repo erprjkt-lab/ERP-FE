@@ -66,6 +66,12 @@ body {
   background: #b9812f;
 }
 
+/* The process step the shop floor should work on next — tinted so an operator
+   can find their row at a glance from a distance. */
+.erp-current-process-row > td {
+  background: #f2f6fb;
+}
+
 /* DataTable is always rendered inside a zero-padding Card body, so the
    pagination row (page-size dropdown included) needs its own horizontal
    inset to avoid sitting flush against the card edge. */
