@@ -11,6 +11,7 @@ import {
   Table,
   Tabs,
   Tag,
+  Tooltip,
   Typography,
 } from 'antd'
 import type { TableColumnsType } from 'antd'
@@ -23,7 +24,6 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ledgerText } from '@/theme/typography'
 import type { JobCardMovement, MaterialIssue, ProcessLog } from '@/types/production'
 import { AcceptProductionModal } from '../components/AcceptProductionModal'
-import { IssueMaterialModal } from '../components/IssueMaterialModal'
 import { LogProductionModal } from '../components/LogProductionModal'
 import { MoveForwardModal } from '../components/MoveForwardModal'
 import { useItemBom } from '../hooks/useItemBom'
@@ -70,7 +70,6 @@ export const JobCardDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [issueOpen, setIssueOpen] = useState(false)
   const [activeStepId, setActiveStepId] = useState<string>()
   const [drawer, setDrawer] = useState<'accept' | 'log' | 'move'>()
 
@@ -254,14 +253,11 @@ export const JobCardDetail: FC = () => {
           <Space>
             {jobCard && <StatusBadge status={jobCard.status} />}
             <Button onClick={() => navigate('/production/work-orders')}>Back</Button>
-            <Button
-              type={hasMaterial ? 'default' : 'primary'}
-              icon={<InboxOutlined />}
-              onClick={() => setIssueOpen(true)}
-              disabled={!jobCard || isClosed}
-            >
-              Issue Material
-            </Button>
+            <Tooltip title="Issue material from Inventory → Issue Material">
+              <Button icon={<InboxOutlined />} disabled>
+                Issue Material
+              </Button>
+            </Tooltip>
           </Space>
         }
       />
@@ -305,22 +301,20 @@ export const JobCardDetail: FC = () => {
           <MetaItem label="Party" value={jobCard?.partyName} />
           <MetaItem label="Target" value={jobCard?.targetDate} />
           <MetaItem label="Output Store" value={jobCard?.outputLocationName} />
-          <MetaItem label="Material" value={hasMaterial ? 'Issued' : 'Not issued'} />
+          <MetaItem
+            label="Material"
+            value={issuesLoading ? undefined : hasMaterial ? 'Issued' : 'Not issued'}
+          />
         </div>
       </Card>
 
-      {!hasMaterial && !isClosed && (
+      {!issuesLoading && !hasMaterial && !isClosed && (
         <Alert
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
           message="Material not issued yet"
-          description="Issue material for this job card before the first process can be logged."
-          action={
-            <Button size="small" type="primary" onClick={() => setIssueOpen(true)}>
-              Issue Material
-            </Button>
-          }
+          description="Issue material for this job card from Inventory → Issue Material before the first process can be logged."
         />
       )}
 
@@ -404,13 +398,6 @@ export const JobCardDetail: FC = () => {
 
       {jobCard && (
         <>
-          <IssueMaterialModal
-            open={issueOpen}
-            onClose={() => setIssueOpen(false)}
-            jobCardId={jobCard.id}
-            itemId={jobCard.itemId}
-            orderedQty={orderedQty}
-          />
           <AcceptProductionModal
             open={drawer === 'accept'}
             onClose={() => setDrawer(undefined)}

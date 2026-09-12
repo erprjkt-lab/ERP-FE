@@ -1,13 +1,29 @@
-import { App, Col, Descriptions, Form, Row, Select } from 'antd'
+import { App, Col, Descriptions, Form, Row, Select, Table, Typography } from 'antd'
+import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
+import { useStockBalance, type StockBalanceRow } from '@/modules/inventory/hooks/useStockBalance'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import { useItemBom } from '../hooks/useItemBom'
 import { useBomRequirements, useIssueMaterial } from '../hooks/useJobCardMaterials'
+
+const stockDetailColumns: TableColumnsType<StockBalanceRow> = [
+  { title: 'Batch No', dataIndex: 'batchNo', key: 'batchNo', render: v => v || '—' },
+  { title: 'Heat No', dataIndex: 'heatNo', key: 'heatNo', render: v => v || '—' },
+  { title: 'Serial No', dataIndex: 'serialNo', key: 'serialNo', render: v => v || '—' },
+  { title: 'Qty', dataIndex: 'qty', key: 'qty', align: 'right' },
+  {
+    title: 'Avg Rate',
+    dataIndex: 'avgRate',
+    key: 'avgRate',
+    align: 'right',
+    render: (v: number | null) => (v != null ? v.toFixed(2) : '—'),
+  },
+]
 
 export interface IssueMaterialModalProps {
   open: boolean
@@ -20,8 +36,8 @@ export interface IssueMaterialModalProps {
 
 interface IssueFormValues {
   componentItemId: string
-  issuedQty: number
   storeLocationId: string
+  issuedQty: number
   batchNo?: string
   heatNo?: string
   issueDate?: { format: (fmt: string) => string }
@@ -44,6 +60,10 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
   const { mutateAsync: issueMaterial, isPending } = useIssueMaterial(jobCardId)
 
   const componentItemId = Form.useWatch('componentItemId', form) as string | undefined
+  const storeLocationId = Form.useWatch('storeLocationId', form) as string | undefined
+  const batchNo = Form.useWatch('batchNo', form) as string | undefined
+
+  const { data: stockRows = [] } = useStockBalance(componentItemId)
 
   const selectedBomLine = bomLines.find(line => line.componentItemId === componentItemId)
   const selectedRequirement = requirements.find(req => req.componentItemId === componentItemId)
@@ -57,14 +77,60 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
   const issuedQty = selectedRequirement?.issuedQty ?? 0
   const remainingQty = Math.max(requiredQty - issuedQty, 0)
 
+  const rowsAtLocation = useMemo(
+    () => stockRows.filter(row => row.locationId === storeLocationId),
+    [stockRows, storeLocationId],
+  )
+
+  // Only offer locations that actually hold stock of the selected component —
+  // no point letting someone pick a store the item was never received into.
+  const locationOptions = useMemo(() => {
+    const totalsByLocation = new Map<string, number>()
+    stockRows.forEach(row => {
+      totalsByLocation.set(row.locationId, (totalsByLocation.get(row.locationId) ?? 0) + row.qty)
+    })
+    return locations
+      .filter(loc => (totalsByLocation.get(loc.id) ?? 0) > 0)
+      .map(loc => ({
+        label: `${loc.name} (Avail: ${totalsByLocation.get(loc.id)})`,
+        value: loc.id,
+      }))
+  }, [locations, stockRows])
+
+  const batchOptions = useMemo(() => {
+    const totalsByBatch = new Map<string, number>()
+    rowsAtLocation.forEach(row => {
+      if (!row.batchNo) return
+      totalsByBatch.set(row.batchNo, (totalsByBatch.get(row.batchNo) ?? 0) + row.qty)
+    })
+    return Array.from(totalsByBatch.entries()).map(([batch, qty]) => ({
+      label: `${batch} (Avail: ${qty})`,
+      value: batch,
+    }))
+  }, [rowsAtLocation])
+
+  const availableQty = selectedItem?.batchTracking
+    ? (rowsAtLocation.find(row => row.batchNo === batchNo)?.qty ?? 0)
+    : rowsAtLocation.reduce((sum, row) => sum + row.qty, 0)
+
   useEffect(() => {
     if (componentItemId) {
       form.setFieldValue('issuedQty', remainingQty > 0 ? remainingQty : undefined)
     }
+    // A location valid for the previous component may hold none of the new
+    // one, so it can't carry over.
+    form.setFieldValue('storeLocationId', undefined)
     // Re-prefill only when the chosen component changes, never while the user
     // is editing the quantity they actually want to issue.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [componentItemId])
+
+  useEffect(() => {
+    // Available batches depend on component + location together, so a batch
+    // chosen for a different pairing is no longer valid — clear it.
+    form.setFieldValue('batchNo', undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentItemId, storeLocationId])
 
   const componentOptions = bomLines.map(line => ({
     label: `${line.componentName} (${line.quantityPerUnit} ${line.uomName} / unit)`,
@@ -137,26 +203,18 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
         <Row gutter={24}>
           <Col xs={24} sm={12}>
             <FormField
-              label="Issue Qty"
-              name="issuedQty"
-              fieldType="number"
-              rules={[
-                { required: true, message: 'Issue quantity is required' },
-                {
-                  validator: (_, value) =>
-                    value > 0
-                      ? Promise.resolve()
-                      : Promise.reject(new Error('Quantity must be greater than zero')),
-                },
-              ]}
-            />
-          </Col>
-          <Col xs={24} sm={12}>
-            <FormField
               label="Store Location"
               name="storeLocationId"
               fieldType="select"
-              options={locations.map(loc => ({ label: loc.name, value: loc.id }))}
+              options={locationOptions}
+              disabled={!componentItemId}
+              placeholder={
+                !componentItemId
+                  ? 'Select component first'
+                  : locationOptions.length
+                    ? 'Select store location'
+                    : 'No stock available for this component'
+              }
               rules={[{ required: true, message: 'Store location is required' }]}
             />
           </Col>
@@ -165,6 +223,10 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
               <FormField
                 label="Batch No"
                 name="batchNo"
+                fieldType="select"
+                options={batchOptions}
+                placeholder={storeLocationId ? 'Select batch' : 'Select store location first'}
+                disabled={!storeLocationId}
                 rules={[{ required: true, message: 'This component is batch tracked' }]}
               />
             </Col>
@@ -178,6 +240,68 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
               />
             </Col>
           )}
+        </Row>
+
+        {componentItemId && storeLocationId && (
+          <div style={{ marginBottom: 16 }}>
+            <Typography.Text
+              type="secondary"
+              style={{ fontSize: 12, display: 'block', marginBottom: 6 }}
+            >
+              Stock available at this location
+            </Typography.Text>
+            <Table<StockBalanceRow>
+              size="small"
+              columns={stockDetailColumns}
+              dataSource={rowsAtLocation}
+              rowKey={row => `${row.batchNo}-${row.heatNo}-${row.serialNo}`}
+              pagination={false}
+              locale={{ emptyText: 'No stock recorded at this location' }}
+              rowClassName={row =>
+                selectedItem?.batchTracking && row.batchNo === batchNo
+                  ? 'erp-selected-batch-row'
+                  : ''
+              }
+              onRow={row => ({
+                onClick: () => {
+                  if (selectedItem?.batchTracking && row.batchNo) {
+                    form.setFieldValue('batchNo', row.batchNo)
+                  }
+                },
+                style: selectedItem?.batchTracking ? { cursor: 'pointer' } : undefined,
+              })}
+            />
+          </div>
+        )}
+
+        {componentItemId && storeLocationId && (!selectedItem?.batchTracking || batchNo) && (
+          <Descriptions size="small" column={1} bordered style={{ marginBottom: 16 }}>
+            <Descriptions.Item label="Available for issue">{availableQty}</Descriptions.Item>
+          </Descriptions>
+        )}
+
+        <Row gutter={24}>
+          <Col xs={24} sm={12}>
+            <FormField
+              label="Issue Qty"
+              name="issuedQty"
+              fieldType="number"
+              rules={[
+                { required: true, message: 'Issue quantity is required' },
+                {
+                  validator: (_, value) => {
+                    if (!(value > 0)) {
+                      return Promise.reject(new Error('Quantity must be greater than zero'))
+                    }
+                    if (storeLocationId && value > availableQty) {
+                      return Promise.reject(new Error('Exceeds available stock at this location'))
+                    }
+                    return Promise.resolve()
+                  },
+                },
+              ]}
+            />
+          </Col>
           <Col xs={24} sm={12}>
             <FormField label="Issue Date" name="issueDate" fieldType="date" />
           </Col>

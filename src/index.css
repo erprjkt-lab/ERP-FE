@@ -72,6 +72,11 @@ body {
   background: #f2f6fb;
 }
 
+/* The batch a user has picked to issue from, in the Issue Material stock table. */
+.erp-selected-batch-row > td {
+  background: #e6f4ff;
+}
+
 /* DataTable is always rendered inside a zero-padding Card body, so the
    pagination row (page-size dropdown included) needs its own horizontal
    inset to avoid sitting flush against the card edge. */
