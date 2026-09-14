@@ -1,0 +1,123 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: '#eef6ff',
+          100: '#dbebff',
+          200: '#b7d8ff',
+          300: '#86bfff',
+          400: '#4e9dff',
+          500: '#227aff',
+          600: '#1677ff',
+          700: '#0e5ce0',
+          800: '#0f49b3',
+          900: '#123e8c',
+          950: '#0b2554',
+        },
+        violet: {
+          50: '#f4f1ff',
+          100: '#ebe4ff',
+          200: '#d5c8ff',
+          300: '#b49dff',
+          400: '#8f6bff',
+          500: '#7440ff',
+          600: '#6620f5',
+          700: '#5714d6',
+          800: '#4813ad',
+          900: '#3c1289',
+          950: '#240a5c',
+        },
+        ink: {
+          50: '#f4f6f9',
+          100: '#e6eaf1',
+          200: '#c7d0e0',
+          300: '#9aabc7',
+          400: '#6a7fa3',
+          500: '#4c5f85',
+          600: '#3a4a6b',
+          700: '#2c3856',
+          800: '#1c2540',
+          900: '#0f1730',
+          950: '#080d1d',
+        },
+      },
+      fontFamily: {
+        display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+      },
+      backgroundImage: {
+        'brand-gradient': 'linear-gradient(135deg, #1677ff 0%, #6620f5 100%)',
+        'brand-gradient-soft': 'linear-gradient(135deg, #eef6ff 0%, #f4f1ff 100%)',
+        'radial-fade': 'radial-gradient(60% 60% at 50% 40%, rgba(22,119,255,0.18) 0%, rgba(22,119,255,0) 70%)',
+      },
+      boxShadow: {
+        glow: '0 0 60px -15px rgba(22, 119, 255, 0.45)',
+        card: '0 10px 40px -12px rgba(15, 23, 48, 0.18)',
+      },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'float-delay': 'float 6s ease-in-out 2s infinite',
+        'float-slow': 'float 9s ease-in-out infinite',
+        'gradient-x': 'gradient-x 8s ease infinite',
+        marquee: 'marquee 28s linear infinite',
+        'grid-pan': 'grid-pan 22s linear infinite',
+        'spin-slow': 'spin 26s linear infinite',
+        'pulse-slow': 'pulse-slow 5s ease-in-out infinite',
+        'twinkle': 'twinkle 4s ease-in-out infinite',
+        'drift-a': 'drift-a 16s ease-in-out infinite',
+        'drift-b': 'drift-b 20s ease-in-out infinite',
+        'drift-c': 'drift-c 13s ease-in-out infinite',
+        'ring-pulse': 'ring-pulse 2.4s ease-out infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-16px)' },
+        },
+        'gradient-x': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'grid-pan': {
+          '0%': { backgroundPosition: '0px 0px' },
+          '100%': { backgroundPosition: '40px 40px' },
+        },
+        'pulse-slow': {
+          '0%, 100%': { opacity: 0.35, transform: 'scale(1)' },
+          '50%': { opacity: 0.55, transform: 'scale(1.08)' },
+        },
+        twinkle: {
+          '0%, 100%': { opacity: 0.15, transform: 'scale(0.85)' },
+          '50%': { opacity: 0.6, transform: 'scale(1.1)' },
+        },
+        'drift-a': {
+          '0%, 100%': { transform: 'translate(0px, 0px) scale(1)' },
+          '25%': { transform: 'translate(24px, -18px) scale(1.05)' },
+          '50%': { transform: 'translate(-12px, 14px) scale(0.97)' },
+          '75%': { transform: 'translate(16px, 22px) scale(1.03)' },
+        },
+        'drift-b': {
+          '0%, 100%': { transform: 'translate(0px, 0px) scale(1)' },
+          '30%': { transform: 'translate(-20px, 16px) scale(1.06)' },
+          '60%': { transform: 'translate(18px, -10px) scale(0.95)' },
+        },
+        'drift-c': {
+          '0%, 100%': { transform: 'translate(0px, 0px)' },
+          '50%': { transform: 'translate(-14px, -20px)' },
+        },
+        'ring-pulse': {
+          '0%': { boxShadow: '0 0 0 0 rgba(22, 119, 255, 0.35)' },
+          '100%': { boxShadow: '0 0 0 14px rgba(22, 119, 255, 0)' },
+        },
+      },
+    },
+  },
+  plugins: [],
+}
