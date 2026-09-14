@@ -85,15 +85,15 @@ export function About() {
             </Reveal>
             <Reveal delay={0.15}>
               <div className="rounded-3xl border border-ink-100 bg-ink-50/60 p-10">
-                <div className="grid grid-cols-2 gap-6 text-center">
+                <div className="grid grid-cols-1 gap-4 text-center sm:grid-cols-2 sm:gap-6">
                   {[
                     { value: 'Engineering', label: 'Industry served' },
                     { value: 'Healthcare', label: 'Industry served' },
                     { value: 'Technology', label: 'Industry served' },
                     { value: 'Manufacturing', label: 'Industry served' },
                   ].map(item => (
-                    <div key={item.value} className="rounded-2xl bg-white p-5 shadow-sm">
-                      <div className="font-display text-base font-semibold text-ink-900">
+                    <div key={item.value} className="min-w-0 rounded-2xl bg-white p-5 shadow-sm">
+                      <div className="break-words font-display text-base font-semibold text-ink-900">
                         {item.value}
                       </div>
                       <div className="mt-1 text-xs text-ink-500">{item.label}</div>

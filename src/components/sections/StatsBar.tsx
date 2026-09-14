@@ -9,7 +9,7 @@ export function StatsBar() {
       <Container>
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           {STATS.map((stat, i) => (
-            <Reveal key={stat.label} delay={i * 0.08} className="text-center">
+            <Reveal key={stat.label} delay={i * 0.08} className="min-w-0 text-center">
               <CountUp
                 value={stat.value}
                 decimals={stat.decimals}

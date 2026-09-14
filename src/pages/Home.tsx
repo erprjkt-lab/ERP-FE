@@ -145,11 +145,16 @@ function HeroVisual() {
                 { label: 'On-time delivery', value: '96%' },
                 { label: 'Open tickets', value: '3' },
               ].map(metric => (
-                <div key={metric.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div
+                  key={metric.label}
+                  className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4"
+                >
                   <div className="font-display text-xl font-semibold text-white sm:text-2xl">
                     {metric.value}
                   </div>
-                  <div className="mt-1 text-[11px] font-medium text-ink-400">{metric.label}</div>
+                  <div className="mt-1 break-words text-[11px] font-medium text-ink-400">
+                    {metric.label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -203,10 +208,12 @@ function HeroVisual() {
                 <motion.div
                   key={label}
                   whileHover={{ y: -4 }}
-                  className="rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-colors hover:border-brand-500/50 hover:bg-white/[0.08]"
+                  className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-colors hover:border-brand-500/50 hover:bg-white/[0.08]"
                 >
                   <Icon className="mx-auto h-5 w-5 text-brand-400" />
-                  <div className="mt-2 text-[11px] font-medium text-white/80">{label}</div>
+                  <div className="mt-2 break-words text-[11px] font-medium text-white/80">
+                    {label}
+                  </div>
                 </motion.div>
               ))}
             </div>
