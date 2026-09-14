@@ -1,4 +1,3 @@
-import { ArrowUpRight } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Reveal } from '@/components/ui/Reveal'
 import { CtaBanner } from '@/components/sections/CtaBanner'
@@ -37,12 +36,9 @@ export function Products() {
             {PRODUCTS.map((product, i) => (
               <Reveal key={product.key} delay={i * 0.08}>
                 <div className="card-hover group flex h-full flex-col rounded-3xl border border-ink-100 bg-white p-8 shadow-card">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700">
-                      {product.category}
-                    </span>
-                    <ArrowUpRight className="h-5 w-5 text-ink-300 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand-600" />
-                  </div>
+                  <span className="w-fit rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700">
+                    {product.category}
+                  </span>
                   <h3 className="mt-6 font-display text-xl font-semibold text-ink-900">
                     {product.name}
                   </h3>

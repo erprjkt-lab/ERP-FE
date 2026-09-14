@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Activity,
@@ -66,6 +66,25 @@ const WITH_ERP = [
 export function ErpSolutions() {
   const [activeModule, setActiveModule] = useState(ERP_MODULES[0].key)
   const current = ERP_MODULES.find(m => m.key === activeModule) ?? ERP_MODULES[0]
+
+  // The module tab list scrolls horizontally on mobile — these fades hint
+  // that there's more to scroll to, since it isn't otherwise obvious.
+  const tabsScrollRef = useRef<HTMLDivElement>(null)
+  const [showLeftFade, setShowLeftFade] = useState(false)
+  const [showRightFade, setShowRightFade] = useState(true)
+
+  const updateTabFades = () => {
+    const el = tabsScrollRef.current
+    if (!el) return
+    setShowLeftFade(el.scrollLeft > 4)
+    setShowRightFade(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+  }
+
+  useEffect(() => {
+    updateTabFades()
+    window.addEventListener('resize', updateTabFades)
+    return () => window.removeEventListener('resize', updateTabFades)
+  }, [])
 
   return (
     <div>
@@ -202,31 +221,43 @@ export function ErpSolutions() {
             className="[&_h2]:text-white [&_p]:text-ink-400"
           />
 
-          <div className="mt-14 grid gap-8 lg:grid-cols-[280px_1fr]">
-            <Reveal className="flex flex-row gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
-              {ERP_MODULES.map(module => {
-                const Icon = MODULE_ICONS[module.key] ?? Users2
-                const isActive = activeModule === module.key
-                return (
-                  <button
-                    key={module.key}
-                    onClick={() => setActiveModule(module.key)}
-                    className={`relative isolate flex shrink-0 items-center gap-2.5 rounded-xl px-4 py-3 text-left text-sm font-semibold transition-colors lg:w-full ${
-                      isActive ? 'text-white' : 'text-ink-300 hover:bg-white/10'
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.span
-                        layoutId="module-pill"
-                        className="absolute inset-0 -z-10 rounded-xl bg-brand-gradient"
-                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                      />
-                    )}
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {module.title}
-                  </button>
-                )
-              })}
+          <div className="mt-14 grid min-w-0 gap-8 lg:grid-cols-[280px_1fr]">
+            <Reveal className="relative min-w-0">
+              <div
+                ref={tabsScrollRef}
+                onScroll={updateTabFades}
+                className="flex flex-row gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0"
+              >
+                {ERP_MODULES.map(module => {
+                  const Icon = MODULE_ICONS[module.key] ?? Users2
+                  const isActive = activeModule === module.key
+                  return (
+                    <button
+                      key={module.key}
+                      onClick={() => setActiveModule(module.key)}
+                      className={`relative isolate flex shrink-0 items-center gap-2.5 rounded-xl px-4 py-3 text-left text-sm font-semibold transition-colors lg:w-full ${
+                        isActive ? 'text-white' : 'text-ink-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.span
+                          layoutId="module-pill"
+                          className="absolute inset-0 -z-10 rounded-xl bg-brand-gradient"
+                          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                        />
+                      )}
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {module.title}
+                    </button>
+                  )
+                })}
+              </div>
+              <div
+                className={`pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-ink-950 to-transparent transition-opacity duration-200 lg:hidden ${showLeftFade ? 'opacity-100' : 'opacity-0'}`}
+              />
+              <div
+                className={`pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-ink-950 to-transparent transition-opacity duration-200 lg:hidden ${showRightFade ? 'opacity-100' : 'opacity-0'}`}
+              />
             </Reveal>
 
             <AnimatePresence mode="wait">

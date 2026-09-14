@@ -1,4 +1,4 @@
-import { ArrowUpRight, Factory, HeartPulse, Cpu, Truck, Store, Boxes } from 'lucide-react'
+import { Factory, HeartPulse, Cpu, Truck, Store, Boxes } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Reveal } from '@/components/ui/Reveal'
 import { SectionHeading } from '@/components/ui/SectionHeading'
@@ -48,11 +48,8 @@ export function Industries() {
               return (
                 <Reveal key={industry.key} delay={i * 0.07}>
                   <div className="card-hover group h-full rounded-3xl border border-ink-100 bg-white p-8 shadow-card">
-                    <div className="flex items-center justify-between">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white">
-                        <Icon className="icon-hover h-6 w-6" />
-                      </div>
-                      <ArrowUpRight className="h-5 w-5 text-ink-300 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand-600" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white">
+                      <Icon className="icon-hover h-6 w-6" />
                     </div>
                     <h3 className="mt-6 font-display text-lg font-semibold text-ink-900">
                       {industry.name}
