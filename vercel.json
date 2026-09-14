@@ -1,0 +1,13 @@
+{
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/about", "destination": "/about/index.html" },
+    { "source": "/services", "destination": "/services/index.html" },
+    { "source": "/services/erp-solutions", "destination": "/services/erp-solutions/index.html" },
+    { "source": "/services/web-development", "destination": "/services/web-development/index.html" },
+    { "source": "/industries", "destination": "/industries/index.html" },
+    { "source": "/products", "destination": "/products/index.html" },
+    { "source": "/contact", "destination": "/contact/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "path": "/",
+    "title": "CoreFlowTech — ERP Software & Web Development Company",
+    "description": "CoreFlowTech builds ERP software and custom web development for engineering, healthcare, technology and manufacturing businesses — one connected platform instead of ten disconnected tools."
+  },
+  {
+    "path": "/about",
+    "title": "About CoreFlowTech | ERP & Web Development Experts",
+    "description": "Learn about CoreFlowTech, a software company building ERP systems and web development solutions for engineering, healthcare, technology and manufacturing businesses."
+  },
+  {
+    "path": "/services",
+    "title": "ERP & Web Development Services | CoreFlowTech",
+    "description": "Explore CoreFlowTech's two core services: end-to-end ERP software solutions and custom web development, built for how your business actually runs."
+  },
+  {
+    "path": "/services/erp-solutions",
+    "title": "ERP Software Solutions — HR, Finance, Inventory & More | CoreFlowTech",
+    "description": "CoreFlowTech ERP unifies HR & payroll, finance, inventory, production, procurement and sales into one ERP software platform, configured around your business."
+  },
+  {
+    "path": "/services/web-development",
+    "title": "Web Development Services | CoreFlowTech",
+    "description": "Custom web development from CoreFlowTech — fast, modern websites and web platforms built without templates, designed to represent your business well."
+  },
+  {
+    "path": "/industries",
+    "title": "Industries We Serve | ERP Software for Every Sector | CoreFlowTech",
+    "description": "CoreFlowTech delivers ERP software solutions for engineering, healthcare, technology, retail, logistics and trading businesses."
+  },
+  {
+    "path": "/products",
+    "title": "Our Products | CoreFlowTech",
+    "description": "Explore FlowDesk, PulseBoard and ShiftSync — tools built by CoreFlowTech for the tech industry, alongside our ERP software and web development work."
+  },
+  {
+    "path": "/contact",
+    "title": "Contact CoreFlowTech | Get a Quote for ERP Software or Web Development",
+    "description": "Get in touch with CoreFlowTech for ERP software implementation or web development. We typically respond within one business day."
+  }
+]
