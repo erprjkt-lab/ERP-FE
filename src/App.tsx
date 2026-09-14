@@ -56,6 +56,7 @@ import {
 import {
   BomList,
   ItemBomForm,
+  ItemInspectionParameterForm,
   ItemProcessRouteForm,
   JobCardDetail,
   JobCardForm,
@@ -187,6 +188,10 @@ function App() {
                   element={<ItemProcessRouteForm />}
                 />
                 <Route path="/production/bom/:itemId/item-bom" element={<ItemBomForm />} />
+                <Route
+                  path="/production/bom/:itemId/inspection-parameters"
+                  element={<ItemInspectionParameterForm />}
+                />
                 <Route path="/production/work-orders" element={<JobCardList />} />
                 <Route path="/production/work-orders/new" element={<JobCardForm />} />
                 <Route path="/production/work-orders/:id" element={<JobCardDetail />} />

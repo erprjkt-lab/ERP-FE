@@ -114,3 +114,25 @@ export interface ItemBomLine {
   scrapAllowancePercent?: number
   status: Status
 }
+
+export type InspectionParamType = 'product' | 'process'
+
+export interface InspectionParameter {
+  id: string
+  processId: string
+  processName: string
+  paramType: InspectionParamType
+  parameter: string
+  specification: string
+  min?: number
+  max?: number
+  machineTool?: string
+  instrument?: string
+  charClass?: string
+  size?: string
+  frequency?: number
+  freqUnit?: 'Hrs' | 'Lot'
+  reactionPlan?: string
+  controlMethod?: string
+  status: Status
+}

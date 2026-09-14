@@ -62,6 +62,51 @@ export interface CreateItemBomLinePayload {
 
 export type UpdateItemBomLinePayload = Partial<CreateItemBomLinePayload>
 
+export interface ApiInspectionParameter {
+  id: number
+  item_id: number
+  item_name: string | null
+  process_id: number
+  process_name: string | null
+  param_type: number
+  parameter: string
+  specification: string
+  min: number | string | null
+  max: number | string | null
+  machine_tool: string | null
+  instrument: string | null
+  char_class: string | null
+  size: string | null
+  frequency: number | string | null
+  freq_unit: 'Hrs' | 'Lot' | null
+  reaction_plan: string | null
+  control_method: string | null
+  status: number
+  created_at?: string | null
+  created_by?: number | null
+  updated_by?: number | null
+}
+
+export interface CreateInspectionParameterPayload {
+  process_id: number
+  param_type: number
+  parameter: string
+  specification: string
+  min?: number | null
+  max?: number | null
+  machine_tool?: string | null
+  instrument?: string | null
+  char_class?: string | null
+  size?: string | null
+  frequency?: number | null
+  freq_unit?: 'Hrs' | 'Lot' | null
+  reaction_plan?: string | null
+  control_method?: string | null
+  status?: number
+}
+
+export type UpdateInspectionParameterPayload = Partial<CreateInspectionParameterPayload>
+
 export interface ApiJobCard {
   id: number
   job_card_number: string
