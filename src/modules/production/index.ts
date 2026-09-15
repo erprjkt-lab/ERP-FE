@@ -6,3 +6,4 @@ export { ItemInspectionParameterForm } from './pages/ItemInspectionParameterForm
 export { JobCardList } from './pages/JobCardList'
 export { JobCardForm } from './pages/JobCardForm'
 export { JobCardDetail } from './pages/JobCardDetail'
+export { OutsourceList } from './pages/OutsourceList'

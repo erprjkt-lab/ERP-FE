@@ -34,7 +34,7 @@ export const AppLayout: FC = () => {
   const isDashboard = location.pathname === '/'
   const selectedKeys = activeNav ? [activeNav.leafKey] : isDashboard ? ['/'] : []
 
-  const [openKeys, setOpenKeys] = useState<string[]>(activeNav ? [activeNav.groupKey] : ['/hr'])
+  const [openKeys, setOpenKeys] = useState<string[]>(activeNav ? [activeNav.groupKey] : [])
   // Force the active route's group open only when navigation actually moves
   // into a different group — tracked here so we can still let the user
   // freely collapse it afterward without it snapping back open every render.

@@ -80,7 +80,50 @@ export interface ProcessLog {
   okQty: number
   rejectedQty: number
   bypassedQty: number
+  inboundChallanItemId?: string
   remark?: string
+}
+
+export type ChallanRequestStatus = 'pending' | 'fulfilled'
+
+export interface ChallanRequest {
+  id: string
+  jobCardId: string
+  processId: string
+  processName: string
+  requestedQty: number
+  dispatchedQty: number
+  consumedQty: number
+  pendingQty: number
+  status: ChallanRequestStatus
+  requestedByName?: string
+  requestedAt?: string
+}
+
+export type ChallanStatus = 'open' | 'received' | 'closed'
+
+export interface ChallanItem {
+  id: string
+  challanId: string
+  challanRequestId: string
+  jobCardId: string
+  processId: string
+  processName: string
+  dispatchedQty: number
+  receivedQty: number
+  outstandingQty: number
+  rate?: number
+  amount?: number
+}
+
+export interface Challan {
+  id: string
+  challanNumber: string
+  challanDate: string
+  destinationPartyId: string
+  destinationPartyName: string
+  status: ChallanStatus
+  items: ChallanItem[]
 }
 
 export interface JobCard {

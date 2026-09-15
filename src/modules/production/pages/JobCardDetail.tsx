@@ -1,4 +1,10 @@
-import { CheckOutlined, EditOutlined, InboxOutlined, SendOutlined } from '@ant-design/icons'
+import {
+  CheckOutlined,
+  EditOutlined,
+  ExportOutlined,
+  InboxOutlined,
+  SendOutlined,
+} from '@ant-design/icons'
 import {
   Alert,
   Button,
@@ -26,6 +32,7 @@ import type { JobCardMovement, MaterialIssue, ProcessLog } from '@/types/product
 import { AcceptProductionModal } from '../components/AcceptProductionModal'
 import { LogProductionModal } from '../components/LogProductionModal'
 import { MoveForwardModal } from '../components/MoveForwardModal'
+import { RequestOutsourceModal } from '../components/RequestOutsourceModal'
 import { useItemBom } from '../hooks/useItemBom'
 import { useJobCard } from '../hooks/useJobCards'
 import { useBomRequirements, useMaterialIssues } from '../hooks/useJobCardMaterials'
@@ -71,7 +78,7 @@ export const JobCardDetail: FC = () => {
   const navigate = useNavigate()
 
   const [activeStepId, setActiveStepId] = useState<string>()
-  const [drawer, setDrawer] = useState<'accept' | 'log' | 'move'>()
+  const [drawer, setDrawer] = useState<'accept' | 'log' | 'move' | 'outsource'>()
 
   const { data: jobCard, isLoading } = useJobCard(id)
   const { data: logs = [], isLoading: logsLoading } = useProcessLogs(id)
@@ -93,7 +100,7 @@ export const JobCardDetail: FC = () => {
   const totalRejected = progress.reduce((sum, row) => sum + row.rejectedQty, 0)
   const completionPercent = orderedQty > 0 ? Math.round((finalOk / orderedQty) * 100) : 0
 
-  const openDrawer = (step: StepProgress, which: 'accept' | 'log' | 'move') => {
+  const openDrawer = (step: StepProgress, which: 'accept' | 'log' | 'move' | 'outsource') => {
     setActiveStepId(step.step.processId)
     setDrawer(which)
   }
@@ -152,44 +159,43 @@ export const JobCardDetail: FC = () => {
     {
       title: 'Action',
       key: 'action',
-      width: 260,
+      width: 190,
       render: (_, record) => {
         const canAccept = record.unacceptedQty > 0
         const canLog = record.pendingQty > 0 && (!record.isFirst || hasMaterial)
         const canMove = record.readyToMoveQty > 0 && !record.isLast
+        const canOutsource = record.pendingQty > 0
         // The one step the floor should do next gets the filled button.
         const primary = canAccept ? 'accept' : canLog ? 'log' : canMove ? 'move' : undefined
 
+        const actions = [
+          { key: 'accept' as const, label: 'Accept', icon: <CheckOutlined />, enabled: canAccept },
+          { key: 'log' as const, label: 'Log', icon: <EditOutlined />, enabled: canLog },
+          {
+            key: 'outsource' as const,
+            label: 'Outsource',
+            icon: <ExportOutlined />,
+            enabled: canOutsource,
+          },
+          { key: 'move' as const, label: 'Move', icon: <SendOutlined />, enabled: canMove },
+        ]
+
         return (
-          <Space size="small" wrap>
-            <Button
-              size="small"
-              icon={<CheckOutlined />}
-              type={primary === 'accept' ? 'primary' : 'default'}
-              disabled={!canAccept || isClosed}
-              onClick={() => openDrawer(record, 'accept')}
-            >
-              Accept
-            </Button>
-            <Button
-              size="small"
-              icon={<EditOutlined />}
-              type={primary === 'log' ? 'primary' : 'default'}
-              disabled={!canLog || isClosed}
-              onClick={() => openDrawer(record, 'log')}
-            >
-              Log
-            </Button>
-            <Button
-              size="small"
-              icon={<SendOutlined />}
-              type={primary === 'move' ? 'primary' : 'default'}
-              disabled={!canMove || isClosed}
-              onClick={() => openDrawer(record, 'move')}
-            >
-              Move
-            </Button>
-          </Space>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+            {actions.map(action => (
+              <Button
+                key={action.key}
+                size="small"
+                type={action.key === primary ? 'primary' : 'default'}
+                icon={action.icon}
+                disabled={!action.enabled || isClosed}
+                onClick={() => openDrawer(record, action.key)}
+                style={{ fontSize: 12, paddingInline: 6 }}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
         )
       },
     },
@@ -406,6 +412,12 @@ export const JobCardDetail: FC = () => {
             movements={movements.filter(
               movement => movement.toProcessId === activeStep?.step.processId,
             )}
+          />
+          <RequestOutsourceModal
+            open={drawer === 'outsource'}
+            onClose={() => setDrawer(undefined)}
+            jobCardId={jobCard.id}
+            step={activeStep}
           />
           <LogProductionModal
             open={drawer === 'log'}

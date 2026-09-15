@@ -61,6 +61,7 @@ import {
   JobCardDetail,
   JobCardForm,
   JobCardList,
+  OutsourceList,
   ProcessList,
 } from '@/modules/production'
 import { ComingSoon } from '@/pages/ComingSoon'
@@ -93,6 +94,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/production/process',
   '/production/bom',
   '/production/work-orders',
+  '/production/outsource',
 ])
 
 function App() {
@@ -195,6 +197,7 @@ function App() {
                 <Route path="/production/work-orders" element={<JobCardList />} />
                 <Route path="/production/work-orders/new" element={<JobCardForm />} />
                 <Route path="/production/work-orders/:id" element={<JobCardDetail />} />
+                <Route path="/production/outsource" element={<OutsourceList />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route
