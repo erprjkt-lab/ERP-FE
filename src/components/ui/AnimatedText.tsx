@@ -21,15 +21,16 @@ interface AnimatedTextProps {
   stagger?: number
 }
 
-// The slight blur on entry is what separates this from a plain fade — words
-// resolve into focus as they settle rather than just appearing.
+// Deliberately opacity/transform only — no filter: blur(). Animating blur is
+// a known mobile GPU-compositing risk (WebKit in particular can fail to
+// recomposite a blurred layer, leaving content stuck invisible), and here
+// it'd be applied to a dozen+ layers at once across a heading's words.
 const WORD = {
-  hidden: { opacity: 0, y: 16, filter: 'blur(8px)' },
+  hidden: { opacity: 0, y: 16 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
   },
 }
 

@@ -209,7 +209,7 @@ export function Contact() {
               delay={0.1}
               className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
             />
-            <Reveal delay={0.25} blur>
+            <Reveal delay={0.25} soft>
               <p className="mt-6 text-lg leading-relaxed text-ink-500">
                 Whether it's an ERP rollout or a new website, tell us where you're starting from.
               </p>

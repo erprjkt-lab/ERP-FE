@@ -109,7 +109,7 @@ export function ErpSolutions() {
               delay={0.1}
               className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
             />
-            <Reveal delay={0.25} blur>
+            <Reveal delay={0.25} soft>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-500">
                 CoreFlowTech ERP connects HR, finance, inventory, production, procurement and sales
                 into a single platform — configured around how your business actually runs, not a

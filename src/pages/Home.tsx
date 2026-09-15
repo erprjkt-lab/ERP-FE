@@ -261,7 +261,7 @@ export function Home() {
               delay={0.15}
               className="mt-6 font-display text-4xl font-semibold leading-tight tracking-tight text-ink-900 sm:text-6xl"
             />
-            <Reveal delay={0.2} blur>
+            <Reveal delay={0.2} soft>
               <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
                 CoreFlowTech builds ERP software and web platforms for engineering, healthcare,
                 technology and manufacturing businesses — one connected system instead of ten

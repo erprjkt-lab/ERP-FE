@@ -42,7 +42,7 @@ export function CtaBanner({
           text={title}
           className="font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl"
         />
-        <Reveal delay={0.2} blur>
+        <Reveal delay={0.2} soft>
           <p className="mx-auto mt-4 max-w-xl text-base text-white/80">{description}</p>
           <div className="mt-8 flex justify-center">
             <Button to={primaryTo} variant="secondary" withArrow className="!bg-white">

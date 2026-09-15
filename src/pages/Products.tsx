@@ -24,7 +24,7 @@ export function Products() {
               delay={0.1}
               className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
             />
-            <Reveal delay={0.25} blur>
+            <Reveal delay={0.25} soft>
               <p className="mt-6 text-lg leading-relaxed text-ink-500">
                 Alongside client ERP and web projects, we ship our own products for common
                 operational problems.
