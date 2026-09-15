@@ -1,6 +1,8 @@
 import { Factory, HeartPulse, Cpu, Truck, Store, Boxes } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Reveal } from '@/components/ui/Reveal'
+import { AnimatedText } from '@/components/ui/AnimatedText'
+import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { CtaBanner } from '@/components/sections/CtaBanner'
 import { INDUSTRIES } from '@/data/site'
@@ -26,12 +28,14 @@ export function Industries() {
                 Industries
               </span>
             </Reveal>
-            <Reveal delay={0.1}>
-              <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
-                Built across sectors, tuned to each one
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
+            <AnimatedText
+              as="h1"
+              text="Built across sectors, tuned to each one"
+              highlight="tuned to each one"
+              delay={0.1}
+              className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
+            />
+            <Reveal delay={0.25} blur>
               <p className="mt-6 text-lg leading-relaxed text-ink-500">
                 The same solid ERP core, configured around how your industry actually operates.
               </p>
@@ -46,18 +50,20 @@ export function Industries() {
             {INDUSTRIES.map((industry, i) => {
               const Icon = ICONS[industry.key] ?? Factory
               return (
-                <Reveal key={industry.key} delay={i * 0.07}>
-                  <div className="card-hover group h-full rounded-3xl border border-ink-100 bg-white p-8 shadow-card">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white">
-                      <Icon className="icon-hover h-6 w-6" />
+                <Reveal key={industry.key} delay={i * 0.07} zoom>
+                  <SpotlightCard className="card-hover gradient-ring h-full rounded-3xl border border-ink-100 bg-white shadow-card">
+                    <div className="p-8">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white">
+                        <Icon className="icon-hover h-6 w-6" />
+                      </div>
+                      <h3 className="mt-6 font-display text-lg font-semibold text-ink-900">
+                        {industry.name}
+                      </h3>
+                      <p className="mt-3 text-sm leading-relaxed text-ink-500">
+                        {industry.description}
+                      </p>
                     </div>
-                    <h3 className="mt-6 font-display text-lg font-semibold text-ink-900">
-                      {industry.name}
-                    </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-ink-500">
-                      {industry.description}
-                    </p>
-                  </div>
+                  </SpotlightCard>
                 </Reveal>
               )
             })}

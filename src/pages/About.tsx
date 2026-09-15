@@ -1,6 +1,8 @@
 import { Compass, Handshake, Rocket, Target } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Reveal } from '@/components/ui/Reveal'
+import { AnimatedText } from '@/components/ui/AnimatedText'
+import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { StatsBar } from '@/components/sections/StatsBar'
 import { CtaBanner } from '@/components/sections/CtaBanner'
@@ -40,12 +42,14 @@ export function About() {
                 About CoreFlowTech
               </span>
             </Reveal>
-            <Reveal delay={0.1}>
-              <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
-                We build the systems businesses run on
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
+            <AnimatedText
+              as="h1"
+              text="We build the systems businesses run on"
+              highlight="systems businesses"
+              delay={0.1}
+              className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
+            />
+            <Reveal delay={0.25} blur>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-500">
                 CoreFlowTech is a software company focused on two things: enterprise resource
                 planning systems that unify how a business operates, and web platforms that
@@ -114,16 +118,18 @@ export function About() {
           />
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {VALUES.map(({ icon: Icon, title, description }, i) => (
-              <Reveal key={title} delay={i * 0.08}>
-                <div className="card-hover group h-full rounded-2xl border border-ink-100 bg-white p-6">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                    <Icon className="icon-hover h-5 w-5" />
+              <Reveal key={title} delay={i * 0.08} zoom>
+                <SpotlightCard className="card-hover gradient-ring h-full rounded-2xl border border-ink-100 bg-white">
+                  <div className="p-6">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                      <Icon className="icon-hover h-5 w-5" />
+                    </div>
+                    <h3 className="mt-5 font-display text-base font-semibold text-ink-900">
+                      {title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-ink-500">{description}</p>
                   </div>
-                  <h3 className="mt-5 font-display text-base font-semibold text-ink-900">
-                    {title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-500">{description}</p>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>

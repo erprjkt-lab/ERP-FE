@@ -2,6 +2,8 @@ import { Code2, Gauge, Layers, Search, Smartphone, Wrench } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
+import { AnimatedText } from '@/components/ui/AnimatedText'
+import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { CtaBanner } from '@/components/sections/CtaBanner'
 
@@ -57,12 +59,14 @@ export function WebDevelopment() {
                 Web Development
               </span>
             </Reveal>
-            <Reveal delay={0.1}>
-              <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
-                Websites built to represent your business well
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
+            <AnimatedText
+              as="h1"
+              text="Websites built to represent your business well"
+              highlight="represent your business"
+              delay={0.1}
+              className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
+            />
+            <Reveal delay={0.25} blur>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-500">
                 From marketing sites to full web platforms, we design and build fast, modern
                 experiences — no page builders, no generic templates.
@@ -84,16 +88,18 @@ export function WebDevelopment() {
           <SectionHeading eyebrow="Capabilities" title="What we build" />
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {CAPABILITIES.map(({ icon: Icon, title, description }, i) => (
-              <Reveal key={title} delay={i * 0.07}>
-                <div className="card-hover group h-full rounded-2xl border border-ink-100 bg-white p-6">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                    <Icon className="icon-hover h-5 w-5" />
+              <Reveal key={title} delay={i * 0.07} zoom>
+                <SpotlightCard className="card-hover gradient-ring h-full rounded-2xl border border-ink-100 bg-white">
+                  <div className="p-6">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                      <Icon className="icon-hover h-5 w-5" />
+                    </div>
+                    <h3 className="mt-5 font-display text-base font-semibold text-ink-900">
+                      {title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-ink-500">{description}</p>
                   </div>
-                  <h3 className="mt-5 font-display text-base font-semibold text-ink-900">
-                    {title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-500">{description}</p>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>

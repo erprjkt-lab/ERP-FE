@@ -22,7 +22,10 @@ export function Footer() {
             <ul className="mt-4 space-y-3 text-sm">
               {FOOTER_LINKS.company.map(link => (
                 <li key={link.path}>
-                  <Link to={link.path} className="transition-colors hover:text-brand-400">
+                  <Link
+                    to={link.path}
+                    className="link-underline inline-block transition-colors hover:text-brand-400"
+                  >
                     {link.label}
                   </Link>
                 </li>
@@ -35,7 +38,10 @@ export function Footer() {
             <ul className="mt-4 space-y-3 text-sm">
               {FOOTER_LINKS.services.map(link => (
                 <li key={link.path}>
-                  <Link to={link.path} className="transition-colors hover:text-brand-400">
+                  <Link
+                    to={link.path}
+                    className="link-underline inline-block transition-colors hover:text-brand-400"
+                  >
                     {link.label}
                   </Link>
                 </li>

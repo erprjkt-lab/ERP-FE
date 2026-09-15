@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useMotionValue, useSpring } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 
 type Variant = 'primary' | 'secondary' | 'ghost'
@@ -25,7 +25,10 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 const MotionLink = motion.create(Link)
 
 const tap = { scale: 0.96 }
-const hover = { scale: 1.035, y: -2 }
+const hover = { scale: 1.04 }
+
+/** How far the button drifts toward the cursor, as a share of the offset. */
+const MAGNET_STRENGTH = 0.28
 
 export function Button({
   to,
@@ -37,37 +40,57 @@ export function Button({
   children,
   type = 'button',
 }: ButtonProps) {
-  const base = `group inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-shadow duration-300 ${VARIANT_CLASSES[variant]} ${className}`
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const x = useSpring(mx, { stiffness: 260, damping: 18, mass: 0.4 })
+  const y = useSpring(my, { stiffness: 260, damping: 18, mass: 0.4 })
+
+  const handleMouseMove = (event: MouseEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    mx.set((event.clientX - (rect.left + rect.width / 2)) * MAGNET_STRENGTH)
+    my.set((event.clientY - (rect.top + rect.height / 2)) * MAGNET_STRENGTH)
+  }
+
+  const handleMouseLeave = () => {
+    mx.set(0)
+    my.set(0)
+  }
+
+  const base = `group relative isolate inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-semibold transition-shadow duration-300 ${VARIANT_CLASSES[variant]} ${className}`
+  const motionProps = {
+    style: { x, y },
+    whileHover: hover,
+    whileTap: tap,
+    onMouseMove: handleMouseMove,
+    onMouseLeave: handleMouseLeave,
+    className: base,
+  }
   const content = (
     <>
-      {children}
-      {withArrow && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
+      {variant !== 'ghost' && <span className="shine absolute inset-0" aria-hidden />}
+      <span className="relative">{children}</span>
+      {withArrow && (
+        <ArrowRight className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+      )}
     </>
   )
 
   if (to) {
     return (
-      <MotionLink to={to} whileHover={hover} whileTap={tap} className={base}>
+      <MotionLink to={to} {...motionProps}>
         {content}
       </MotionLink>
     )
   }
   if (href) {
     return (
-      <motion.a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        whileHover={hover}
-        whileTap={tap}
-        className={base}
-      >
+      <motion.a href={href} target="_blank" rel="noreferrer" {...motionProps}>
         {content}
       </motion.a>
     )
   }
   return (
-    <motion.button type={type} onClick={onClick} whileHover={hover} whileTap={tap} className={base}>
+    <motion.button type={type} onClick={onClick} {...motionProps}>
       {content}
     </motion.button>
   )

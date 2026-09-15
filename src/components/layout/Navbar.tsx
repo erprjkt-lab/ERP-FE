@@ -30,9 +30,15 @@ export function Navbar() {
         scrolled ? 'bg-white/80 shadow-sm backdrop-blur-lg' : 'bg-transparent'
       }`}
     >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+      <motion.nav
+        animate={{ paddingTop: scrolled ? 10 : 16, paddingBottom: scrolled ? 10 : 16 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-8"
+      >
         <Link to="/">
-          <Logo />
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Logo />
+          </motion.div>
         </Link>
 
         <div className="hidden items-center gap-1 lg:flex">
@@ -113,14 +119,26 @@ export function Navbar() {
           </Button>
         </div>
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           className="rounded-lg p-2 text-ink-700 lg:hidden"
           onClick={() => setMobileOpen(v => !v)}
           aria-label="Toggle menu"
         >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </nav>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={mobileOpen ? 'close' : 'open'}
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="block"
+            >
+              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
+      </motion.nav>
 
       <AnimatePresence>
         {mobileOpen && (
@@ -131,12 +149,23 @@ export function Navbar() {
             transition={{ duration: 0.25 }}
             className="overflow-hidden border-t border-ink-100 bg-white lg:hidden"
           >
-            <div className="space-y-1 px-6 py-4">
+            <motion.div
+              className="space-y-1 px-6 py-4"
+              initial="hidden"
+              animate="visible"
+              variants={{ visible: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } } }}
+            >
               {NAV_ITEMS.map(item => (
-                <div key={item.path}>
+                <motion.div
+                  key={item.path}
+                  variants={{
+                    hidden: { opacity: 0, x: -12 },
+                    visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+                  }}
+                >
                   <Link
                     to={item.path}
-                    className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-ink-900"
+                    className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-ink-900 transition-colors hover:text-brand-600"
                   >
                     {item.label}
                   </Link>
@@ -146,21 +175,27 @@ export function Navbar() {
                         <Link
                           key={child.path}
                           to={child.path}
-                          className="block rounded-lg px-3 py-2 text-sm text-ink-500"
+                          className="block rounded-lg px-3 py-2 text-sm text-ink-500 transition-colors hover:text-brand-600"
                         >
                           {child.label}
                         </Link>
                       ))}
                     </div>
                   )}
-                </div>
+                </motion.div>
               ))}
-              <div className="pt-2">
+              <motion.div
+                className="pt-2"
+                variants={{
+                  hidden: { opacity: 0, x: -12 },
+                  visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+                }}
+              >
                 <Button to="/contact" variant="primary" className="w-full justify-center">
                   Get a Quote
                 </Button>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

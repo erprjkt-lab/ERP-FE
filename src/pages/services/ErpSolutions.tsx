@@ -22,6 +22,8 @@ import {
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
+import { AnimatedText } from '@/components/ui/AnimatedText'
+import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { CtaBanner } from '@/components/sections/CtaBanner'
 import { ERP_BENEFITS, ERP_MODULES, ERP_WORKFLOW } from '@/data/site'
@@ -100,12 +102,14 @@ export function ErpSolutions() {
                 ERP Solutions
               </span>
             </Reveal>
-            <Reveal delay={0.1}>
-              <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
-                Every department. <span className="text-gradient">One system.</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
+            <AnimatedText
+              as="h1"
+              text="Every department. One system."
+              highlight="One system."
+              delay={0.1}
+              className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
+            />
+            <Reveal delay={0.25} blur>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-500">
                 CoreFlowTech ERP connects HR, finance, inventory, production, procurement and sales
                 into a single platform — configured around how your business actually runs, not a
@@ -147,18 +151,20 @@ export function ErpSolutions() {
             {ERP_BENEFITS.map((benefit, i) => {
               const Icon = BENEFIT_ICONS[benefit.title] ?? Database
               return (
-                <Reveal key={benefit.title} delay={i * 0.08}>
-                  <div className="card-hover group h-full rounded-2xl border border-ink-100 p-6 hover:bg-brand-50/40">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                      <Icon className="icon-hover h-5 w-5" />
+                <Reveal key={benefit.title} delay={i * 0.08} zoom>
+                  <SpotlightCard className="card-hover gradient-ring h-full rounded-2xl border border-ink-100 hover:bg-brand-50/40">
+                    <div className="p-6">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                        <Icon className="icon-hover h-5 w-5" />
+                      </div>
+                      <h3 className="mt-4 font-display text-base font-semibold text-ink-900">
+                        {benefit.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-ink-500">
+                        {benefit.description}
+                      </p>
                     </div>
-                    <h3 className="mt-4 font-display text-base font-semibold text-ink-900">
-                      {benefit.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-ink-500">
-                      {benefit.description}
-                    </p>
-                  </div>
+                  </SpotlightCard>
                 </Reveal>
               )
             })}

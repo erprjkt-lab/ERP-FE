@@ -1,7 +1,14 @@
-import { useRef } from 'react'
-import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
-  BarChart3,
+  AnimatePresence,
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from 'framer-motion'
+import {
   Boxes,
   Factory,
   Globe2,
@@ -22,6 +29,9 @@ import {
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
+import { AnimatedText } from '@/components/ui/AnimatedText'
+import { SpotlightCard } from '@/components/ui/SpotlightCard'
+import { Parallax } from '@/components/ui/Parallax'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { Marquee } from '@/components/ui/Marquee'
 import { SectionWave } from '@/components/ui/SectionWave'
@@ -75,20 +85,22 @@ function HeroVisual() {
   const blob1 = useMotionTemplate`translate3d(${sx}px, ${sy}px, 0)`
   const blob2 = useMotionTemplate`translate3d(${sxInverse}px, ${syInverse}px, 0)`
 
-  const chartValues = [42, 58, 48, 66, 60, 74, 68, 82, 76, 88]
-  const chartWidth = 334
-  const chartHeight = 56
-  const chartPad = 4
-  const chartMax = Math.max(...chartValues)
-  const chartMin = Math.min(...chartValues)
-  const chartPoints = chartValues.map((v, i) => {
-    const x = chartPad + (i * (chartWidth - chartPad * 2)) / (chartValues.length - 1)
-    const y =
-      chartPad + (1 - (v - chartMin) / (chartMax - chartMin)) * (chartHeight - chartPad * 2)
-    return [x, y] as const
-  })
-  const chartLinePath = chartPoints.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ')
-  const chartAreaPath = `${chartLinePath} L${chartPoints[chartPoints.length - 1][0]},${chartHeight} L${chartPoints[0][0]},${chartHeight} Z`
+  const rotateY = useTransform(sx, [-20, 20], [-5, 5])
+  const rotateX = useTransform(sy, [-20, 20], [5, -5])
+
+  // Cycles the highlighted module every few seconds so the panel feels
+  // alive without inventing metrics we don't actually have; hovering a
+  // tile takes over and pauses the auto-cycle until the cursor leaves.
+  const [active, setActive] = useState(0)
+  const [paused, setPaused] = useState(false)
+
+  useEffect(() => {
+    if (paused) return
+    const id = window.setInterval(() => {
+      setActive(current => (current + 1) % ERP_MODULES.length)
+    }, 2600)
+    return () => window.clearInterval(id)
+  }, [paused])
 
   return (
     <div
@@ -114,110 +126,90 @@ function HeroVisual() {
         <div className="h-full w-full animate-drift-b rounded-full bg-violet-200/40 blur-3xl" />
       </motion.div>
 
-      {/* Purely ambient — always drifting, independent of the cursor. */}
-      <div
-        className="absolute left-1/3 -top-10 h-56 w-56 animate-drift-c rounded-full bg-brand-300/25 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="absolute -bottom-16 right-1/4 h-64 w-64 animate-drift-a rounded-full bg-violet-300/25 blur-3xl [animation-delay:-6s]"
-        aria-hidden
-      />
+      {/* Purely ambient — always drifting, independent of the cursor. The
+          parallax wrappers add a second, scroll-driven layer of depth. */}
+      <Parallax speed={0.35} className="absolute left-1/3 -top-10">
+        <div
+          className="h-56 w-56 animate-drift-c animate-blob-morph bg-brand-300/25 blur-3xl"
+          aria-hidden
+        />
+      </Parallax>
+      <Parallax speed={-0.25} className="absolute -bottom-16 right-1/4">
+        <div
+          className="h-64 w-64 animate-drift-a animate-blob-morph bg-violet-300/25 blur-3xl [animation-delay:-6s]"
+          aria-hidden
+        />
+      </Parallax>
 
       <Reveal delay={0.4} className="relative mt-20">
         <div className="relative mx-auto max-w-5xl rounded-3xl border border-ink-100 bg-white/70 p-3 shadow-card backdrop-blur">
-          <div className="rounded-2xl bg-ink-950 p-6 sm:p-10">
+          <motion.div
+            style={{ rotateX, rotateY, transformPerspective: 1200 }}
+            className="rounded-2xl bg-ink-950 p-6 sm:p-10"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-400" />
                 </span>
-                <span className="text-xs font-semibold text-white/70">Operations overview · live</span>
+                <span className="text-xs font-semibold text-white/70">One connected system</span>
               </div>
-              <span className="hidden text-xs text-ink-500 sm:block">Illustrative preview</span>
+              <span className="hidden text-xs text-ink-500 sm:block">
+                {ERP_MODULES.length} modules, always in sync
+              </span>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {[
-                { label: 'Job cards live', value: '24' },
-                { label: 'Stock accuracy', value: '98%' },
-                { label: 'On-time delivery', value: '96%' },
-                { label: 'Open tickets', value: '3' },
-              ].map(metric => (
-                <div
-                  key={metric.label}
-                  className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4"
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+              {ERP_MODULES.map((module, i) => {
+                const Icon = MODULE_ICONS[module.key] ?? Users2
+                const isActive = i === active
+                return (
+                  <motion.button
+                    key={module.key}
+                    type="button"
+                    whileHover={{ y: -3 }}
+                    onMouseEnter={() => {
+                      setPaused(true)
+                      setActive(i)
+                    }}
+                    onMouseLeave={() => setPaused(false)}
+                    onFocus={() => setActive(i)}
+                    className="isolate relative min-w-0 rounded-xl border border-white/10 bg-white/5 p-4 text-left transition-colors hover:border-brand-500/40"
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="heroModuleHighlight"
+                        className="absolute inset-0 -z-10 rounded-xl bg-white/10 ring-1 ring-brand-400/50"
+                        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                      />
+                    )}
+                    <Icon
+                      className={`h-5 w-5 transition-colors ${isActive ? 'text-brand-300' : 'text-brand-400/80'}`}
+                    />
+                    <div className="mt-2 break-words text-[11px] font-medium text-white/80">
+                      {module.title}
+                    </div>
+                  </motion.button>
+                )
+              })}
+            </div>
+
+            <div className="mt-5 min-h-[4.25rem] rounded-xl border border-white/10 bg-white/5 px-4 py-3 sm:min-h-[3.5rem]">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={ERP_MODULES[active].key}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25 }}
+                  className="text-xs leading-relaxed text-ink-300"
                 >
-                  <div className="font-display text-xl font-semibold text-white sm:text-2xl">
-                    {metric.value}
-                  </div>
-                  <div className="mt-1 break-words text-[11px] font-medium text-ink-400">
-                    {metric.label}
-                  </div>
-                </div>
-              ))}
+                  {ERP_MODULES[active].description}
+                </motion.p>
+              </AnimatePresence>
             </div>
-
-            <div className="mt-5 h-20 rounded-xl border border-white/10 bg-white/5 px-4 pb-3 pt-3">
-              <svg
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                className="h-full w-full"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <linearGradient id="heroAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#4e9dff" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#4e9dff" stopOpacity="0" />
-                  </linearGradient>
-                  <linearGradient id="heroLineGradient" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#4e9dff" />
-                    <stop offset="100%" stopColor="#8f6bff" />
-                  </linearGradient>
-                </defs>
-                <motion.path
-                  d={chartAreaPath}
-                  fill="url(#heroAreaGradient)"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.5 }}
-                />
-                <motion.path
-                  d={chartLinePath}
-                  fill="none"
-                  stroke="url(#heroLineGradient)"
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  initial={{ pathLength: 0 }}
-                  whileInView={{ pathLength: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
-                />
-              </svg>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {[
-                { icon: Users2, label: 'HR & Payroll' },
-                { icon: BarChart3, label: 'Finance' },
-                { icon: Boxes, label: 'Inventory' },
-                { icon: Factory, label: 'Production' },
-              ].map(({ icon: Icon, label }) => (
-                <motion.div
-                  key={label}
-                  whileHover={{ y: -4 }}
-                  className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-colors hover:border-brand-500/50 hover:bg-white/[0.08]"
-                >
-                  <Icon className="mx-auto h-5 w-5 text-brand-400" />
-                  <div className="mt-2 break-words text-[11px] font-medium text-white/80">
-                    {label}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 10, rotate: -6 }}
@@ -262,16 +254,14 @@ export function Home() {
                 ERP built for how you actually work
               </span>
             </Reveal>
-            <Reveal delay={0.1}>
-              <h1 className="mt-6 font-display text-4xl font-semibold leading-tight tracking-tight text-ink-900 sm:text-6xl">
-                One platform to run{' '}
-                <span className="text-gradient bg-[length:200%_auto] animate-gradient-x">
-                  every part
-                </span>{' '}
-                of your business
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
+            <AnimatedText
+              as="h1"
+              text="One platform to run every part of your business"
+              highlight="every part"
+              delay={0.15}
+              className="mt-6 font-display text-4xl font-semibold leading-tight tracking-tight text-ink-900 sm:text-6xl"
+            />
+            <Reveal delay={0.2} blur>
               <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
                 CoreFlowTech builds ERP software and web platforms for engineering, healthcare,
                 technology and manufacturing businesses — one connected system instead of ten
@@ -294,6 +284,20 @@ export function Home() {
           </div>
 
           <HeroVisual />
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.6, duration: 0.6 }}
+            className="mt-16 flex flex-col items-center gap-2"
+          >
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-400">
+              Scroll
+            </span>
+            <span className="flex h-9 w-5 items-start justify-center rounded-full border border-ink-200 p-1">
+              <span className="h-1.5 w-1 animate-bob-hint rounded-full bg-brand-500" />
+            </span>
+          </motion.div>
         </Container>
       </section>
 
@@ -309,20 +313,21 @@ export function Home() {
           />
           <div className="mt-14 grid gap-6 sm:grid-cols-2">
             {SERVICE_CARDS.map(({ icon: Icon, title, description, to }, i) => (
-              <Reveal key={title} delay={i * 0.1}>
-                <a
-                  href={to}
-                  className="card-hover group block h-full rounded-3xl border border-ink-100 bg-white p-8 shadow-card"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white">
-                    <Icon className="icon-hover h-6 w-6" />
-                  </div>
-                  <h3 className="mt-6 font-display text-xl font-semibold text-ink-900">{title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-ink-500">{description}</p>
-                  <span className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-brand-600 transition-transform group-hover:translate-x-1">
-                    Learn more →
-                  </span>
-                </a>
+              <Reveal key={title} delay={i * 0.1} zoom>
+                <SpotlightCard className="card-hover gradient-ring h-full rounded-3xl border border-ink-100 bg-white shadow-card">
+                  <Link to={to} className="block h-full p-8">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white">
+                      <Icon className="icon-hover h-6 w-6" />
+                    </div>
+                    <h3 className="mt-6 font-display text-xl font-semibold text-ink-900">
+                      {title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-ink-500">{description}</p>
+                    <span className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-brand-600 transition-transform duration-300 group-hover:translate-x-1">
+                      Learn more →
+                    </span>
+                  </Link>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
@@ -343,18 +348,23 @@ export function Home() {
             {ERP_MODULES.map((module, i) => {
               const Icon = MODULE_ICONS[module.key] ?? Users2
               return (
-                <Reveal key={module.key} delay={i * 0.06}>
-                  <div className="card-hover group h-full rounded-2xl border border-white/10 bg-white/5 p-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-brand-400">
-                      <Icon className="icon-hover h-5 w-5" />
+                <Reveal key={module.key} delay={i * 0.06} zoom>
+                  <SpotlightCard
+                    glow="rgba(78, 157, 255, 0.22)"
+                    className="card-hover h-full rounded-2xl border border-white/10 bg-white/5"
+                  >
+                    <div className="p-6">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-brand-400">
+                        <Icon className="icon-hover h-5 w-5" />
+                      </div>
+                      <h3 className="mt-4 font-display text-base font-semibold text-white">
+                        {module.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-ink-400">
+                        {module.description}
+                      </p>
                     </div>
-                    <h3 className="mt-4 font-display text-base font-semibold text-white">
-                      {module.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-ink-400">
-                      {module.description}
-                    </p>
-                  </div>
+                  </SpotlightCard>
                 </Reveal>
               )
             })}
@@ -379,18 +389,20 @@ export function Home() {
             {INDUSTRIES.map((industry, i) => {
               const Icon = INDUSTRY_ICONS[industry.key] ?? ShieldCheck
               return (
-                <Reveal key={industry.key} delay={i * 0.06}>
-                  <div className="card-hover group h-full rounded-2xl border border-ink-100 p-6 hover:bg-brand-50/40">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                      <Icon className="icon-hover h-5 w-5" />
+                <Reveal key={industry.key} delay={i * 0.06} zoom>
+                  <SpotlightCard className="card-hover gradient-ring h-full rounded-2xl border border-ink-100 hover:bg-brand-50/40">
+                    <div className="p-6">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                        <Icon className="icon-hover h-5 w-5" />
+                      </div>
+                      <h3 className="mt-4 font-display text-base font-semibold text-ink-900">
+                        {industry.name}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-ink-500">
+                        {industry.description}
+                      </p>
                     </div>
-                    <h3 className="mt-4 font-display text-base font-semibold text-ink-900">
-                      {industry.name}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-ink-500">
-                      {industry.description}
-                    </p>
-                  </div>
+                  </SpotlightCard>
                 </Reveal>
               )
             })}
@@ -408,16 +420,20 @@ export function Home() {
           />
           <div className="mt-14 grid gap-6 sm:grid-cols-3">
             {PRODUCTS.map((product, i) => (
-              <Reveal key={product.key} delay={i * 0.08}>
-                <div className="card-hover h-full rounded-3xl border border-white bg-white/70 p-7 shadow-card backdrop-blur">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-brand-600">
-                    {product.category}
-                  </span>
-                  <h3 className="mt-3 font-display text-lg font-semibold text-ink-900">
-                    {product.name}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-500">{product.description}</p>
-                </div>
+              <Reveal key={product.key} delay={i * 0.08} zoom>
+                <SpotlightCard className="card-hover gradient-ring h-full rounded-3xl border border-white bg-white/70 shadow-card backdrop-blur">
+                  <div className="p-7">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-brand-600">
+                      {product.category}
+                    </span>
+                    <h3 className="mt-3 font-display text-lg font-semibold text-ink-900">
+                      {product.name}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-ink-500">
+                      {product.description}
+                    </p>
+                  </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
