@@ -64,6 +64,17 @@ import {
   OutsourceList,
   ProcessList,
 } from '@/modules/production'
+import {
+  SalesEnquiryDetail,
+  SalesEnquiryForm,
+  SalesEnquiryList,
+  SalesOrderDetail,
+  SalesOrderForm,
+  SalesOrderList,
+  SalesQuotationDetail,
+  SalesQuotationForm,
+  SalesQuotationList,
+} from '@/modules/sales'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { Dashboard } from '@/pages/Dashboard'
 import { Login } from '@/pages/Login'
@@ -89,6 +100,9 @@ const IMPLEMENTED_PATHS = new Set([
   '/purchase/enquiries',
   '/purchase/orders',
   '/purchase/grn',
+  '/sales/enquiries',
+  '/sales/quotations',
+  '/sales/orders',
   '/inventory/ledger',
   '/inventory/issue-material',
   '/production/process',
@@ -179,6 +193,21 @@ function App() {
                 <Route path="/purchase/grn" element={<PurchaseGrnList />} />
                 <Route path="/purchase/grn/new" element={<PurchaseGrnForm />} />
                 <Route path="/purchase/grn/:id" element={<PurchaseGrnDetail />} />
+
+                <Route path="/sales/enquiries" element={<SalesEnquiryList />} />
+                <Route path="/sales/enquiries/new" element={<SalesEnquiryForm />} />
+                <Route path="/sales/enquiries/:id" element={<SalesEnquiryDetail />} />
+                <Route path="/sales/enquiries/:id/edit" element={<SalesEnquiryForm />} />
+
+                <Route path="/sales/quotations" element={<SalesQuotationList />} />
+                <Route path="/sales/quotations/new" element={<SalesQuotationForm />} />
+                <Route path="/sales/quotations/:id" element={<SalesQuotationDetail />} />
+                <Route path="/sales/quotations/:id/edit" element={<SalesQuotationForm />} />
+
+                <Route path="/sales/orders" element={<SalesOrderList />} />
+                <Route path="/sales/orders/new" element={<SalesOrderForm />} />
+                <Route path="/sales/orders/:id" element={<SalesOrderDetail />} />
+                <Route path="/sales/orders/:id/edit" element={<SalesOrderForm />} />
 
                 <Route path="/inventory/ledger" element={<StockBalance />} />
                 <Route path="/inventory/issue-material" element={<IssueMaterialList />} />
