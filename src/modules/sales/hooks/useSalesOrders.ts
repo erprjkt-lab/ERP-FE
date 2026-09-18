@@ -134,7 +134,11 @@ export function useSalesOrder(id: string | undefined) {
     queryFn: async () => (await getSalesOrder(Number(id))).data,
     enabled: !!id,
   })
-  return { data: query.data ? toSalesOrder(query.data) : undefined, isLoading: query.isLoading }
+  return {
+    data: query.data ? toSalesOrder(query.data) : undefined,
+    isLoading: query.isLoading,
+    error: query.error,
+  }
 }
 
 export function useCreateSalesOrder() {

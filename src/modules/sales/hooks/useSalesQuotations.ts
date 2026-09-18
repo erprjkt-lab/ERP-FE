@@ -148,7 +148,11 @@ export function useSalesQuotation(id: string | undefined) {
     queryFn: async () => (await getSalesQuotation(Number(id))).data,
     enabled: !!id,
   })
-  return { data: query.data ? toSalesQuotation(query.data) : undefined, isLoading: query.isLoading }
+  return {
+    data: query.data ? toSalesQuotation(query.data) : undefined,
+    isLoading: query.isLoading,
+    error: query.error,
+  }
 }
 
 // Both create paths invalidate sales-enquiries too: quoting an enquiry flips

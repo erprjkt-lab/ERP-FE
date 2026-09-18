@@ -1,4 +1,4 @@
-import { apiRequest } from '@/api/client'
+import { apiDownload, apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type { ApiSalesQuotation, SalesQuotationPayload } from '@/types/api/sales'
 import type { SalesListParams } from './salesEnquiries'
@@ -66,4 +66,8 @@ export function rejectSalesQuotation(
 
 export function reviseSalesQuotation(id: number): Promise<ApiEnvelope<ApiSalesQuotation>> {
   return apiRequest(`/api/v1/sales-quotations/${id}/revise`, { method: 'POST' })
+}
+
+export function downloadSalesQuotationPdf(id: number, quotationNumber: string): Promise<void> {
+  return apiDownload(`/api/v1/sales-quotations/${id}/pdf`, `${quotationNumber}.pdf`)
 }

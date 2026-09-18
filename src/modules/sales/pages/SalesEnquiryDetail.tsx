@@ -13,6 +13,7 @@ import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesEnquiryItem } from '@/types/sales'
+import { DetailFallback } from '../components/DetailFallback'
 import {
   ENQUIRY_ITEM_STATUS_BADGE,
   ENQUIRY_ITEM_STATUS_LABELS,
@@ -86,18 +87,19 @@ export const SalesEnquiryDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
-  const { data: enquiry, isLoading } = useSalesEnquiry(id)
+  const { data: enquiry, isLoading, error } = useSalesEnquiry(id)
   const { mutateAsync: closeEnquiry, isPending: closing } = useCloseSalesEnquiry()
   const { mutateAsync: removeEnquiry, isPending: deleting } = useDeleteSalesEnquiry()
 
   if (!enquiry) {
     return (
-      <div>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/enquiries')}>
-          Back to Sales Enquiries
-        </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Sales enquiry not found.'}</p>
-      </div>
+      <DetailFallback
+        isLoading={isLoading}
+        error={error}
+        backTo="/sales/enquiries"
+        backLabel="Back to Sales Enquiries"
+        notFoundLabel="Sales enquiry not found."
+      />
     )
   }
 

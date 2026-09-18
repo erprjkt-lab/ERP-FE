@@ -23,7 +23,6 @@ const getColumns = (onView: (record: SalesEnquiry) => void): TableColumnsType<Sa
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   { title: 'Ref By', dataIndex: 'refBy', key: 'refBy', width: 140, render: v => v || '—' },
   { title: 'Ref No', dataIndex: 'refNo', key: 'refNo', width: 130, render: v => v || '—' },
-  { title: 'Items', key: 'items', width: 80, render: (_, r) => r.items.length },
   {
     title: 'Status',
     dataIndex: 'status',

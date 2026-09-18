@@ -13,7 +13,7 @@ import {
   Space,
 } from 'antd'
 import dayjs from 'dayjs'
-import type { FC } from 'react'
+import type { CSSProperties, FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormSection } from '@/components/ui/FormSection'
@@ -22,6 +22,34 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
 import { useCreateSalesOrder, useSalesOrder, useUpdateSalesOrder } from '../hooks/useSalesOrders'
 import type { SalesOrderItemInput } from '../hooks/useSalesOrders'
+
+// The item rows are a bare grid rather than a table, so the columns need their
+// own header — several inputs (discount/tax) default to 0, which hides their
+// placeholder and left them unidentifiable.
+const ITEM_GRID: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '2fr 90px 90px 90px 90px 140px 1fr 32px',
+  gap: '0 8px',
+  alignItems: 'start',
+}
+
+const ITEM_COLUMN_LABELS = [
+  'Item',
+  'Qty',
+  'Rate',
+  'Discount %',
+  'Tax %',
+  'Committed Date',
+  'Remarks',
+  '',
+]
+
+const COLUMN_LABEL_STYLE: CSSProperties = {
+  fontSize: 12,
+  fontWeight: 500,
+  color: 'rgba(0,0,0,0.65)',
+  paddingBottom: 4,
+}
 
 interface ItemRowValues {
   itemId: string
@@ -212,16 +240,17 @@ export const SalesOrderForm: FC = () => {
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
+                  {fields.length > 0 && (
+                    <div style={ITEM_GRID} aria-hidden>
+                      {ITEM_COLUMN_LABELS.map(label => (
+                        <span key={label} style={COLUMN_LABEL_STYLE}>
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {fields.map(field => (
-                    <div
-                      key={field.key}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 90px 90px 90px 90px 140px 1fr 32px',
-                        gap: '0 8px',
-                        alignItems: 'start',
-                      }}
-                    >
+                    <div key={field.key} style={ITEM_GRID}>
                       <Form.Item
                         name={[field.name, 'itemId']}
                         rules={[{ required: true, message: 'Required' }]}

@@ -125,7 +125,11 @@ export function useSalesEnquiry(id: string | undefined) {
     queryFn: async () => (await getSalesEnquiry(Number(id))).data,
     enabled: !!id,
   })
-  return { data: query.data ? toSalesEnquiry(query.data) : undefined, isLoading: query.isLoading }
+  return {
+    data: query.data ? toSalesEnquiry(query.data) : undefined,
+    isLoading: query.isLoading,
+    error: query.error,
+  }
 }
 
 export function useCreateSalesEnquiry() {

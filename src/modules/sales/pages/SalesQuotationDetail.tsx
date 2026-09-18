@@ -5,17 +5,20 @@ import {
   DeleteOutlined,
   EditOutlined,
   FileDoneOutlined,
+  FilePdfOutlined,
   SendOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { downloadSalesQuotationPdf } from '@/api/salesQuotations'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesQuotationItem } from '@/types/sales'
+import { DetailFallback } from '../components/DetailFallback'
 import { QUOTATION_STATUS_BADGE, QUOTATION_STATUS_LABELS } from '../constants'
 import { useCreateSalesOrderFromQuotation } from '../hooks/useSalesOrders'
 import {
@@ -58,20 +61,22 @@ export const SalesQuotationDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
-  const { data: quotation, isLoading } = useSalesQuotation(id)
+  const { data: quotation, isLoading, error } = useSalesQuotation(id)
   const { mutateAsync: runAction, isPending: actionPending } = useSalesQuotationAction()
   const { mutateAsync: createOrder, isPending: creatingOrder } = useCreateSalesOrderFromQuotation()
   const { mutateAsync: removeQuotation, isPending: deleting } = useDeleteSalesQuotation()
   const rejectReason = useRef('')
+  const [downloading, setDownloading] = useState(false)
 
   if (!quotation) {
     return (
-      <div>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/quotations')}>
-          Back to Quotations
-        </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Quotation not found.'}</p>
-      </div>
+      <DetailFallback
+        isLoading={isLoading}
+        error={error}
+        backTo="/sales/quotations"
+        backLabel="Back to Quotations"
+        notFoundLabel="Quotation not found."
+      />
     )
   }
 
@@ -132,6 +137,17 @@ export const SalesQuotationDetail: FC = () => {
     }
   }
 
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      await downloadSalesQuotationPdf(Number(quotation.id), quotation.quotationNumber)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Could not download the PDF')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   const handleDelete = () => {
     modal.confirm({
       title: `Delete ${quotation.quotationNumber}?`,
@@ -164,6 +180,9 @@ export const SalesQuotationDetail: FC = () => {
           <Space wrap>
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/quotations')}>
               Back
+            </Button>
+            <Button icon={<FilePdfOutlined />} loading={downloading} onClick={handleDownload}>
+              Download PDF
             </Button>
             <Button
               icon={<EditOutlined />}

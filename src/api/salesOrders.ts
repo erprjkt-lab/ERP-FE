@@ -1,4 +1,4 @@
-import { apiRequest } from '@/api/client'
+import { apiDownload, apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type {
   ApiSalesOrder,
@@ -57,4 +57,8 @@ export function cancelSalesOrder(
   reason: string | null,
 ): Promise<ApiEnvelope<ApiSalesOrder>> {
   return apiRequest(`/api/v1/sales-orders/${id}/cancel`, { method: 'POST', body: { reason } })
+}
+
+export function downloadSalesOrderPdf(id: number, orderNumber: string): Promise<void> {
+  return apiDownload(`/api/v1/sales-orders/${id}/pdf`, `${orderNumber}.pdf`)
 }

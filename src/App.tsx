@@ -65,9 +65,15 @@ import {
   ProcessList,
 } from '@/modules/production'
 import {
+  DeliveryChallanDetail,
+  DeliveryChallanForm,
+  DeliveryChallanList,
   SalesEnquiryDetail,
   SalesEnquiryForm,
   SalesEnquiryList,
+  SalesInvoiceDetail,
+  SalesInvoiceForm,
+  SalesInvoiceList,
   SalesOrderDetail,
   SalesOrderForm,
   SalesOrderList,
@@ -103,6 +109,8 @@ const IMPLEMENTED_PATHS = new Set([
   '/sales/enquiries',
   '/sales/quotations',
   '/sales/orders',
+  '/sales/delivery-challans',
+  '/sales/invoices',
   '/inventory/ledger',
   '/inventory/issue-material',
   '/production/process',
@@ -208,6 +216,15 @@ function App() {
                 <Route path="/sales/orders/new" element={<SalesOrderForm />} />
                 <Route path="/sales/orders/:id" element={<SalesOrderDetail />} />
                 <Route path="/sales/orders/:id/edit" element={<SalesOrderForm />} />
+
+                <Route path="/sales/delivery-challans" element={<DeliveryChallanList />} />
+                <Route path="/sales/delivery-challans/new" element={<DeliveryChallanForm />} />
+                <Route path="/sales/delivery-challans/:id" element={<DeliveryChallanDetail />} />
+
+                <Route path="/sales/invoices" element={<SalesInvoiceList />} />
+                <Route path="/sales/invoices/new" element={<SalesInvoiceForm />} />
+                <Route path="/sales/invoices/:id" element={<SalesInvoiceDetail />} />
+                <Route path="/sales/invoices/:id/edit" element={<SalesInvoiceForm />} />
 
                 <Route path="/inventory/ledger" element={<StockBalance />} />
                 <Route path="/inventory/issue-material" element={<IssueMaterialList />} />

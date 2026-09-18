@@ -7,32 +7,35 @@ import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { SalesOrder } from '@/types/sales'
-import { ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from '../constants'
-import { useSalesOrders } from '../hooks/useSalesOrders'
+import type { DeliveryChallan } from '@/types/sales'
+import { CHALLAN_STATUS_BADGE, CHALLAN_STATUS_LABELS } from '../constants'
+import { useDeliveryChallans } from '../hooks/useDeliveryChallans'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
 
-const STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({
+const STATUS_OPTIONS = Object.entries(CHALLAN_STATUS_LABELS).map(([value, label]) => ({
   value,
   label,
 }))
 
-const getColumns = (onView: (record: SalesOrder) => void): TableColumnsType<SalesOrder> => [
-  { title: 'Order #', dataIndex: 'orderNumber', key: 'orderNumber', width: 150 },
-  { title: 'Date', dataIndex: 'orderDate', key: 'orderDate', width: 120 },
+const getColumns = (
+  onView: (record: DeliveryChallan) => void,
+): TableColumnsType<DeliveryChallan> => [
+  { title: 'Challan #', dataIndex: 'challanNumber', key: 'challanNumber', width: 160 },
+  { title: 'Date', dataIndex: 'challanDate', key: 'challanDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   {
-    title: 'Customer PO',
-    dataIndex: 'customerPoNo',
-    key: 'customerPoNo',
-    width: 140,
+    title: 'Vehicle',
+    dataIndex: 'vehicleNo',
+    key: 'vehicleNo',
+    width: 120,
     render: v => v || '—',
   },
   {
-    title: 'Source',
-    key: 'source',
-    width: 130,
-    render: (_, r) => (r.salesQuotationId ? 'From Quotation' : 'Direct'),
+    title: 'Transporter',
+    dataIndex: 'transporterName',
+    key: 'transporterName',
+    width: 150,
+    render: v => v || '—',
   },
   {
     title: 'Status',
@@ -41,8 +44,8 @@ const getColumns = (onView: (record: SalesOrder) => void): TableColumnsType<Sale
     width: 120,
     render: status => (
       <StatusBadge
-        status={ORDER_STATUS_BADGE[status as SalesOrder['status']]}
-        label={ORDER_STATUS_LABELS[status as SalesOrder['status']]}
+        status={CHALLAN_STATUS_BADGE[status as DeliveryChallan['status']]}
+        label={CHALLAN_STATUS_LABELS[status as DeliveryChallan['status']]}
       />
     ),
   },
@@ -66,43 +69,44 @@ const getColumns = (onView: (record: SalesOrder) => void): TableColumnsType<Sale
   },
 ]
 
-export const SalesOrderList: FC = () => {
+export const DeliveryChallanList: FC = () => {
   const navigate = useNavigate()
-  const status = useSalesStatusFilter('order')
+  const status = useSalesStatusFilter('challan')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
   const {
-    data: orders,
+    data: challans,
     meta,
     isLoading,
     isFetching,
-  } = useSalesOrders({ page, perPage: pageSize, status })
+  } = useDeliveryChallans({
+    page,
+    perPage: pageSize,
+    status,
+  })
 
-  // Status filtering happens server-side, so changing it has to send the
-  // user back to page 1 — otherwise they can sit on a page number that
-  // no longer exists in the filtered result set.
   const handleStatusChange = (value: string | null) => {
-    setStatus('order', value ?? null)
+    setStatus('challan', value ?? null)
     setPage(1)
   }
 
-  const columns = getColumns(record => navigate(`/sales/orders/${record.id}`))
+  const columns = getColumns(record => navigate(`/sales/delivery-challans/${record.id}`))
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
-        title="Sales Orders"
-        subtitle={`${meta?.total ?? 0} sales orders`}
-        breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Order' }]}
+        title="Delivery Challans"
+        subtitle={`${meta?.total ?? 0} challans`}
+        breadcrumbs={[{ label: 'Sales' }, { label: 'Delivery Challan' }]}
         actions={
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/sales/orders/new')}
+            onClick={() => navigate('/sales/delivery-challans/new')}
           >
-            New Sales Order
+            New Challan
           </Button>
         }
       >
@@ -131,9 +135,9 @@ export const SalesOrderList: FC = () => {
           body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
         }}
       >
-        <DataTable<SalesOrder>
+        <DataTable<DeliveryChallan>
           columns={columns}
-          dataSource={orders}
+          dataSource={challans}
           rowKey="id"
           loading={isLoading || isFetching}
           pagination={{
@@ -145,10 +149,10 @@ export const SalesOrderList: FC = () => {
               setPageSize(nextPageSize)
             },
           }}
-          totalLabel="sales orders"
+          totalLabel="challans"
           fillHeight
           onRow={record => ({
-            onClick: () => navigate(`/sales/orders/${record.id}`),
+            onClick: () => navigate(`/sales/delivery-challans/${record.id}`),
             style: { cursor: 'pointer' },
           })}
         />

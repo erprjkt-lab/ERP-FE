@@ -7,32 +7,40 @@ import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { SalesOrder } from '@/types/sales'
-import { ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from '../constants'
-import { useSalesOrders } from '../hooks/useSalesOrders'
+import type { SalesInvoice } from '@/types/sales'
+import { INVOICE_STATUS_BADGE, INVOICE_STATUS_LABELS } from '../constants'
+import { useSalesInvoices } from '../hooks/useSalesInvoices'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
 
-const STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({
+const STATUS_OPTIONS = Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => ({
   value,
   label,
 }))
 
-const getColumns = (onView: (record: SalesOrder) => void): TableColumnsType<SalesOrder> => [
-  { title: 'Order #', dataIndex: 'orderNumber', key: 'orderNumber', width: 150 },
-  { title: 'Date', dataIndex: 'orderDate', key: 'orderDate', width: 120 },
+const getColumns = (onView: (record: SalesInvoice) => void): TableColumnsType<SalesInvoice> => [
+  { title: 'Invoice #', dataIndex: 'invoiceNumber', key: 'invoiceNumber', width: 160 },
+  { title: 'Date', dataIndex: 'invoiceDate', key: 'invoiceDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   {
-    title: 'Customer PO',
-    dataIndex: 'customerPoNo',
-    key: 'customerPoNo',
-    width: 140,
-    render: v => v || '—',
+    title: 'Taxable',
+    dataIndex: 'taxableAmount',
+    key: 'taxableAmount',
+    width: 120,
+    render: (value: number) => value.toFixed(2),
   },
   {
-    title: 'Source',
-    key: 'source',
+    title: 'Tax',
+    dataIndex: 'taxAmount',
+    key: 'taxAmount',
+    width: 110,
+    render: (value: number) => value.toFixed(2),
+  },
+  {
+    title: 'Net Amount',
+    dataIndex: 'netAmount',
+    key: 'netAmount',
     width: 130,
-    render: (_, r) => (r.salesQuotationId ? 'From Quotation' : 'Direct'),
+    render: (value: number) => value.toFixed(2),
   },
   {
     title: 'Status',
@@ -41,8 +49,8 @@ const getColumns = (onView: (record: SalesOrder) => void): TableColumnsType<Sale
     width: 120,
     render: status => (
       <StatusBadge
-        status={ORDER_STATUS_BADGE[status as SalesOrder['status']]}
-        label={ORDER_STATUS_LABELS[status as SalesOrder['status']]}
+        status={INVOICE_STATUS_BADGE[status as SalesInvoice['status']]}
+        label={INVOICE_STATUS_LABELS[status as SalesInvoice['status']]}
       />
     ),
   },
@@ -66,43 +74,44 @@ const getColumns = (onView: (record: SalesOrder) => void): TableColumnsType<Sale
   },
 ]
 
-export const SalesOrderList: FC = () => {
+export const SalesInvoiceList: FC = () => {
   const navigate = useNavigate()
-  const status = useSalesStatusFilter('order')
+  const status = useSalesStatusFilter('invoice')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
   const {
-    data: orders,
+    data: invoices,
     meta,
     isLoading,
     isFetching,
-  } = useSalesOrders({ page, perPage: pageSize, status })
+  } = useSalesInvoices({
+    page,
+    perPage: pageSize,
+    status,
+  })
 
-  // Status filtering happens server-side, so changing it has to send the
-  // user back to page 1 — otherwise they can sit on a page number that
-  // no longer exists in the filtered result set.
   const handleStatusChange = (value: string | null) => {
-    setStatus('order', value ?? null)
+    setStatus('invoice', value ?? null)
     setPage(1)
   }
 
-  const columns = getColumns(record => navigate(`/sales/orders/${record.id}`))
+  const columns = getColumns(record => navigate(`/sales/invoices/${record.id}`))
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
-        title="Sales Orders"
-        subtitle={`${meta?.total ?? 0} sales orders`}
-        breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Order' }]}
+        title="Sales Invoices"
+        subtitle={`${meta?.total ?? 0} invoices`}
+        breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Invoice' }]}
         actions={
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/sales/orders/new')}
+            onClick={() => navigate('/sales/invoices/new')}
           >
-            New Sales Order
+            New Invoice
           </Button>
         }
       >
@@ -131,9 +140,9 @@ export const SalesOrderList: FC = () => {
           body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
         }}
       >
-        <DataTable<SalesOrder>
+        <DataTable<SalesInvoice>
           columns={columns}
-          dataSource={orders}
+          dataSource={invoices}
           rowKey="id"
           loading={isLoading || isFetching}
           pagination={{
@@ -145,10 +154,10 @@ export const SalesOrderList: FC = () => {
               setPageSize(nextPageSize)
             },
           }}
-          totalLabel="sales orders"
+          totalLabel="invoices"
           fillHeight
           onRow={record => ({
-            onClick: () => navigate(`/sales/orders/${record.id}`),
+            onClick: () => navigate(`/sales/invoices/${record.id}`),
             style: { cursor: 'pointer' },
           })}
         />

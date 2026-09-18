@@ -42,12 +42,6 @@ const getColumns = (onView: (record: SalesQuotation) => void): TableColumnsType<
     render: v => v || '—',
   },
   {
-    title: 'Net Amount',
-    key: 'netAmount',
-    width: 130,
-    render: (_, r) => r.netAmount.toFixed(2),
-  },
-  {
     title: 'Status',
     dataIndex: 'status',
     key: 'status',

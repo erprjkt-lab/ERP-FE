@@ -3,21 +3,26 @@ import {
   CheckOutlined,
   DeleteOutlined,
   EditOutlined,
+  FilePdfOutlined,
+  TruckOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Input, Row, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { downloadSalesOrderPdf } from '@/api/salesOrders'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesOrderItem } from '@/types/sales'
+import { DetailFallback } from '../components/DetailFallback'
 import { ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from '../constants'
+import { useChallansForOrder } from '../hooks/useDeliveryChallans'
 import { useDeleteSalesOrder, useSalesOrder, useSalesOrderAction } from '../hooks/useSalesOrders'
 
-const ITEM_COLUMNS: TableColumnsType<SalesOrderItem> = [
+const BASE_ITEM_COLUMNS: TableColumnsType<SalesOrderItem> = [
   {
     title: 'Item',
     key: 'item',
@@ -57,24 +62,40 @@ export const SalesOrderDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
-  const { data: order, isLoading } = useSalesOrder(id)
+  const { data: order, isLoading, error } = useSalesOrder(id)
   const { mutateAsync: runAction, isPending } = useSalesOrderAction()
   const { mutateAsync: removeOrder, isPending: deleting } = useDeleteSalesOrder()
+  const { data: orderChallans } = useChallansForOrder(id)
   const cancelReason = useRef('')
+  const [downloading, setDownloading] = useState(false)
 
   if (!order) {
     return (
-      <div>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/orders')}>
-          Back to Sales Orders
-        </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Sales order not found.'}</p>
-      </div>
+      <DetailFallback
+        isLoading={isLoading}
+        error={error}
+        backTo="/sales/orders"
+        backLabel="Back to Sales Orders"
+        notFoundLabel="Sales order not found."
+      />
     )
   }
 
   const isDraft = order.status === 'DRAFT'
   const isFinished = order.status === 'CLOSED' || order.status === 'CANCELLED'
+  const isConfirmed = order.status === 'CONFIRMED'
+
+  // The order resource doesn't expose dispatch_qty, so dispatched-per-line is
+  // summed from the (non-cancelled) challans raised against this order.
+  const dispatchedByLine = new Map<string, number>()
+  for (const challan of orderChallans) {
+    if (challan.status === 'CANCELLED') continue
+    for (const line of challan.items) {
+      if (!line.salesOrderItemId) continue
+      const key = String(line.salesOrderItemId)
+      dispatchedByLine.set(key, (dispatchedByLine.get(key) ?? 0) + line.dispatchQty)
+    }
+  }
 
   const handleApprove = () => {
     modal.confirm({
@@ -122,6 +143,36 @@ export const SalesOrderDetail: FC = () => {
     })
   }
 
+  const itemColumns: TableColumnsType<SalesOrderItem> = [
+    ...BASE_ITEM_COLUMNS,
+    {
+      title: 'Dispatched',
+      key: 'dispatched',
+      width: 110,
+      render: (_, row) => dispatchedByLine.get(String(row.id)) ?? 0,
+    },
+    {
+      title: 'Pending',
+      key: 'pendingDispatch',
+      width: 100,
+      render: (_, row) => {
+        const pending = Math.max(row.qty - (dispatchedByLine.get(String(row.id)) ?? 0), 0)
+        return pending > 0 ? <Tag color="orange">{pending}</Tag> : <Tag color="green">0</Tag>
+      },
+    },
+  ]
+
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      await downloadSalesOrderPdf(Number(order.id), order.orderNumber)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Could not download the PDF')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   const handleDelete = () => {
     modal.confirm({
       title: `Delete ${order.orderNumber}?`,
@@ -156,6 +207,18 @@ export const SalesOrderDetail: FC = () => {
               Back
             </Button>
             {/* Backend only permits edits while the order is still a draft. */}
+            <Button icon={<FilePdfOutlined />} loading={downloading} onClick={handleDownload}>
+              Download PDF
+            </Button>
+            {/* Only a confirmed order can be dispatched against. */}
+            <Button
+              icon={<TruckOutlined />}
+              type={isConfirmed ? 'primary' : 'default'}
+              disabled={!isConfirmed}
+              onClick={() => navigate(`/sales/delivery-challans/new?salesOrderId=${order.id}`)}
+            >
+              Create Challan
+            </Button>
             <Button
               icon={<EditOutlined />}
               disabled={!isDraft}
@@ -242,7 +305,7 @@ export const SalesOrderDetail: FC = () => {
             }
           >
             <DataTable<SalesOrderItem>
-              columns={ITEM_COLUMNS}
+              columns={itemColumns}
               dataSource={order.items}
               rowKey="id"
               pagination={false}

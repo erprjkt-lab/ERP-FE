@@ -70,3 +70,39 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return payload as T
 }
+
+/** Fetches a binary document (the PDF endpoints stream a file, not JSON) and
+ * hands it to the browser as a download. Kept separate from apiRequest, which
+ * only ever parses JSON. */
+export async function apiDownload(path: string, filename: string): Promise<void> {
+  const token = useAuthStore.getState().token
+
+  const headers: Record<string, string> = { Accept: 'application/pdf' }
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const response = await fetch(buildUrl(path), { headers })
+
+  if (!response.ok) {
+    // Errors still come back as JSON even on a download endpoint.
+    const isJson = response.headers.get('content-type')?.includes('application/json') ?? false
+    const payload: unknown = isJson ? await response.json() : undefined
+    const message =
+      (isRecord(payload) && typeof payload.message === 'string' && payload.message) ||
+      response.statusText ||
+      'Download failed'
+    if (response.status === 401) {
+      useAuthStore.getState().clear()
+    }
+    throw new ApiRequestError(message, response.status)
+  }
+
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
