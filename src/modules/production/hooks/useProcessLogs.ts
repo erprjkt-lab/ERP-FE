@@ -16,6 +16,8 @@ function toProcessLog(api: ApiProcessLog): ProcessLog {
     okQty: Number(api.ok_qty),
     rejectedQty: Number(api.rejected_qty),
     bypassedQty: Number(api.bypassed_qty),
+    inboundChallanItemId:
+      api.inbound_challan_item_id != null ? String(api.inbound_challan_item_id) : undefined,
     remark: api.remark ?? undefined,
   }
 }

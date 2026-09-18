@@ -1,4 +1,4 @@
-import { ApartmentOutlined, UnorderedListOutlined } from '@ant-design/icons'
+import { ApartmentOutlined, ExperimentOutlined, UnorderedListOutlined } from '@ant-design/icons'
 import { Button, Card, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
@@ -12,6 +12,7 @@ import type { FinishedGood } from '@/types/masters'
 const getColumns = (
   onProcessRoute: (record: FinishedGood) => void,
   onBom: (record: FinishedGood) => void,
+  onInspectionParameters: (record: FinishedGood) => void,
 ): TableColumnsType<FinishedGood> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   { title: 'Name', dataIndex: 'name', key: 'name' },
@@ -27,7 +28,7 @@ const getColumns = (
   {
     title: 'Actions',
     key: 'actions',
-    width: 240,
+    width: 360,
     render: (_, record) => (
       <Space size="small">
         <Tooltip title="Define the ordered shop-floor operations for this item">
@@ -38,6 +39,15 @@ const getColumns = (
         <Tooltip title="Define the materials consumed per unit of this item">
           <Button size="small" icon={<UnorderedListOutlined />} onClick={() => onBom(record)}>
             Item BOM
+          </Button>
+        </Tooltip>
+        <Tooltip title="Define the quality control-plan characteristics to check for this item">
+          <Button
+            size="small"
+            icon={<ExperimentOutlined />}
+            onClick={() => onInspectionParameters(record)}
+          >
+            Inspection Parameters
           </Button>
         </Tooltip>
       </Space>
@@ -52,6 +62,7 @@ export const BomList: FC = () => {
   const columns = getColumns(
     record => navigate(`/production/bom/${record.id}/process-route`),
     record => navigate(`/production/bom/${record.id}/item-bom`),
+    record => navigate(`/production/bom/${record.id}/inspection-parameters`),
   )
 
   return (

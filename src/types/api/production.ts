@@ -62,6 +62,51 @@ export interface CreateItemBomLinePayload {
 
 export type UpdateItemBomLinePayload = Partial<CreateItemBomLinePayload>
 
+export interface ApiInspectionParameter {
+  id: number
+  item_id: number
+  item_name: string | null
+  process_id: number
+  process_name: string | null
+  param_type: number
+  parameter: string
+  specification: string
+  min: number | string | null
+  max: number | string | null
+  machine_tool: string | null
+  instrument: string | null
+  char_class: string | null
+  size: string | null
+  frequency: number | string | null
+  freq_unit: 'Hrs' | 'Lot' | null
+  reaction_plan: string | null
+  control_method: string | null
+  status: number
+  created_at?: string | null
+  created_by?: number | null
+  updated_by?: number | null
+}
+
+export interface CreateInspectionParameterPayload {
+  process_id: number
+  param_type: number
+  parameter: string
+  specification: string
+  min?: number | null
+  max?: number | null
+  machine_tool?: string | null
+  instrument?: string | null
+  char_class?: string | null
+  size?: string | null
+  frequency?: number | null
+  freq_unit?: 'Hrs' | 'Lot' | null
+  reaction_plan?: string | null
+  control_method?: string | null
+  status?: number
+}
+
+export type UpdateInspectionParameterPayload = Partial<CreateInspectionParameterPayload>
+
 export interface ApiJobCard {
   id: number
   job_card_number: string
@@ -157,6 +202,7 @@ export interface ApiProcessLog {
   ok_qty: number
   rejected_qty: number
   bypassed_qty: number
+  inbound_challan_item_id: number | null
   weight_kg: number | null
   finished_weight_kg: number | null
   conversion_ratio: number | null
@@ -213,9 +259,66 @@ export interface CreateProcessLogPayload {
   ok_qty?: number
   rejected_qty?: number
   bypassed_qty?: number
+  inbound_challan_item_id?: number | null
   production_seconds?: number | null
   downtime_seconds?: number | null
   remark?: string | null
+}
+
+export interface ApiJobCardChallanRequest {
+  id: number
+  job_card_id: number
+  process_id: number
+  process_name: string | null
+  requested_qty: number
+  dispatched_qty: number
+  consumed_qty: number
+  pending_qty: number
+  status: number
+  requested_by: number | null
+  requested_by_name: string | null
+  requested_at: string | null
+}
+
+export interface CreateChallanRequestPayload {
+  process_id: number
+  requested_qty: number
+}
+
+export interface ApiJobCardChallanItem {
+  id: number
+  challan_id: number
+  challan_request_id: number
+  job_card_id: number
+  process_id: number
+  process_name: string | null
+  dispatched_qty: number
+  received_qty: number
+  outstanding_qty: number
+  rate: number | string | null
+  amount: number | string | null
+}
+
+export interface ApiJobCardChallan {
+  id: number
+  challan_number: string
+  challan_date: string | null
+  destination_party_id: number
+  destination_party_name: string | null
+  status: number
+  items?: ApiJobCardChallanItem[]
+}
+
+export interface CreateChallanItemInput {
+  challan_request_id: number
+  dispatched_qty: number
+  rate?: number | null
+}
+
+export interface CreateChallanPayload {
+  challan_date?: string | null
+  destination_party_id: number
+  items: CreateChallanItemInput[]
 }
 
 export interface CreateJobCardPayload {

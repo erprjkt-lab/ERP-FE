@@ -1,4 +1,4 @@
-import { Alert, App, Col, Form, InputNumber, Radio, Row, Space, Tag, Typography } from 'antd'
+import { Alert, App, Col, Form, InputNumber, Row, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
@@ -8,7 +8,6 @@ import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
 import { useEmployees } from '@/modules/hr/hooks/useEmployees'
 import { useShifts } from '@/modules/hr/hooks/useShifts'
-import { useVendors } from '@/modules/masters/hooks/useVendors'
 import type { ProcessLog } from '@/types/production'
 import { useCreateProcessLog } from '../hooks/useProcessLogs'
 import type { StepProgress } from '../utils/jobCardProgress'
@@ -31,9 +30,7 @@ interface LogFormValues {
   bypassedQty?: number
   productionMinutes?: number
   downtimeMinutes?: number
-  performedByType: 'in_house' | 'outsourced'
-  processorEmployeeId?: string
-  processorPartyId?: string
+  processorEmployeeId: string
   operatorId: string
   shiftId: string
   remark?: string
@@ -54,13 +51,11 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
 
   const { data: employees = [] } = useEmployees()
   const { data: shifts = [] } = useShifts()
-  const { data: vendors = [] } = useVendors()
   const { mutateAsync: createLog, isPending } = useCreateProcessLog(jobCardId)
 
   const productionQty = Form.useWatch('productionQty', form) ?? 0
   const okQty = Form.useWatch('okQty', form) ?? 0
   const bypassedQty = Form.useWatch('bypassedQty', form) ?? 0
-  const performedByType = Form.useWatch('performedByType', form) ?? 'in_house'
 
   const pendingQty = step?.pendingQty ?? 0
   const rejectedQty = Math.max(productionQty - okQty - bypassedQty, 0)
@@ -71,10 +66,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
   useEffect(() => {
     if (open) {
       form.resetFields()
-      form.setFieldsValue({
-        logDate: dayjs(),
-        performedByType: 'in_house',
-      } as Partial<LogFormValues>)
+      form.setFieldsValue({ logDate: dayjs() } as Partial<LogFormValues>)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, step?.step.processId])
@@ -100,19 +92,16 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
     try {
       await createLog({
         process_id: Number(step.step.processId),
-        performed_by_type: values.performedByType === 'outsourced' ? 2 : 1,
-        processor_employee_id:
-          values.performedByType === 'in_house' ? Number(values.processorEmployeeId) : null,
-        processor_party_id:
-          values.performedByType === 'outsourced' ? Number(values.processorPartyId) : null,
+        performed_by_type: 1,
+        processor_employee_id: Number(values.processorEmployeeId),
         operator_id: Number(values.operatorId),
         shift_id: Number(values.shiftId),
         log_date: values.logDate.format('YYYY-MM-DD'),
         ok_qty: values.okQty,
         rejected_qty: rejectedQty,
         bypassed_qty: values.bypassedQty ?? 0,
-        production_seconds: values.productionMinutes ? values.productionMinutes * 60 : null,
-        downtime_seconds: values.downtimeMinutes ? values.downtimeMinutes * 60 : null,
+        production_seconds: values.productionMinutes ? values.productionMinutes * 60 : 0,
+        downtime_seconds: values.downtimeMinutes ? values.downtimeMinutes * 60 : 0,
         remark: values.remark || undefined,
       })
       message.success(`Logged ${productionQty} at ${step.step.processName}`)
@@ -159,6 +148,12 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
           description="The first process cannot be logged until material has been issued for this job card."
         />
       )}
+
+      <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginBottom: 16 }}>
+        This logs work done in-house. Sending this process to a vendor instead? Use the{' '}
+        <strong>Outsource</strong> action on this process, then accept it back from Production →
+        Outsource once it's returned.
+      </Typography.Paragraph>
 
       <Form form={form} layout="vertical">
         <Row gutter={16}>
@@ -229,56 +224,33 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
         />
 
         <Row gutter={16}>
-          <Col xs={12} sm={6}>
+          <Col xs={12} sm={8}>
             <Form.Item label="Bypassed Qty" name="bypassedQty" tooltip="Qty skipping this process">
               <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
-          <Col xs={12} sm={6}>
+          <Col xs={12} sm={8}>
             <Form.Item label="Production Time (min)" name="productionMinutes">
               <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
-          <Col xs={12} sm={6}>
+          <Col xs={12} sm={8}>
             <Form.Item label="Down Time (min)" name="downtimeMinutes">
               <InputNumber min={0} style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-          <Col xs={12} sm={6}>
-            <Form.Item label="Process By" name="performedByType">
-              <Radio.Group
-                options={[
-                  { label: 'In-house', value: 'in_house' },
-                  { label: 'Outsourced', value: 'outsourced' },
-                ]}
-                optionType="button"
-              />
             </Form.Item>
           </Col>
         </Row>
 
         <Row gutter={16}>
-          {performedByType === 'outsourced' ? (
-            <Col xs={24} sm={8}>
-              <FormField
-                label="Vendor"
-                name="processorPartyId"
-                fieldType="select"
-                options={vendors.map(vendor => ({ label: vendor.name, value: vendor.id }))}
-                rules={[{ required: true, message: 'Vendor is required' }]}
-              />
-            </Col>
-          ) : (
-            <Col xs={24} sm={8}>
-              <FormField
-                label="Processed By"
-                name="processorEmployeeId"
-                fieldType="select"
-                options={employeeOptions}
-                rules={[{ required: true, message: 'Processor is required' }]}
-              />
-            </Col>
-          )}
+          <Col xs={24} sm={8}>
+            <FormField
+              label="Processed By"
+              name="processorEmployeeId"
+              fieldType="select"
+              options={employeeOptions}
+              rules={[{ required: true, message: 'Processor is required' }]}
+            />
+          </Col>
           <Col xs={24} sm={8}>
             <FormField
               label="Operator"

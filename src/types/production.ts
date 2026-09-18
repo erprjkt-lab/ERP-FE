@@ -80,7 +80,50 @@ export interface ProcessLog {
   okQty: number
   rejectedQty: number
   bypassedQty: number
+  inboundChallanItemId?: string
   remark?: string
+}
+
+export type ChallanRequestStatus = 'pending' | 'fulfilled'
+
+export interface ChallanRequest {
+  id: string
+  jobCardId: string
+  processId: string
+  processName: string
+  requestedQty: number
+  dispatchedQty: number
+  consumedQty: number
+  pendingQty: number
+  status: ChallanRequestStatus
+  requestedByName?: string
+  requestedAt?: string
+}
+
+export type ChallanStatus = 'open' | 'received' | 'closed'
+
+export interface ChallanItem {
+  id: string
+  challanId: string
+  challanRequestId: string
+  jobCardId: string
+  processId: string
+  processName: string
+  dispatchedQty: number
+  receivedQty: number
+  outstandingQty: number
+  rate?: number
+  amount?: number
+}
+
+export interface Challan {
+  id: string
+  challanNumber: string
+  challanDate: string
+  destinationPartyId: string
+  destinationPartyName: string
+  status: ChallanStatus
+  items: ChallanItem[]
 }
 
 export interface JobCard {
@@ -112,5 +155,27 @@ export interface ItemBomLine {
   uomId: string
   uomName: string
   scrapAllowancePercent?: number
+  status: Status
+}
+
+export type InspectionParamType = 'product' | 'process'
+
+export interface InspectionParameter {
+  id: string
+  processId: string
+  processName: string
+  paramType: InspectionParamType
+  parameter: string
+  specification: string
+  min?: number
+  max?: number
+  machineTool?: string
+  instrument?: string
+  charClass?: string
+  size?: string
+  frequency?: number
+  freqUnit?: 'Hrs' | 'Lot'
+  reactionPlan?: string
+  controlMethod?: string
   status: Status
 }

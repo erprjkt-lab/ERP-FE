@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Input, Row, Select, Tag } from 'antd'
+import { Button, Card, Col, Input, Row, Segmented, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -10,7 +10,10 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { JobCard, JobCardStatus } from '@/types/production'
 import { JOB_CARD_STATUS_CODE, useJobCards } from '../hooks/useJobCards'
 
-const STATUS_OPTIONS: { label: string; value: JobCardStatus }[] = [
+const ALL_STATUSES = 'all' as const
+
+const STATUS_OPTIONS: { label: string; value: JobCardStatus | typeof ALL_STATUSES }[] = [
+  { label: 'All', value: ALL_STATUSES },
   { label: 'Draft', value: 'draft' },
   { label: 'In Progress', value: 'in_progress' },
   { label: 'On Hold', value: 'on_hold' },
@@ -70,11 +73,13 @@ const getColumns = (onOpen: (record: JobCard) => void): TableColumnsType<JobCard
 
 export const JobCardList: FC = () => {
   const navigate = useNavigate()
-  const [statusFilter, setStatusFilter] = useState<JobCardStatus>()
+  const [statusFilter, setStatusFilter] = useState<JobCardStatus | typeof ALL_STATUSES>(
+    ALL_STATUSES,
+  )
   const [search, setSearch] = useState('')
 
   const { data: jobCards = [], isLoading } = useJobCards(
-    statusFilter ? { status: JOB_CARD_STATUS_CODE[statusFilter] } : {},
+    statusFilter !== ALL_STATUSES ? { status: JOB_CARD_STATUS_CODE[statusFilter] } : {},
   )
 
   const filtered = jobCards.filter(jc => {
@@ -100,7 +105,7 @@ export const JobCardList: FC = () => {
         }
       >
         <Row gutter={[12, 12]} align="middle">
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} md={8}>
             <Input.Search
               placeholder="Search by job card no. or item..."
               value={search}
@@ -108,25 +113,25 @@ export const JobCardList: FC = () => {
               allowClear
             />
           </Col>
-          <Col xs={24} sm={8} md={6}>
-            <Select<JobCardStatus>
-              placeholder="Status"
-              value={statusFilter}
-              onChange={setStatusFilter}
-              allowClear
-              style={{ width: '100%' }}
-              options={STATUS_OPTIONS}
-            />
-          </Col>
-          <Col>
-            <Button
-              onClick={() => {
-                setStatusFilter(undefined)
-                setSearch('')
-              }}
-            >
-              Clear filters
-            </Button>
+          <Col xs={24} md={16}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <Segmented
+                value={statusFilter}
+                onChange={value => setStatusFilter(value as JobCardStatus | typeof ALL_STATUSES)}
+                options={STATUS_OPTIONS}
+              />
+              {(statusFilter !== ALL_STATUSES || search) && (
+                <Button
+                  type="link"
+                  onClick={() => {
+                    setStatusFilter(ALL_STATUSES)
+                    setSearch('')
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
+            </div>
           </Col>
         </Row>
       </PageHeader>

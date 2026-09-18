@@ -13,6 +13,9 @@ export type StatusBadgeStatus =
   | 'on_hold'
   | 'completed'
   | 'closed'
+  | 'open'
+  | 'received'
+  | 'fulfilled'
 
 const STATUS_CONFIG: Record<
   StatusBadgeStatus,
@@ -36,6 +39,9 @@ const STATUS_CONFIG: Record<
   on_hold: { color: 'orange', label: 'On Hold', dotStatus: 'warning' },
   completed: { color: 'green', label: 'Completed', dotStatus: 'success' },
   closed: { color: 'default', label: 'Closed', dotStatus: 'default' },
+  open: { color: 'blue', label: 'Open', dotStatus: 'processing' },
+  received: { color: 'green', label: 'Received', dotStatus: 'success' },
+  fulfilled: { color: 'green', label: 'Fulfilled', dotStatus: 'success' },
 }
 
 export interface StatusBadgeProps {
