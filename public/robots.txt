@@ -1,4 +1,35 @@
+# Everything on this site is public marketing content — all crawlers welcome.
 User-agent: *
 Allow: /
 
-Sitemap: https://coreflowtech.com/sitemap.xml
+# Listed explicitly so AI/LLM crawlers are unambiguously permitted. The
+# wildcard above already allows them; these entries state the intent, so a
+# future tightening of the wildcard doesn't silently lock them out.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://www.coreflowtech.in/sitemap.xml

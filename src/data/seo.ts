@@ -12,7 +12,7 @@ export interface SeoRoute {
 // client-side updates React makes during navigation.
 export const SEO_ROUTES: SeoRoute[] = seoRoutesJson
 
-export const SITE_URL = 'https://coreflowtech.com'
+export const SITE_URL = 'https://www.coreflowtech.in'
 export const SITE_NAME = 'CoreFlowTech'
 export const OG_IMAGE_PATH = '/og-image.png'
 

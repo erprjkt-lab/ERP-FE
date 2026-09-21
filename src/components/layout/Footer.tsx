@@ -69,7 +69,13 @@ export function Footer() {
         </div>
 
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-ink-800 pt-8 text-xs text-ink-500 sm:flex-row">
-          <p>© {new Date().getFullYear()} {COMPANY.name}. All rights reserved.</p>
+          <p>
+            {/* Baked in at build time for prerendering; suppressHydrationWarning
+                stops React from warning if the year has since rolled over — it
+                still corrects the DOM to the live value on hydration. */}
+            © <span suppressHydrationWarning>{new Date().getFullYear()}</span> {COMPANY.name}. All
+            rights reserved.
+          </p>
           <p>Enterprise Resource Planning Solutions</p>
         </div>
       </Container>
