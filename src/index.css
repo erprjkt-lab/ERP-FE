@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted rather than linked from fonts.googleapis.com: that stylesheet
+   is a render-blocking request to a third-party origin, so the browser
+   can't paint anything — even the prerendered content already in the HTML —
+   until that round trip finishes. Bundling the files here means Vite serves
+   them from the same origin as everything else, with no extra DNS/TLS hop.
+   Both are the variable-font files Google's own CSS API serves (one file
+   covers the whole weight range), latin subset only — every page on this
+   site is English-language copy. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/inter-variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('./assets/fonts/space-grotesk-variable.woff2') format('woff2');
+}
+
 html {
   scroll-behavior: smooth;
 }
