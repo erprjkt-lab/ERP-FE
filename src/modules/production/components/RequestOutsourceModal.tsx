@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { useCreateChallanRequest } from '../hooks/useChallanRequests'
 import type { StepProgress } from '../utils/jobCardProgress'
+import { getErrorMessage } from '@/api/client'
 
 export interface RequestOutsourceModalProps {
   open: boolean
@@ -53,7 +54,7 @@ export const RequestOutsourceModal: FC<RequestOutsourceModalProps> = ({
       form.resetFields()
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/store/authStore'
-import { apiRequest, ApiRequestError } from './client'
+import { apiRequest, ApiRequestError, getErrorMessage } from './client'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -157,5 +157,36 @@ describe('apiRequest', () => {
     )
     await expect(apiRequest('/api/v1/employees/999')).rejects.toThrow('Not found')
     expect(useAuthStore.getState().token).toBe('valid-token')
+  })
+})
+
+describe('getErrorMessage', () => {
+  it('prefers field errors over the generic top-level message', () => {
+    const error = new ApiRequestError('Validation failed', 422, {
+      qty: ['Insufficient stock balance for this item/location/batch/heat/serial combination.'],
+    })
+    expect(getErrorMessage(error)).toBe(
+      'Insufficient stock balance for this item/location/batch/heat/serial combination.',
+    )
+  })
+
+  it('joins messages when several fields failed', () => {
+    const error = new ApiRequestError('Validation failed', 422, {
+      issued_qty: ['The issued qty must be greater than 0.'],
+      store_location_id: ['The selected store location is invalid.'],
+    })
+    expect(getErrorMessage(error)).toBe(
+      'The issued qty must be greater than 0. The selected store location is invalid.',
+    )
+  })
+
+  it('uses the top-level message when there are no field errors', () => {
+    expect(getErrorMessage(new ApiRequestError('Not found', 404))).toBe('Not found')
+    expect(getErrorMessage(new Error('Network request failed'))).toBe('Network request failed')
+  })
+
+  it('falls back for non-Error throwables, honouring a custom fallback', () => {
+    expect(getErrorMessage('a string')).toBe('Something went wrong')
+    expect(getErrorMessage(undefined, 'Login failed')).toBe('Login failed')
   })
 })

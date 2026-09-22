@@ -16,6 +16,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesOrderItem } from '@/types/sales'
 import { ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from '../constants'
 import { useDeleteSalesOrder, useSalesOrder, useSalesOrderAction } from '../hooks/useSalesOrders'
+import { getErrorMessage } from '@/api/client'
 
 const ITEM_COLUMNS: TableColumnsType<SalesOrderItem> = [
   {
@@ -86,7 +87,7 @@ export const SalesOrderDetail: FC = () => {
           await runAction({ id: order.id, action: 'approve' })
           message.success('Sales order approved')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -116,7 +117,7 @@ export const SalesOrderDetail: FC = () => {
           })
           message.success('Sales order cancelled')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -134,7 +135,7 @@ export const SalesOrderDetail: FC = () => {
           message.success('Sales order deleted')
           navigate('/sales/orders')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

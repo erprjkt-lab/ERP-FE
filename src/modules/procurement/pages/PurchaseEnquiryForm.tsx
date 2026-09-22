@@ -32,6 +32,7 @@ import type {
   PurchaseEnquirySupplierInput,
 } from '../hooks/usePurchaseEnquiries'
 import { usePurchaseRequisitions } from '../hooks/usePurchaseRequisitions'
+import { getErrorMessage } from '@/api/client'
 
 type Mode = 'manual' | 'fromRequisitions'
 
@@ -127,7 +128,7 @@ export const PurchaseEnquiryForm: FC = () => {
       message.success('Purchase enquiry created successfully')
       navigate(`/purchase/enquiries/${enquiryId}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

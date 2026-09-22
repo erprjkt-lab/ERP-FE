@@ -30,6 +30,7 @@ import { useProcurementItems } from '../hooks/useProcurementItems'
 import type { GrnItemInput } from '../hooks/usePurchaseGrns'
 import { useCreateGrn } from '../hooks/usePurchaseGrns'
 import { usePurchaseOrder, usePurchaseOrders } from '../hooks/usePurchaseOrders'
+import { getErrorMessage } from '@/api/client'
 
 interface GrnRowValues {
   poItemId: string
@@ -120,7 +121,7 @@ export const PurchaseGrnForm: FC = () => {
       message.success('GRN created successfully')
       navigate(`/purchase/grn/${created.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

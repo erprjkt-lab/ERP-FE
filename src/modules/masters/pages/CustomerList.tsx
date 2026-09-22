@@ -10,6 +10,7 @@ import type { Customer } from '@/types/masters'
 import { CUSTOMER_TYPE_OPTIONS, MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteCustomer, useCustomers } from '../hooks/useCustomers'
 import { useMastersStore } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 const getColumns = (
   onView: (record: Customer) => void,
@@ -86,7 +87,7 @@ export const CustomerList: FC = () => {
           await deleteCustomer(record.id)
           message.success('Customer deleted successfully')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

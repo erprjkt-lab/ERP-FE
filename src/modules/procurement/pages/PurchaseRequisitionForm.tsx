@@ -31,6 +31,7 @@ import {
   useUpdatePurchaseRequisition,
 } from '../hooks/usePurchaseRequisitions'
 import type { PurchaseRequisitionItemInput } from '../hooks/usePurchaseRequisitions'
+import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
   itemId: string
@@ -136,7 +137,7 @@ export const PurchaseRequisitionForm: FC = () => {
       message.success(`Requisition ${isEdit ? 'updated' : 'created'} successfully`)
       navigate(`/purchase/requisitions/${requisitionId}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

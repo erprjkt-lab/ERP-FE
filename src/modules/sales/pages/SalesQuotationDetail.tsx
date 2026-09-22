@@ -23,6 +23,7 @@ import {
   useSalesQuotation,
   useSalesQuotationAction,
 } from '../hooks/useSalesQuotations'
+import { getErrorMessage } from '@/api/client'
 
 const ITEM_COLUMNS: TableColumnsType<SalesQuotationItem> = [
   {
@@ -88,7 +89,7 @@ export const SalesQuotationDetail: FC = () => {
       // A revision is a brand-new draft row — follow the user to it.
       if (action === 'revise' && result) navigate(`/sales/quotations/${result.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -116,7 +117,7 @@ export const SalesQuotationDetail: FC = () => {
           })
           message.success('Quotation rejected')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -128,7 +129,7 @@ export const SalesQuotationDetail: FC = () => {
       message.success(`Sales order ${order.orderNumber} created`)
       navigate(`/sales/orders/${order.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -144,7 +145,7 @@ export const SalesQuotationDetail: FC = () => {
           message.success('Quotation deleted')
           navigate('/sales/quotations')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

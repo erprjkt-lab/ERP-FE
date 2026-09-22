@@ -30,6 +30,7 @@ import {
   useSendPurchaseEnquiry,
 } from '../hooks/usePurchaseEnquiries'
 import { useCreatePurchaseOrderFromEnquiry, usePurchaseOrders } from '../hooks/usePurchaseOrders'
+import { getErrorMessage } from '@/api/client'
 
 export const PurchaseEnquiryDetail: FC = () => {
   const { id } = useParams()
@@ -64,7 +65,7 @@ export const PurchaseEnquiryDetail: FC = () => {
       await sendEnquiry(enquiry.id)
       message.success('Purchase enquiry sent to suppliers')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -84,7 +85,7 @@ export const PurchaseEnquiryDetail: FC = () => {
       setAddSupplierOpen(false)
       setSelectedSupplierId(undefined)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -98,7 +99,7 @@ export const PurchaseEnquiryDetail: FC = () => {
           await removeSupplier({ enquiryId: enquiry.id, peSupplierId })
           message.success('Supplier removed')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -110,7 +111,7 @@ export const PurchaseEnquiryDetail: FC = () => {
       message.success('Purchase order created')
       navigate(`/purchase/orders/${po.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

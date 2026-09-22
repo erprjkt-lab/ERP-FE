@@ -19,6 +19,7 @@ import { useCountries } from '../hooks/useCountries'
 import { useStates } from '../hooks/useStates'
 import { useCreateVendor, useUpdateVendor, useVendor } from '../hooks/useVendors'
 import type { VendorInput } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 export const VendorForm: FC = () => {
   const { id } = useParams()
@@ -103,7 +104,7 @@ export const VendorForm: FC = () => {
       message.success(`Vendor ${isEdit ? 'updated' : 'created'} successfully`)
       navigate('/masters/vendors')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

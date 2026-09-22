@@ -60,8 +60,8 @@ export function useMaterialIssues(jobCardId: string | undefined) {
 export function useIssueMaterial(jobCardId: string | undefined) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: CreateMaterialIssuePayload) =>
-      createMaterialIssue(Number(jobCardId), payload),
+    mutationFn: async (payload: CreateMaterialIssuePayload) =>
+      (await createMaterialIssue(Number(jobCardId), payload)).data.map(toIssue),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['production', 'bomRequirements', jobCardId] })
       queryClient.invalidateQueries({ queryKey: ['production', 'materialIssues', jobCardId] })

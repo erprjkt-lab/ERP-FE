@@ -26,6 +26,7 @@ import {
   useDeleteSalesEnquiry,
   useSalesEnquiry,
 } from '../hooks/useSalesEnquiries'
+import { getErrorMessage } from '@/api/client'
 
 const ITEM_COLUMNS: TableColumnsType<SalesEnquiryItem> = [
   {
@@ -115,7 +116,7 @@ export const SalesEnquiryDetail: FC = () => {
           await closeEnquiry(enquiry.id)
           message.success('Sales enquiry closed')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -133,7 +134,7 @@ export const SalesEnquiryDetail: FC = () => {
           message.success('Sales enquiry deleted')
           navigate('/sales/enquiries')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

@@ -18,6 +18,7 @@ import {
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getErrorMessage } from '@/api/client'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -63,7 +64,7 @@ export const PurchaseGrnDetail: FC = () => {
           await cancelGrnMutation(grn.id)
           message.success('GRN cancelled')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -269,7 +270,7 @@ const QcModal: FC<QcModalProps> = ({ item, grnId, onClose }) => {
       message.success('QC result saved')
       onClose()
     } catch (error) {
-      if (error instanceof Error) message.error(error.message)
+      if (error instanceof Error) message.error(getErrorMessage(error))
     }
   }
 

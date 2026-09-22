@@ -10,6 +10,7 @@ import type { RawMaterial } from '@/types/masters'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteRawMaterial, useRawMaterials } from '../hooks/useRawMaterials'
 import { useMastersStore } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 const getColumns = (
   onEdit: (record: RawMaterial) => void,
@@ -78,7 +79,7 @@ export const RawMaterialList: FC = () => {
           await deleteRawMaterial(record.id)
           message.success('Raw material deleted successfully')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

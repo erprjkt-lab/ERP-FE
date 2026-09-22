@@ -8,6 +8,7 @@ import { useEmployees } from '@/modules/hr/hooks/useEmployees'
 import { useShifts } from '@/modules/hr/hooks/useShifts'
 import type { Challan, ChallanItem } from '@/types/production'
 import { useCreateProcessLog } from '../hooks/useProcessLogs'
+import { getErrorMessage } from '@/api/client'
 
 export interface AcceptChallanItemModalProps {
   open: boolean
@@ -79,7 +80,7 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
       message.success(`Accepted ${values.okQty} back from ${challan.destinationPartyName}`)
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

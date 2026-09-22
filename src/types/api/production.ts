@@ -173,14 +173,21 @@ export interface ApiMaterialIssue {
   created_at?: string | null
 }
 
+export interface MaterialIssueBatchLine {
+  batch_no?: string | null
+  heat_no?: string | null
+  issued_qty: number
+}
+
+// One call issues N batches from a SINGLE location in one atomic transaction
+// — store_location_id is scoped to the whole request, not per batch line. A
+// selection spanning multiple locations needs one call per location.
 export interface CreateMaterialIssuePayload {
   component_item_id: number
   process_id?: number | null
   store_location_id: number
-  batch_no?: string | null
-  heat_no?: string | null
-  issued_qty: number
   issue_date?: string | null
+  batches: MaterialIssueBatchLine[]
 }
 
 export interface ApiProcessLog {

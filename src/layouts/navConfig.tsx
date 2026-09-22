@@ -99,9 +99,12 @@ export const NAV_GROUPS: NavGroup[] = [
     children: [
       { path: '/inventory/locations', label: 'Store Location' },
       { path: '/inventory/transfers', label: 'Stock Transfer' },
+      { path: '/inventory/requisitions', label: 'Stock Requisition' },
       { path: '/inventory/adjustments', label: 'Stock Adjustment' },
       { path: '/inventory/ledger', label: 'Stock Ledger' },
-      { path: '/inventory/issue-material', label: 'Issue Material' },
+      { path: '/inventory/stock-balance', label: 'Stock Balance' },
+      { path: '/inventory/stock-issues', label: 'Stock Issue' },
+      { path: '/inventory/issue-material', label: 'Issue Material (Job Card)' },
     ],
   },
   {

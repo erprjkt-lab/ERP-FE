@@ -3,6 +3,7 @@ import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
+import { getErrorMessage } from '@/api/client'
 import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
@@ -127,27 +128,43 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
     }
 
     const issueDate = values.issueDate ? values.issueDate.format('YYYY-MM-DD') : undefined
-    const failures: string[] = []
 
+    // The API issues N batches from ONE location per call (store_location_id
+    // is scoped to the whole request, not per batch line) — group selections
+    // by location so each group becomes a single atomic call instead of one
+    // call per row.
+    const groupsByLocation = new Map<string, typeof selections>()
+    for (const entry of selections) {
+      const key = entry.row.locationId
+      const group = groupsByLocation.get(key) ?? []
+      group.push(entry)
+      groupsByLocation.set(key, group)
+    }
+
+    const failures: string[] = []
     setSubmitting(true)
-    for (const { row, qty } of selections) {
-      const label = `${locationNameById.get(row.locationId) ?? row.locationId}${row.batchNo ? ` / ${row.batchNo}` : ''}`
+    for (const [locationId, group] of groupsByLocation) {
+      const label = locationNameById.get(locationId) ?? locationId
       try {
         await issueMaterial({
           component_item_id: Number(values.componentItemId),
-          store_location_id: Number(row.locationId),
-          issued_qty: qty,
-          batch_no: row.batchNo || undefined,
-          heat_no: row.heatNo || undefined,
+          store_location_id: Number(locationId),
           issue_date: issueDate,
+          batches: group.map(({ row, qty }) => ({
+            batch_no: row.batchNo || undefined,
+            heat_no: row.heatNo || undefined,
+            issued_qty: qty,
+          })),
         })
-        setIssueQtyByRow(prev => {
-          const next = { ...prev }
-          delete next[rowKey(row)]
-          return next
-        })
+        for (const { row } of group) {
+          setIssueQtyByRow(prev => {
+            const next = { ...prev }
+            delete next[rowKey(row)]
+            return next
+          })
+        }
       } catch (error) {
-        failures.push(`${label} — ${error instanceof Error ? error.message : 'failed'}`)
+        failures.push(`${label} — ${getErrorMessage(error, 'failed')}`)
       }
     }
     setSubmitting(false)

@@ -11,6 +11,7 @@ import type {
   QuotationComparisonRow,
 } from '../hooks/usePurchaseEnquiries'
 import { useSelectSupplierForEnquiry } from '../hooks/usePurchaseOrders'
+import { getErrorMessage } from '@/api/client'
 
 export const PurchaseEnquiryCompare: FC = () => {
   const { id } = useParams()
@@ -59,7 +60,7 @@ export const PurchaseEnquiryCompare: FC = () => {
       })
       message.success('Supplier selected for this enquiry')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
