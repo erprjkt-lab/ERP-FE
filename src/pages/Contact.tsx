@@ -1,12 +1,13 @@
 import { useRef, useState, type FC, type FormEvent } from 'react'
-import { Mail, MapPin, Phone, Send, TriangleAlert } from 'lucide-react'
+import { Mail, MapPin, MessageCircle, Phone, Send, TriangleAlert } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Accordion } from '@/components/ui/Accordion'
 import { AnimatedText } from '@/components/ui/AnimatedText'
+import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { Reveal } from '@/components/ui/Reveal'
 import { SectionHeading } from '@/components/ui/SectionHeading'
-import { COMPANY, FAQS } from '@/data/site'
+import { COMPANY, FAQS, WHATSAPP_URL } from '@/data/site'
 
 const CONTACT_CARDS = [
   { icon: MapPin, label: 'Address', value: COMPANY.address },
@@ -247,6 +248,10 @@ export function Contact() {
                 <div className="rounded-2xl border border-dashed border-ink-200 p-6 text-sm text-ink-500">
                   We typically respond within one business day.
                 </div>
+                <Button href={WHATSAPP_URL} variant="secondary" className="w-full justify-center">
+                  <MessageCircle className="h-4 w-4" />
+                  Chat on WhatsApp
+                </Button>
               </div>
             </Reveal>
 

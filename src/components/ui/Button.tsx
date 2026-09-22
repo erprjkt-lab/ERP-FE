@@ -57,12 +57,16 @@ export function Button({
   }
 
   const base = `group relative isolate inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-semibold transition-shadow duration-300 ${VARIANT_CLASSES[variant]} ${className}`
+  // onClick lives here (not just on the plain-button branch below) so it
+  // still fires — for tracking, say — on a `to`/`href` button alongside the
+  // navigation, instead of being silently dropped.
   const motionProps = {
     style: { x, y },
     whileHover: hover,
     whileTap: tap,
     onMouseMove: handleMouseMove,
     onMouseLeave: handleMouseLeave,
+    onClick,
     className: base,
   }
   const content = (
@@ -90,7 +94,7 @@ export function Button({
     )
   }
   return (
-    <motion.button type={type} onClick={onClick} {...motionProps}>
+    <motion.button type={type} {...motionProps}>
       {content}
     </motion.button>
   )

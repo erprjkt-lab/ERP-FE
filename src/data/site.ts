@@ -3,8 +3,12 @@ export const COMPANY = {
   tagline: 'Enterprise Resource Planning Solutions',
   address: 'Suvarnabhoomi, near Speed Well Party Plot, Ambika Township, Rajkot 360004',
   phone: '+91 97730 84699',
-  email: 'hello@coreflowtech.com',
+  // .in, matching the real domain — .com belongs to an unrelated company.
+  email: 'hello@coreflowtech.in',
 }
+
+// Same number as COMPANY.phone — wa.me needs it digits-only with country code.
+export const WHATSAPP_URL = 'https://wa.me/919773084699'
 
 export interface NavItem {
   label: string

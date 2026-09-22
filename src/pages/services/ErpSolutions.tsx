@@ -19,6 +19,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
+import { Accordion } from '@/components/ui/Accordion'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
@@ -26,7 +27,7 @@ import { AnimatedText } from '@/components/ui/AnimatedText'
 import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { CtaBanner } from '@/components/sections/CtaBanner'
-import { ERP_BENEFITS, ERP_MODULES, ERP_WORKFLOW } from '@/data/site'
+import { ERP_BENEFITS, ERP_MODULES, ERP_WORKFLOW, FAQS, WHATSAPP_URL } from '@/data/site'
 
 const PLATFORM_HIGHLIGHTS = [
   { icon: LayoutGrid, label: 'Modular by design' },
@@ -119,7 +120,7 @@ export function ErpSolutions() {
             <Reveal delay={0.3}>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Button to="/contact" withArrow>
-                  Book a walkthrough
+                  Book a Free ERP Demo
                 </Button>
                 <Button to="/industries" variant="secondary">
                   See it by industry
@@ -320,10 +321,22 @@ export function ErpSolutions() {
         </Container>
       </section>
 
+      {/* FAQ */}
+      <section className="bg-ink-50/60 py-24">
+        <Container>
+          <SectionHeading eyebrow="FAQ" title="Common questions" align="left" />
+          <div className="mt-10 max-w-3xl">
+            <Accordion items={FAQS} />
+          </div>
+        </Container>
+      </section>
+
       <CtaBanner
         title="See CoreFlowTech ERP on your own data"
         description="We'll walk through your current process and show exactly how it maps onto the platform."
-        primaryLabel="Book a walkthrough"
+        primaryLabel="Book a Free ERP Demo"
+        secondaryLabel="Chat on WhatsApp"
+        secondaryHref={WHATSAPP_URL}
       />
     </div>
   )

@@ -1,7 +1,8 @@
 // Runs after `vite build` (client) and `vite build --ssr` (server bundle, see
 // the `build:ssr` script). Generates a static dist/<route>/index.html per page
-// with both that page's own <title>/description/OG/Twitter tags AND its
-// actual rendered content baked in.
+// with that page's own <title>/description/OG/Twitter tags, its own
+// WebPage/BreadcrumbList JSON-LD, AND its actual rendered content baked in.
+// Also generates a real dist/404.html for unmatched routes.
 //
 // Why the meta tags: this is a client-side-only React SPA — social crawlers
 // (WhatsApp, LinkedIn, Facebook, Slack, iMessage) fetch the raw HTML and read
@@ -17,12 +18,13 @@
 // ships empty and those crawlers see a blank page. Rendering each route to
 // static HTML via entry-server.tsx's renderToStaticMarkup gives them real
 // text. Real visitors still get the normal client-rendered app: main.tsx
-// mounts with createRoot (not hydrateRoot), so the browser replaces this
-// markup with the live app on load — there's no hydration-mismatch risk here.
+// hydrates onto this markup rather than discarding it.
 //
-// Vercel/most static hosts serve an exact file match (dist/about/index.html)
-// ahead of the SPA catch-all rewrite, so real users still get the normal
-// client-rendered app once React Router takes over.
+// Vercel serves an exact file match (dist/about/index.html) for a request to
+// that path; there is deliberately no SPA catch-all rewrite (see vercel.json)
+// so a path that doesn't match one of these files, or dist/404.html, falls
+// through to Vercel's own 404 — every real route already has its own static
+// file, so nothing legitimate depends on a catch-all.
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -33,6 +35,7 @@ const distDir = path.join(rootDir, 'dist')
 const ssrDir = path.join(rootDir, 'dist-ssr')
 const routes = JSON.parse(readFileSync(path.join(rootDir, 'src/data/seo-routes.json'), 'utf-8'))
 const SITE_URL = 'https://www.coreflowtech.in'
+const SITE_NAME = 'CoreFlowTech'
 
 const template = readFileSync(path.join(distDir, 'index.html'), 'utf-8')
 
@@ -52,14 +55,66 @@ function replaceTagContent(html, findAttr, findValue, newContent) {
   return html.replace(pattern, `$1${newContent}$2`)
 }
 
+/** Fills (or refills) the empty <script id="ld-xxx"> placeholders that live
+ * in index.html — see src/hooks/useSeo.ts, which targets the same ids to
+ * keep client-side navigation in sync. */
+function setJsonLdPlaceholder(html, id, data) {
+  const pattern = new RegExp(`(<script type="application/ld\\+json" id="${id}">)[^<]*(</script>)`)
+  if (!pattern.test(html)) {
+    throw new Error(`Missing <script id="${id}"> placeholder in the HTML template`)
+  }
+  return html.replace(pattern, `$1${JSON.stringify(data)}$2`)
+}
+
+/** Appends an extra JSON-LD block before </head> — for schema that only
+ * applies to specific routes (e.g. SoftwareApplication on the ERP page)
+ * rather than every page, so it isn't wired as a shared placeholder. */
+function appendJsonLd(html, data) {
+  const script = `    <script type="application/ld+json">${JSON.stringify(data)}</script>\n  </head>`
+  return html.replace('</head>', script)
+}
+
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+}
+
+// Mirrors src/data/seo.ts's getBreadcrumbs — duplicated rather than shared
+// because this script runs in plain Node against compiled JSON, not through
+// the TS/Vite pipeline. Keep the two in sync if the logic changes.
+const SEGMENT_LABELS = { services: 'Services' }
+function getBreadcrumbs(routePath) {
+  if (routePath === '/') return [{ label: 'Home', path: '/' }]
+  const segments = routePath.split('/').filter(Boolean)
+  const crumbs = [{ label: 'Home', path: '/' }]
+  let currentPath = ''
+  for (const segment of segments) {
+    currentPath += `/${segment}`
+    const route = routes.find(r => r.path === currentPath)
+    crumbs.push({ label: route?.breadcrumbLabel ?? SEGMENT_LABELS[segment] ?? segment, path: currentPath })
+  }
+  return crumbs
+}
+
+/** Every <script type="application/ld+json"> in the file must actually be
+ * valid JSON — a typo here ships broken structured data to every crawler
+ * with no build-time signal, so fail the build instead. */
+function assertValidJsonLd(html, label) {
+  const blocks = html.matchAll(/<script type="application\/ld\+json"[^>]*>([^<]*)<\/script>/g)
+  for (const [, content] of blocks) {
+    if (!content.trim()) continue
+    try {
+      JSON.parse(content)
+    } catch (error) {
+      throw new Error(`Invalid JSON-LD in ${label}: ${error.message}\n${content}`)
+    }
+  }
 }
 
 for (const route of routes) {
   const url = `${SITE_URL}${route.path}`
   const title = escapeHtml(route.title)
   const description = escapeHtml(route.description)
+  const imageUrl = `${SITE_URL}${route.image}`
 
   let html = template
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
@@ -68,8 +123,45 @@ for (const route of routes) {
   html = replaceTagContent(html, 'property', 'og:title', title)
   html = replaceTagContent(html, 'property', 'og:description', description)
   html = replaceTagContent(html, 'property', 'og:url', url)
+  html = replaceTagContent(html, 'property', 'og:image', imageUrl)
   html = replaceTagContent(html, 'name', 'twitter:title', title)
   html = replaceTagContent(html, 'name', 'twitter:description', description)
+  html = replaceTagContent(html, 'name', 'twitter:image', imageUrl)
+
+  const breadcrumbs = getBreadcrumbs(route.path)
+  html = setJsonLdPlaceholder(html, 'ld-webpage', {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: route.title,
+    description: route.description,
+    url,
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+  })
+  html = setJsonLdPlaceholder(html, 'ld-breadcrumb', {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: crumb.label,
+      item: `${SITE_URL}${crumb.path}`,
+    })),
+  })
+
+  // Genuinely applicable only here — this is the one page actually
+  // describing the ERP product itself. No price/offers/rating: none of
+  // that is real, so none of it is claimed.
+  if (route.path === '/services/erp-solutions') {
+    html = appendJsonLd(html, {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'CoreFlowTech ERP',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description: route.description,
+      url,
+    })
+  }
 
   const bodyHtml = render(route.path)
   if (!html.includes('<div id="root"></div>')) {
@@ -77,10 +169,38 @@ for (const route of routes) {
   }
   html = html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`)
 
+  assertValidJsonLd(html, route.path)
+
   const outDir = route.path === '/' ? distDir : path.join(distDir, route.path)
   mkdirSync(outDir, { recursive: true })
   writeFileSync(path.join(outDir, 'index.html'), html)
   console.log(`✓ ${route.path === '/' ? '/' : route.path + '/'}index.html`)
+}
+
+// A real 404 page: same shell, its own title/robots, none of the per-route
+// JSON-LD placeholders (an error page has no canonical content to describe —
+// left empty they'd be invalid JSON-LD, so they're stripped instead). Paired
+// with vercel.json having no catch-all rewrite, Vercel serves this file with
+// a genuine 404 status for any path that isn't one of the routes above.
+{
+  const notFoundTitle = 'Page Not Found | CoreFlowTech'
+  let html = template
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${notFoundTitle}</title>`)
+  html = replaceTagContent(html, 'name', 'description', "The page you're looking for doesn't exist or may have moved.")
+  html = replaceTagContent(html, 'property', 'og:title', notFoundTitle)
+  html = replaceTagContent(html, 'name', 'twitter:title', notFoundTitle)
+  html = replaceTagContent(html, 'name', 'robots', 'noindex, nofollow')
+  html = html.replace(
+    /<script type="application\/ld\+json" id="ld-webpage"><\/script>\s*<script type="application\/ld\+json" id="ld-breadcrumb"><\/script>\n?/,
+    '',
+  )
+
+  const bodyHtml = render('/__not_found__')
+  html = html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`)
+
+  assertValidJsonLd(html, '404')
+  writeFileSync(path.join(distDir, '404.html'), html)
+  console.log('✓ 404.html')
 }
 
 // Intermediate build artifact only — never deployed, and stale files here

@@ -49,6 +49,27 @@
       rel="stylesheet"
     />
 
+    <!-- Every scroll-reveal/entrance animation (Reveal, AnimatedText, etc.)
+         starts at opacity:0 as an inline style and is only ever animated to
+         opacity:1 by Framer Motion's JS. Prerendered HTML ships with that
+         inline opacity:0 baked in, so with JavaScript disabled or blocked,
+         the content never becomes visible — a real user with no-JS, or a
+         renderer that gives up before JS runs, sees a blank page below the
+         navbar. A stylesheet rule with !important beats an inline style
+         without one, and <noscript> content is parsed only when scripting is
+         off, so this forces everything visible without touching the normal
+         JS-enabled experience at all. -->
+    <noscript>
+      <style>
+        * {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
+    </noscript>
+
+    <!-- Site-wide — identical on every page, so these are static in the
+         template rather than generated per route. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -57,7 +78,7 @@
         "url": "https://www.coreflowtech.in/",
         "logo": "https://www.coreflowtech.in/og-image.png",
         "description": "ERP software and web development for engineering, healthcare, technology and manufacturing teams.",
-        "email": "hello@coreflowtech.com",
+        "email": "hello@coreflowtech.in",
         "telephone": "+91-97730-84699",
         "address": {
           "@type": "PostalAddress",
@@ -69,6 +90,20 @@
         "sameAs": []
       }
     </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "CoreFlowTech",
+        "url": "https://www.coreflowtech.in/"
+      }
+    </script>
+
+    <!-- Per-route — placeholders here, filled in by scripts/prerender-seo.mjs
+         for each static file, and kept in sync on client-side navigation by
+         src/hooks/useSeo.ts (both target these ids). -->
+    <script type="application/ld+json" id="ld-webpage"></script>
+    <script type="application/ld+json" id="ld-breadcrumb"></script>
   </head>
   <body>
     <div id="root"></div>

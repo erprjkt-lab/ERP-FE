@@ -9,6 +9,9 @@ interface CtaBannerProps {
   description: string
   primaryLabel?: string
   primaryTo?: string
+  /** External link (e.g. WhatsApp) — omit to show just the primary action. */
+  secondaryLabel?: string
+  secondaryHref?: string
 }
 
 export function CtaBanner({
@@ -16,6 +19,8 @@ export function CtaBanner({
   description,
   primaryLabel = 'Talk to us',
   primaryTo = '/contact',
+  secondaryLabel,
+  secondaryHref,
 }: CtaBannerProps) {
   return (
     <section className="relative overflow-hidden py-24">
@@ -44,10 +49,15 @@ export function CtaBanner({
         />
         <Reveal delay={0.2} soft>
           <p className="mx-auto mt-4 max-w-xl text-base text-white/80">{description}</p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Button to={primaryTo} variant="secondary" withArrow className="!bg-white">
               {primaryLabel}
             </Button>
+            {secondaryHref && secondaryLabel && (
+              <Button href={secondaryHref} variant="ghost" className="!text-white">
+                {secondaryLabel}
+              </Button>
+            )}
           </div>
         </Reveal>
       </Container>
