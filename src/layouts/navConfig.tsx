@@ -3,6 +3,7 @@ import {
   BarChartOutlined,
   DashboardOutlined,
   InboxOutlined,
+  SafetyCertificateOutlined,
   ShopOutlined,
   ShoppingCartOutlined,
   TagsOutlined,
@@ -117,6 +118,16 @@ export const NAV_GROUPS: NavGroup[] = [
       { path: '/production/work-orders', label: 'Work Order (Jobcard)' },
       { path: '/production/outsource', label: 'Outsource' },
       { path: '/production/entries', label: 'Production Entry' },
+    ],
+  },
+  {
+    key: '/quality',
+    icon: <SafetyCertificateOutlined />,
+    label: 'Quality',
+    children: [
+      { path: '/quality/ipr', label: 'IPR' },
+      { path: '/quality/fir', label: 'FIR' },
+      { path: '/quality/iir', label: 'IIR' },
     ],
   },
   {

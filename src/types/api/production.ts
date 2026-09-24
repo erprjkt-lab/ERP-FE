@@ -3,6 +3,9 @@ export interface ApiProcess {
   process_name: string
   process_code: string | null
   cycle_time: number | null
+  // Gates Final Inspection Report (FIR) creation server-side — a job card
+  // step against a process with this false can only get an IPR, never a FIR.
+  inspection_required: boolean
   status: number
   created_at?: string | null
   created_by?: number | null
@@ -13,6 +16,7 @@ export interface CreateProcessPayload {
   process_name: string
   process_code?: string | null
   cycle_time?: number | null
+  inspection_required?: boolean
   status?: number
 }
 

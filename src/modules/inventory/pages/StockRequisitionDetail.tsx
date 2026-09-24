@@ -4,38 +4,17 @@ import {
   CloseOutlined,
   DeleteOutlined,
   EditOutlined,
-  InboxOutlined,
   SendOutlined,
 } from '@ant-design/icons'
-import {
-  App,
-  Button,
-  Card,
-  Col,
-  DatePicker,
-  Descriptions,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Row,
-  Select,
-  Space,
-  Typography,
-} from 'antd'
-import type { FormListFieldData } from 'antd'
-import dayjs from 'dayjs'
+import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
-import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import type { StockIssue, StockRequisitionItem } from '@/types/inventory'
 import { STOCK_REQUISITION_STATUS_BADGE, STOCK_REQUISITION_STATUS_LABELS } from '../constants'
-import { useLocations } from '../hooks/useLocations'
-import { useIssueAgainstRequisition, useStockIssuesForRequisition } from '../hooks/useStockIssues'
+import { useStockIssuesForRequisition } from '../hooks/useStockIssues'
 import {
   useApproveStockRequisition,
   useCancelStockRequisition,
@@ -45,14 +24,6 @@ import {
   useSubmitStockRequisition,
 } from '../hooks/useStockRequisitions'
 import { getErrorMessage } from '@/api/client'
-
-interface IssueLineValues {
-  stockRequisitionItemId: string
-  storeLocationId: string
-  batchNo?: string
-  heatNo?: string
-  issuedQty: number
-}
 
 export const StockRequisitionDetail: FC = () => {
   const { id } = useParams()
@@ -65,7 +36,6 @@ export const StockRequisitionDetail: FC = () => {
   const { mutateAsync: reject, isPending: rejecting } = useRejectStockRequisition()
   const { mutateAsync: close, isPending: closing } = useCloseStockRequisition()
   const { mutateAsync: cancel, isPending: cancelling } = useCancelStockRequisition()
-  const [issueModalOpen, setIssueModalOpen] = useState(false)
 
   if (!requisition) {
     return (
@@ -198,8 +168,6 @@ export const StockRequisitionDetail: FC = () => {
     },
   ]
 
-  const hasPendingItems = requisition.items.some(item => item.pendingQty > 0)
-
   return (
     <div>
       <PageHeader
@@ -280,14 +248,6 @@ export const StockRequisitionDetail: FC = () => {
                 <Button loading={closing} onClick={handleClose}>
                   Close
                 </Button>
-                <Button
-                  type="primary"
-                  icon={<InboxOutlined />}
-                  disabled={!hasPendingItems}
-                  onClick={() => setIssueModalOpen(true)}
-                >
-                  Issue Stock
-                </Button>
               </>
             )}
           </Space>
@@ -360,165 +320,6 @@ export const StockRequisitionDetail: FC = () => {
           </Col>
         )}
       </Row>
-
-      {issueModalOpen && (
-        <IssueStockModal
-          requisitionId={requisition.id}
-          items={requisition.items.filter(item => item.pendingQty > 0)}
-          onClose={() => setIssueModalOpen(false)}
-        />
-      )}
     </div>
-  )
-}
-
-interface IssueStockModalProps {
-  requisitionId: string
-  items: StockRequisitionItem[]
-  onClose: () => void
-}
-
-const IssueStockModal: FC<IssueStockModalProps> = ({ requisitionId, items, onClose }) => {
-  const { message } = App.useApp()
-  const [form] = Form.useForm()
-  const { data: locations } = useLocations()
-  const { data: procurementItems } = useProcurementItems()
-  const { mutateAsync: issueStock, isPending } = useIssueAgainstRequisition(requisitionId)
-
-  const itemOptions = items.map(item => ({
-    label: `${item.itemName ?? item.itemId} (pending: ${item.pendingQty})`,
-    value: item.id,
-  }))
-  const locationOptions = locations.map(l => ({ label: l.name, value: l.id }))
-
-  const handleFinish = async (values: { issueDate?: dayjs.Dayjs; lines: IssueLineValues[] }) => {
-    try {
-      await issueStock({
-        issue_date: values.issueDate ? values.issueDate.format('YYYY-MM-DD') : undefined,
-        lines: values.lines.map(line => ({
-          stock_requisition_item_id: Number(line.stockRequisitionItemId),
-          store_location_id: Number(line.storeLocationId),
-          batch_no: line.batchNo ?? null,
-          heat_no: line.heatNo ?? null,
-          issued_qty: line.issuedQty,
-        })),
-      })
-      message.success('Stock issued')
-      onClose()
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
-  }
-
-  return (
-    <Modal
-      title="Issue Stock"
-      open
-      onCancel={onClose}
-      onOk={() => form.submit()}
-      confirmLoading={isPending}
-      width={760}
-      okText="Issue"
-    >
-      <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ lines: [{}] }}>
-        <Form.Item label="Issue Date" name="issueDate">
-          <DatePicker style={{ width: 220 }} />
-        </Form.Item>
-        <Form.List name="lines">
-          {(fields, { add, remove }) => (
-            <>
-              {fields.map(field => (
-                <IssueLineRow
-                  key={field.key}
-                  field={field}
-                  itemOptions={itemOptions}
-                  locationOptions={locationOptions}
-                  requisitionItems={items}
-                  procurementItems={procurementItems}
-                  onRemove={fields.length > 1 ? () => remove(field.name) : undefined}
-                />
-              ))}
-              <Button icon={<InboxOutlined />} onClick={() => add()} style={{ width: '100%' }}>
-                Add Line
-              </Button>
-            </>
-          )}
-        </Form.List>
-      </Form>
-    </Modal>
-  )
-}
-
-interface IssueLineRowProps {
-  field: FormListFieldData
-  itemOptions: { label: string; value: string }[]
-  locationOptions: { label: string; value: string }[]
-  requisitionItems: StockRequisitionItem[]
-  procurementItems: { id: string; batchTracking: boolean; heatTracking: boolean }[]
-  onRemove?: () => void
-}
-
-const IssueLineRow: FC<IssueLineRowProps> = ({
-  field,
-  itemOptions,
-  locationOptions,
-  requisitionItems,
-  procurementItems,
-  onRemove,
-}) => {
-  const selectedRequisitionItemId = Form.useWatch([
-    'lines',
-    field.name,
-    'stockRequisitionItemId',
-  ]) as string | undefined
-  const requisitionItem = requisitionItems.find(i => i.id === selectedRequisitionItemId)
-  const masterItem = procurementItems.find(i => i.id === requisitionItem?.itemId)
-
-  return (
-    <Row gutter={8} align="top">
-      <Col span={7}>
-        <Form.Item
-          name={[field.name, 'stockRequisitionItemId']}
-          rules={[{ required: true, message: 'Required' }]}
-        >
-          <Select placeholder="Pending item" options={itemOptions} />
-        </Form.Item>
-      </Col>
-      <Col span={5}>
-        <Form.Item
-          name={[field.name, 'storeLocationId']}
-          rules={[{ required: true, message: 'Required' }]}
-        >
-          <Select placeholder="Store location" options={locationOptions} showSearch />
-        </Form.Item>
-      </Col>
-      <Col span={4}>
-        <Form.Item
-          name={[field.name, 'batchNo']}
-          rules={masterItem?.batchTracking ? [{ required: true, message: 'Required' }] : []}
-        >
-          <Input placeholder="Batch No" />
-        </Form.Item>
-      </Col>
-      <Col span={4}>
-        <Form.Item
-          name={[field.name, 'heatNo']}
-          rules={masterItem?.heatTracking ? [{ required: true, message: 'Required' }] : []}
-        >
-          <Input placeholder="Heat No" />
-        </Form.Item>
-      </Col>
-      <Col span={3}>
-        <Form.Item
-          name={[field.name, 'issuedQty']}
-          rules={[{ required: true, message: 'Required' }]}
-        >
-          <InputNumber placeholder="Qty" min={0.001} style={{ width: '100%' }} />
-        </Form.Item>
-      </Col>
-      <Col span={1}>
-        {onRemove && <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />}
-      </Col>
-    </Row>
   )
 }

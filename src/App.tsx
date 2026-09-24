@@ -75,6 +75,7 @@ import {
   OutsourceList,
   ProcessList,
 } from '@/modules/production'
+import { FirList, IirList, IprList } from '@/modules/quality'
 import {
   SalesEnquiryDetail,
   SalesEnquiryForm,
@@ -124,6 +125,9 @@ const IMPLEMENTED_PATHS = new Set([
   '/production/bom',
   '/production/work-orders',
   '/production/outsource',
+  '/quality/ipr',
+  '/quality/fir',
+  '/quality/iir',
 ])
 
 function App() {
@@ -256,6 +260,10 @@ function App() {
                 <Route path="/production/work-orders/new" element={<JobCardForm />} />
                 <Route path="/production/work-orders/:id" element={<JobCardDetail />} />
                 <Route path="/production/outsource" element={<OutsourceList />} />
+
+                <Route path="/quality/ipr" element={<IprList />} />
+                <Route path="/quality/fir" element={<FirList />} />
+                <Route path="/quality/iir" element={<IirList />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route
