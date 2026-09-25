@@ -11,6 +11,7 @@ import { useLocations } from '@/modules/inventory/hooks/useLocations'
 import { MANUFACTURING_ROUTE_CODE, useCreateJobCard } from '../hooks/useJobCards'
 import { useItemProcessRoute } from '../hooks/useItemProcessRoute'
 import { useProcesses } from '../hooks/useProcesses'
+import { getErrorMessage } from '@/api/client'
 
 const ROUTE_TYPE_OPTIONS = [
   { label: 'Standard', value: 'standard' },
@@ -87,7 +88,7 @@ export const JobCardForm: FC = () => {
       message.success('Job card created successfully')
       navigate('/production/work-orders')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

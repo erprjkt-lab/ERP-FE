@@ -29,6 +29,7 @@ import {
   useUpdateSalesEnquiry,
 } from '../hooks/useSalesEnquiries'
 import type { SalesEnquiryItemInput } from '../hooks/useSalesEnquiries'
+import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
   itemId: string
@@ -123,7 +124,7 @@ export const SalesEnquiryForm: FC = () => {
       message.success(isEdit ? 'Sales enquiry updated' : 'Sales enquiry created')
       navigate(`/sales/enquiries/${enquiry.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

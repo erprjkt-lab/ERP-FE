@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { getErrorMessage } from '@/api/client'
 
 export interface SimpleMasterListProps<T extends { id: string }> {
   title: string
@@ -72,7 +73,7 @@ export function SimpleMasterList<T extends { id: string }>({
       message.success(`${breadcrumbLabel} ${editing ? 'updated' : 'created'} successfully`)
       setOpen(false)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     } finally {
       setSubmitting(false)
     }
@@ -89,7 +90,7 @@ export function SimpleMasterList<T extends { id: string }>({
           await onDelete(record)
           message.success(`${breadcrumbLabel} deleted successfully`)
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

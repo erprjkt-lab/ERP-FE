@@ -27,6 +27,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { JobCardInspectionReports } from '@/modules/quality/components/JobCardInspectionReports'
 import { ledgerText } from '@/theme/typography'
 import type { JobCardMovement, MaterialIssue, ProcessLog } from '@/types/production'
 import { AcceptProductionModal } from '../components/AcceptProductionModal'
@@ -396,6 +397,40 @@ export const JobCardDetail: FC = () => {
                   size="small"
                   totalLabel="movements"
                 />
+              ),
+            },
+            {
+              key: 'quality',
+              label: 'Quality',
+              children: jobCard && (
+                <Space direction="vertical" size={24} style={{ width: '100%' }}>
+                  <div>
+                    <Typography.Title level={5}>
+                      In-Process Inspection Reports (IPR)
+                    </Typography.Title>
+                    <JobCardInspectionReports
+                      jobCardId={jobCard.id}
+                      itemId={jobCard.itemId}
+                      routeProcesses={jobCard.routes.map(r => ({
+                        id: r.processId,
+                        name: r.processName,
+                      }))}
+                      reportType="IPR"
+                    />
+                  </div>
+                  <div>
+                    <Typography.Title level={5}>Final Inspection Reports (FIR)</Typography.Title>
+                    <JobCardInspectionReports
+                      jobCardId={jobCard.id}
+                      itemId={jobCard.itemId}
+                      routeProcesses={jobCard.routes.map(r => ({
+                        id: r.processId,
+                        name: r.processName,
+                      }))}
+                      reportType="FIR"
+                    />
+                  </div>
+                </Space>
               ),
             },
           ]}

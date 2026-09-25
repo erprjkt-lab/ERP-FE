@@ -15,6 +15,7 @@ import {
 } from '../hooks/useJobCardChallans'
 import { useJobCards } from '../hooks/useJobCards'
 import type { Challan, ChallanItem, ChallanRequest } from '@/types/production'
+import { getErrorMessage } from '@/api/client'
 
 export const OutsourceList = () => {
   const { message } = App.useApp()
@@ -34,7 +35,7 @@ export const OutsourceList = () => {
       await markReceived(challanId)
       message.success('Challan marked received')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -43,7 +44,7 @@ export const OutsourceList = () => {
       await closeChallanMutation(challanId)
       message.success('Challan closed')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

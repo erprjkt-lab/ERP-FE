@@ -21,6 +21,7 @@ import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
 import { useProcurementItems } from '../hooks/useProcurementItems'
 import { useCreatePurchaseOrderDirect } from '../hooks/usePurchaseOrders'
 import type { PurchaseOrderItemInput } from '../hooks/usePurchaseOrders'
+import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
   itemId: string
@@ -86,7 +87,7 @@ export const PurchaseOrderForm: FC = () => {
       message.success('Purchase order created successfully')
       navigate(`/purchase/orders/${po.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

@@ -11,7 +11,18 @@ import {
   EmployeeList,
   ShiftList,
 } from '@/modules/hr'
-import { IssueMaterialList, StockBalance } from '@/modules/inventory'
+import {
+  IssueMaterialList,
+  StockAdjustmentDetail,
+  StockAdjustmentForm,
+  StockAdjustmentList,
+  StockBalance,
+  StockIssueList,
+  StockLedger,
+  StockRequisitionDetail,
+  StockRequisitionForm,
+  StockRequisitionList,
+} from '@/modules/inventory'
 import {
   ConsumableList,
   CustomerDetail,
@@ -64,6 +75,7 @@ import {
   OutsourceList,
   ProcessList,
 } from '@/modules/production'
+import { FirList, IirList, IprList } from '@/modules/quality'
 import {
   SalesEnquiryDetail,
   SalesEnquiryForm,
@@ -104,17 +116,26 @@ const IMPLEMENTED_PATHS = new Set([
   '/sales/quotations',
   '/sales/orders',
   '/inventory/ledger',
+  '/inventory/stock-balance',
+  '/inventory/requisitions',
+  '/inventory/adjustments',
+  '/inventory/stock-issues',
   '/inventory/issue-material',
   '/production/process',
   '/production/bom',
   '/production/work-orders',
   '/production/outsource',
+  '/quality/ipr',
+  '/quality/fir',
+  '/quality/iir',
 ])
 
 function App() {
   return (
     <ConfigProvider theme={ANTD_THEME}>
-      <AntApp>
+      {/* Longer than antd's 3s default — API validation errors can be a full
+          sentence and were dismissing before they could be read. */}
+      <AntApp message={{ duration: 5 }}>
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -209,7 +230,19 @@ function App() {
                 <Route path="/sales/orders/:id" element={<SalesOrderDetail />} />
                 <Route path="/sales/orders/:id/edit" element={<SalesOrderForm />} />
 
-                <Route path="/inventory/ledger" element={<StockBalance />} />
+                <Route path="/inventory/ledger" element={<StockLedger />} />
+                <Route path="/inventory/stock-balance" element={<StockBalance />} />
+
+                <Route path="/inventory/requisitions" element={<StockRequisitionList />} />
+                <Route path="/inventory/requisitions/new" element={<StockRequisitionForm />} />
+                <Route path="/inventory/requisitions/:id" element={<StockRequisitionDetail />} />
+                <Route path="/inventory/requisitions/:id/edit" element={<StockRequisitionForm />} />
+
+                <Route path="/inventory/adjustments" element={<StockAdjustmentList />} />
+                <Route path="/inventory/adjustments/new" element={<StockAdjustmentForm />} />
+                <Route path="/inventory/adjustments/:id" element={<StockAdjustmentDetail />} />
+
+                <Route path="/inventory/stock-issues" element={<StockIssueList />} />
                 <Route path="/inventory/issue-material" element={<IssueMaterialList />} />
 
                 <Route path="/production/process" element={<ProcessList />} />
@@ -227,6 +260,10 @@ function App() {
                 <Route path="/production/work-orders/new" element={<JobCardForm />} />
                 <Route path="/production/work-orders/:id" element={<JobCardDetail />} />
                 <Route path="/production/outsource" element={<OutsourceList />} />
+
+                <Route path="/quality/ipr" element={<IprList />} />
+                <Route path="/quality/fir" element={<FirList />} />
+                <Route path="/quality/iir" element={<IirList />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route

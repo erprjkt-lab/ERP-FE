@@ -16,6 +16,7 @@ import {
 } from '../hooks/useRawMaterials'
 import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 export const RawMaterialForm: FC = () => {
   const { id } = useParams()
@@ -107,7 +108,7 @@ export const RawMaterialForm: FC = () => {
       message.success(`Raw material ${isEdit ? 'updated' : 'created'} successfully`)
       navigate('/masters/raw-materials')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

@@ -10,6 +10,10 @@ import type {
 } from '@/types/procurement'
 import type { StatusBadgeStatus } from '@/components/ui/StatusBadge'
 
+// ItemMaster::TYPE_RM on the backend — RM GRN lines require an approved IIR
+// before QC can be saved.
+export const ITEM_TYPE_RAW_MATERIAL = 2
+
 export const PRIORITY_OPTIONS: { label: string; value: Priority }[] = [
   { label: 'Low', value: 'LOW' },
   { label: 'Normal', value: 'NORMAL' },

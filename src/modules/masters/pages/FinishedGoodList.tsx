@@ -10,6 +10,7 @@ import type { FinishedGood } from '@/types/masters'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteFinishedGood, useFinishedGoods } from '../hooks/useFinishedGoods'
 import { useMastersStore } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 const getColumns = (
   onEdit: (record: FinishedGood) => void,
@@ -78,7 +79,7 @@ export const FinishedGoodList: FC = () => {
           await deleteFinishedGood(record.id)
           message.success('Finished good deleted successfully')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

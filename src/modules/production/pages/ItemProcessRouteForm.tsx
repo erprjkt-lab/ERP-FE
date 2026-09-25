@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { useFinishedGood } from '@/modules/masters/hooks/useFinishedGoods'
 import { useDefineItemProcessRoute, useItemProcessRoute } from '../hooks/useItemProcessRoute'
 import { useProcesses } from '../hooks/useProcesses'
+import { getErrorMessage } from '@/api/client'
 
 interface StepFormValue {
   processId?: string
@@ -148,7 +149,7 @@ export const ItemProcessRouteForm: FC = () => {
       message.success('Item process route saved successfully')
       navigate('/production/bom')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

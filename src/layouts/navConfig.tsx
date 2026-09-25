@@ -3,6 +3,7 @@ import {
   BarChartOutlined,
   DashboardOutlined,
   InboxOutlined,
+  SafetyCertificateOutlined,
   ShopOutlined,
   ShoppingCartOutlined,
   TagsOutlined,
@@ -99,9 +100,12 @@ export const NAV_GROUPS: NavGroup[] = [
     children: [
       { path: '/inventory/locations', label: 'Store Location' },
       { path: '/inventory/transfers', label: 'Stock Transfer' },
+      { path: '/inventory/requisitions', label: 'Stock Requisition' },
       { path: '/inventory/adjustments', label: 'Stock Adjustment' },
       { path: '/inventory/ledger', label: 'Stock Ledger' },
-      { path: '/inventory/issue-material', label: 'Issue Material' },
+      { path: '/inventory/stock-balance', label: 'Stock Balance' },
+      { path: '/inventory/stock-issues', label: 'Stock Issue' },
+      { path: '/inventory/issue-material', label: 'Issue Material (Job Card)' },
     ],
   },
   {
@@ -114,6 +118,16 @@ export const NAV_GROUPS: NavGroup[] = [
       { path: '/production/work-orders', label: 'Work Order (Jobcard)' },
       { path: '/production/outsource', label: 'Outsource' },
       { path: '/production/entries', label: 'Production Entry' },
+    ],
+  },
+  {
+    key: '/quality',
+    icon: <SafetyCertificateOutlined />,
+    label: 'Quality',
+    children: [
+      { path: '/quality/ipr', label: 'IPR' },
+      { path: '/quality/fir', label: 'FIR' },
+      { path: '/quality/iir', label: 'IIR' },
     ],
   },
   {

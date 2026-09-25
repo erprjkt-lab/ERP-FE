@@ -18,15 +18,19 @@ import {
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getErrorMessage } from '@/api/client'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { IncomingInspectionReports } from '@/modules/quality/components/IncomingInspectionReports'
+import { useIncomingInspectionReportsForGrnItem } from '@/modules/quality/hooks/useInspectionReports'
 import type { GrnItem } from '@/types/procurement'
 import {
   GRN_LINE_STATUS_BADGE,
   GRN_LINE_STATUS_LABELS,
   GRN_STATUS_BADGE,
   GRN_STATUS_LABELS,
+  ITEM_TYPE_RAW_MATERIAL,
 } from '../constants'
 import { useCancelGrn, useGrn, useSaveGrnItemQc } from '../hooks/usePurchaseGrns'
 
@@ -39,6 +43,7 @@ export const PurchaseGrnDetail: FC = () => {
   const { data: grn, isLoading } = useGrn(id)
   const { mutateAsync: cancelGrnMutation, isPending: cancelling } = useCancelGrn()
   const [qcItem, setQcItem] = useState<GrnItem | null>(null)
+  const [iirItem, setIirItem] = useState<GrnItem | null>(null)
 
   if (!grn) {
     return (
@@ -63,7 +68,7 @@ export const PurchaseGrnDetail: FC = () => {
           await cancelGrnMutation(grn.id)
           message.success('GRN cancelled')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -137,15 +142,7 @@ export const PurchaseGrnDetail: FC = () => {
       title: 'Actions',
       key: 'actions',
       render: (_: unknown, r: GrnItem) => (
-        <Tooltip title={QC_LOCKED_STATUSES.has(r.lineStatus) ? 'QC already recorded' : 'Run QC'}>
-          <Button
-            size="small"
-            disabled={QC_LOCKED_STATUSES.has(r.lineStatus)}
-            onClick={() => setQcItem(r)}
-          >
-            QC
-          </Button>
-        </Tooltip>
+        <GrnLineActions record={r} onQc={() => setQcItem(r)} onIir={() => setIirItem(r)} />
       ),
     },
   ]
@@ -222,7 +219,59 @@ export const PurchaseGrnDetail: FC = () => {
       </Row>
 
       {qcItem && <QcModal item={qcItem} grnId={grn.id} onClose={() => setQcItem(null)} />}
+      {iirItem && (
+        <Modal
+          title={`Incoming Inspection — ${iirItem.itemName ?? iirItem.itemId}`}
+          open
+          onCancel={() => setIirItem(null)}
+          footer={null}
+          width={840}
+        >
+          <IncomingInspectionReports grnItemId={iirItem.id} itemId={iirItem.itemId} />
+        </Modal>
+      )}
     </div>
+  )
+}
+
+interface GrnLineActionsProps {
+  record: GrnItem
+  onQc: () => void
+  onIir: () => void
+}
+
+const GrnLineActions: FC<GrnLineActionsProps> = ({ record, onQc, onIir }) => {
+  const isRawMaterial = record.itemType === ITEM_TYPE_RAW_MATERIAL
+  const { hasApprovedIir, isLoading } = useIncomingInspectionReportsForGrnItem(
+    isRawMaterial ? record.id : undefined,
+  )
+  const qcLocked = QC_LOCKED_STATUSES.has(record.lineStatus)
+  // Fail-safe: block QC on an RM line until the IIR check has actually
+  // resolved and confirmed an approval — don't let the button flash enabled
+  // during the initial fetch just because isLoading hasn't settled yet.
+  const qcBlockedByIir = isRawMaterial && (isLoading || !hasApprovedIir)
+
+  const qcTooltip = qcLocked
+    ? 'QC already recorded'
+    : qcBlockedByIir
+      ? 'An approved Incoming Inspection Report (IIR) is required first'
+      : 'Run QC'
+
+  return (
+    <Space size="small">
+      {isRawMaterial && (
+        <Tooltip title="Manage Incoming Inspection Reports for this line">
+          <Button size="small" onClick={onIir}>
+            IIR{hasApprovedIir ? ' ✓' : ''}
+          </Button>
+        </Tooltip>
+      )}
+      <Tooltip title={qcTooltip}>
+        <Button size="small" disabled={qcLocked || qcBlockedByIir} onClick={onQc}>
+          QC
+        </Button>
+      </Tooltip>
+    </Space>
   )
 }
 
@@ -269,7 +318,7 @@ const QcModal: FC<QcModalProps> = ({ item, grnId, onClose }) => {
       message.success('QC result saved')
       onClose()
     } catch (error) {
-      if (error instanceof Error) message.error(error.message)
+      if (error instanceof Error) message.error(getErrorMessage(error))
     }
   }
 

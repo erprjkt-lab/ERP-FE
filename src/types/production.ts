@@ -4,6 +4,7 @@ export interface Process extends BaseEntity {
   processName: string
   processCode?: string
   cycleTime?: number
+  inspectionRequired: boolean
   status: Status
 }
 

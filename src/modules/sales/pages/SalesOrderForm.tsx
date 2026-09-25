@@ -22,6 +22,7 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
 import { useCreateSalesOrder, useSalesOrder, useUpdateSalesOrder } from '../hooks/useSalesOrders'
 import type { SalesOrderItemInput } from '../hooks/useSalesOrders'
+import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
   itemId: string
@@ -113,7 +114,7 @@ export const SalesOrderForm: FC = () => {
       message.success(isEdit ? 'Sales order updated' : 'Sales order created')
       navigate(`/sales/orders/${order.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

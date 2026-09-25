@@ -29,6 +29,7 @@ import { EMPLOYEE_STATUS_OPTIONS } from '../constants'
 import { useDeleteEmployee, useEmployees } from '../hooks/useEmployees'
 import { useHRStore } from '../store/hrStore'
 import { getDepartmentColor } from '../utils/departmentColor'
+import { getErrorMessage } from '@/api/client'
 
 const getColumns = (
   colorTextDescription: string,
@@ -116,7 +117,7 @@ export const EmployeeList: FC = () => {
           await deleteEmployee(Number(record.id))
           message.success('Employee deleted successfully')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

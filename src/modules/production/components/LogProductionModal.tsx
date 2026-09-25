@@ -11,6 +11,7 @@ import { useShifts } from '@/modules/hr/hooks/useShifts'
 import type { ProcessLog } from '@/types/production'
 import { useCreateProcessLog } from '../hooks/useProcessLogs'
 import type { StepProgress } from '../utils/jobCardProgress'
+import { getErrorMessage } from '@/api/client'
 
 export interface LogProductionModalProps {
   open: boolean
@@ -107,7 +108,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
       message.success(`Logged ${productionQty} at ${step.step.processName}`)
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

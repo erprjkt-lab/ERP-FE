@@ -28,6 +28,7 @@ import {
   useUpdateSalesQuotation,
 } from '../hooks/useSalesQuotations'
 import type { SalesQuotationItemInput } from '../hooks/useSalesQuotations'
+import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
   salesEnquiryItemId?: string | null
@@ -155,7 +156,7 @@ export const SalesQuotationForm: FC = () => {
       message.success(isEdit ? 'Quotation updated' : 'Quotation created')
       navigate(`/sales/quotations/${quotation.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

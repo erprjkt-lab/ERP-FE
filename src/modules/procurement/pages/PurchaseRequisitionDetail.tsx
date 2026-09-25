@@ -19,6 +19,7 @@ import {
   useRejectRequisition,
   useSubmitRequisitionForApproval,
 } from '../hooks/usePurchaseRequisitions'
+import { getErrorMessage } from '@/api/client'
 
 export const PurchaseRequisitionDetail: FC = () => {
   const { id } = useParams()
@@ -46,7 +47,7 @@ export const PurchaseRequisitionDetail: FC = () => {
       await submitForApproval(requisition.id)
       message.success('Requisition submitted for approval')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -55,7 +56,7 @@ export const PurchaseRequisitionDetail: FC = () => {
       await approve(requisition.id)
       message.success('Requisition approved')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -79,7 +80,7 @@ export const PurchaseRequisitionDetail: FC = () => {
           await reject({ id: requisition.id, reason })
           message.success('Requisition rejected')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

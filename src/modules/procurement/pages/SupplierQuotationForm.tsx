@@ -11,6 +11,7 @@ import {
   useSupplierQuotationByPeSupplier,
 } from '../hooks/useSupplierQuotations'
 import type { SupplierQuotationItemInput } from '../hooks/useSupplierQuotations'
+import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
   quotedQty: number
@@ -116,7 +117,7 @@ export const SupplierQuotationForm: FC = () => {
       message.success('Supplier quotation recorded')
       navigate(`/purchase/enquiries/${enquiry.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

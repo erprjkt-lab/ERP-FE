@@ -35,6 +35,7 @@ function toGrnItem(api: ApiGrnItem): GrnItem {
     itemId: String(api.item_id),
     itemName: api.item?.item_name,
     itemCode: api.item?.item_code,
+    itemType: api.item?.item_type,
     orderedQty: api.po_item ? Number(api.po_item.ordered_qty) : undefined,
     gradeId: api.grade_id ? String(api.grade_id) : null,
     receivedQty: Number(api.received_qty),

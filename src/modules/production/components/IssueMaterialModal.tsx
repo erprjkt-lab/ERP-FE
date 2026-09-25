@@ -3,6 +3,7 @@ import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
+import { getErrorMessage } from '@/api/client'
 import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
@@ -127,39 +128,29 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
     }
 
     const issueDate = values.issueDate ? values.issueDate.format('YYYY-MM-DD') : undefined
-    const failures: string[] = []
 
     setSubmitting(true)
-    for (const { row, qty } of selections) {
-      const label = `${locationNameById.get(row.locationId) ?? row.locationId}${row.batchNo ? ` / ${row.batchNo}` : ''}`
-      try {
-        await issueMaterial({
-          component_item_id: Number(values.componentItemId),
+    try {
+      await issueMaterial({
+        component_item_id: Number(values.componentItemId),
+        issue_date: issueDate,
+        batches: selections.map(({ row, qty }) => ({
           store_location_id: Number(row.locationId),
-          issued_qty: qty,
           batch_no: row.batchNo || undefined,
           heat_no: row.heatNo || undefined,
-          issue_date: issueDate,
-        })
-        setIssueQtyByRow(prev => {
-          const next = { ...prev }
-          delete next[rowKey(row)]
-          return next
-        })
-      } catch (error) {
-        failures.push(`${label} — ${error instanceof Error ? error.message : 'failed'}`)
-      }
-    }
-    setSubmitting(false)
-
-    if (failures.length === 0) {
+          issued_qty: qty,
+        })),
+      })
       message.success(
         `Material issued from ${selections.length} ${selections.length > 1 ? 'lots' : 'lot'}`,
       )
+      setIssueQtyByRow({})
       form.resetFields()
       onClose()
-    } else {
-      message.error(`Some issues failed — ${failures.join('; ')}`)
+    } catch (error) {
+      message.error(getErrorMessage(error))
+    } finally {
+      setSubmitting(false)
     }
   }
 

@@ -13,6 +13,7 @@ import {
   usePurchaseRequisitions,
 } from '../hooks/usePurchaseRequisitions'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
+import { getErrorMessage } from '@/api/client'
 
 const STATUS_OPTIONS = Object.entries(REQUISITION_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -88,7 +89,7 @@ export const PurchaseRequisitionList: FC = () => {
           await deleteRequisition(record.id)
           message.success('Purchase requisition deleted')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })

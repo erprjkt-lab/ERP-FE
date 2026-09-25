@@ -3,6 +3,9 @@ export interface ApiProcess {
   process_name: string
   process_code: string | null
   cycle_time: number | null
+  // Gates Final Inspection Report (FIR) creation server-side — a job card
+  // step against a process with this false can only get an IPR, never a FIR.
+  inspection_required: boolean
   status: number
   created_at?: string | null
   created_by?: number | null
@@ -13,6 +16,7 @@ export interface CreateProcessPayload {
   process_name: string
   process_code?: string | null
   cycle_time?: number | null
+  inspection_required?: boolean
   status?: number
 }
 
@@ -173,14 +177,21 @@ export interface ApiMaterialIssue {
   created_at?: string | null
 }
 
-export interface CreateMaterialIssuePayload {
-  component_item_id: number
-  process_id?: number | null
+export interface MaterialIssueBatchLine {
   store_location_id: number
   batch_no?: string | null
   heat_no?: string | null
   issued_qty: number
+}
+
+// store_location_id moved from a single request-level field to per batch
+// line (backend change) — one call can now span multiple locations in a
+// single atomic transaction instead of needing one call per location.
+export interface CreateMaterialIssuePayload {
+  component_item_id: number
+  process_id?: number | null
   issue_date?: string | null
+  batches: MaterialIssueBatchLine[]
 }
 
 export interface ApiProcessLog {

@@ -1,3 +1,4 @@
+import { Tag } from 'antd'
 import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
@@ -32,6 +33,14 @@ export const ProcessList: FC = () => {
         { title: 'Process Code', dataIndex: 'processCode', key: 'processCode', width: 140 },
         { title: 'Cycle Time (sec)', dataIndex: 'cycleTime', key: 'cycleTime', width: 140 },
         {
+          title: 'Inspection Required',
+          dataIndex: 'inspectionRequired',
+          key: 'inspectionRequired',
+          width: 150,
+          render: (required: boolean) =>
+            required ? <Tag color="blue">FIR Required</Tag> : <Tag>IPR only</Tag>,
+        },
+        {
           title: 'Status',
           dataIndex: 'status',
           key: 'status',
@@ -55,6 +64,12 @@ export const ProcessList: FC = () => {
             options={MASTER_STATUS_OPTIONS}
             initialValue="active"
           />
+          <FormField
+            label="Requires Final Inspection (FIR)"
+            name="inspectionRequired"
+            fieldType="switch"
+            valuePropName="checked"
+          />
         </div>
       )}
       onSubmit={async (values, editing) => {
@@ -62,6 +77,7 @@ export const ProcessList: FC = () => {
           process_name: values.processName as string,
           process_code: values.processCode as string | undefined,
           cycle_time: values.cycleTime as number | undefined,
+          inspection_required: Boolean(values.inspectionRequired),
           status: values.status === 'inactive' ? 0 : 1,
         }
         if (editing) {
