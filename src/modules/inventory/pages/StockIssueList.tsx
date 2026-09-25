@@ -6,34 +6,27 @@ import {
   Col,
   DatePicker,
   Form,
-  Input,
   InputNumber,
-  Modal,
   Row,
   Select,
   Tag,
+  Typography,
 } from 'antd'
-import type { FormListFieldData, TableColumnsType } from 'antd'
+import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
+import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useEmployees } from '@/modules/hr/hooks/useEmployees'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
-import type { ProcurementItemOption } from '@/modules/procurement/hooks/useProcurementItems'
 import type { StockIssue } from '@/types/inventory'
 import { useLocations } from '../hooks/useLocations'
+import { useStockBalance, type StockBalanceRow } from '../hooks/useStockBalance'
 import { useAllStockIssues, useCreateDirectStockIssue } from '../hooks/useStockIssues'
-import { getErrorMessage } from '@/api/client'
-
-interface DirectIssueLineValues {
-  itemId: string
-  storeLocationId: string
-  batchNo?: string
-  heatNo?: string
-  issuedQty: number
-}
+import type { DirectIssueLine } from '@/types/api/inventory'
 
 const getColumns = (): TableColumnsType<StockIssue> => [
   { title: 'Date', dataIndex: 'issueDate', key: 'issueDate', width: 120, render: v => v ?? '—' },
@@ -139,39 +132,87 @@ export const StockIssueList: FC = () => {
   )
 }
 
+interface ItemLine {
+  itemId: string
+  itemLabel: string
+  qtyByLot: Record<string, number>
+}
+
+function lotKey(
+  row: Pick<StockBalanceRow, 'locationId' | 'batchNo' | 'heatNo' | 'serialNo'>,
+): string {
+  return `${row.locationId}|${row.batchNo}|${row.heatNo}|${row.serialNo}`
+}
+
 const DirectIssueModal: FC<{ onClose: () => void }> = ({ onClose }) => {
   const { message } = App.useApp()
-  const [form] = Form.useForm()
+  const [headerForm] = Form.useForm<{ issuedTo: string; issueDate?: dayjs.Dayjs }>()
+  const [itemLines, setItemLines] = useState<ItemLine[]>([])
+  const [pendingItemId, setPendingItemId] = useState<string>()
   const { data: items } = useProcurementItems()
-  const { data: locations } = useLocations()
   const { data: employees } = useEmployees()
   const { mutateAsync: createDirectIssue, isPending } = useCreateDirectStockIssue()
 
-  const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
-  const locationOptions = locations.map(l => ({ label: l.name, value: l.id }))
+  const itemOptions = items
+    .filter(i => !itemLines.some(line => line.itemId === i.id))
+    .map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
   const employeeOptions = (employees ?? []).map(e => ({ label: e.fullName, value: e.id }))
 
-  const handleFinish = async (values: {
-    issuedTo: string
-    issueDate?: dayjs.Dayjs
-    lines: DirectIssueLineValues[]
-  }) => {
+  const handleAddItem = () => {
+    if (!pendingItemId) return
+    const item = items.find(i => i.id === pendingItemId)
+    setItemLines(prev => [
+      ...prev,
+      {
+        itemId: pendingItemId,
+        itemLabel: item ? `${item.code} — ${item.name}` : pendingItemId,
+        qtyByLot: {},
+      },
+    ])
+    setPendingItemId(undefined)
+  }
+
+  const setLotQty = (itemId: string, key: string, qty: number | null) => {
+    setItemLines(prev =>
+      prev.map(line =>
+        line.itemId === itemId
+          ? { ...line, qtyByLot: { ...line.qtyByLot, [key]: qty ?? 0 } }
+          : line,
+      ),
+    )
+  }
+
+  const handleSubmit = async () => {
     try {
+      const header = await headerForm.validateFields()
+      const lines: DirectIssueLine[] = []
+      for (const line of itemLines) {
+        for (const [key, qty] of Object.entries(line.qtyByLot)) {
+          if (qty > 0) {
+            const [storeLocationId, batchNo, heatNo] = key.split('|')
+            lines.push({
+              item_id: Number(line.itemId),
+              store_location_id: Number(storeLocationId),
+              batch_no: batchNo,
+              heat_no: heatNo,
+              issued_qty: qty,
+            })
+          }
+        }
+      }
+      if (lines.length === 0) {
+        message.error('Enter a quantity to issue from at least one location/batch')
+        return
+      }
       await createDirectIssue({
-        issued_to: Number(values.issuedTo),
-        issue_date: values.issueDate ? values.issueDate.format('YYYY-MM-DD') : undefined,
-        lines: values.lines.map(line => ({
-          item_id: Number(line.itemId),
-          store_location_id: Number(line.storeLocationId),
-          batch_no: line.batchNo ?? null,
-          heat_no: line.heatNo ?? null,
-          issued_qty: line.issuedQty,
-        })),
+        issued_to: Number(header.issuedTo),
+        issue_date: header.issueDate ? header.issueDate.format('YYYY-MM-DD') : undefined,
+        lines,
       })
       message.success('Stock issued')
       onClose()
     } catch (error) {
-      message.error(getErrorMessage(error))
+      if (error instanceof Error) message.error(getErrorMessage(error))
     }
   }
 
@@ -180,12 +221,12 @@ const DirectIssueModal: FC<{ onClose: () => void }> = ({ onClose }) => {
       title="Direct Issue"
       open
       onCancel={onClose}
-      onOk={() => form.submit()}
+      onOk={handleSubmit}
       confirmLoading={isPending}
-      width={800}
+      width={860}
       okText="Issue"
     >
-      <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ lines: [{}] }}>
+      <Form form={headerForm} layout="vertical" initialValues={{ issueDate: dayjs() }}>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -211,99 +252,112 @@ const DirectIssueModal: FC<{ onClose: () => void }> = ({ onClose }) => {
             </Form.Item>
           </Col>
         </Row>
-        <Form.List name="lines">
-          {(fields, { add, remove }) => (
-            <>
-              {fields.map(field => (
-                <DirectIssueLineRow
-                  key={field.key}
-                  field={field}
-                  itemOptions={itemOptions}
-                  locationOptions={locationOptions}
-                  items={items}
-                  onRemove={fields.length > 1 ? () => remove(field.name) : undefined}
-                />
-              ))}
-              <Button icon={<PlusOutlined />} onClick={() => add()} style={{ width: '100%' }}>
-                Add Line
-              </Button>
-            </>
-          )}
-        </Form.List>
       </Form>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <Select
+          style={{ flex: 1 }}
+          placeholder="Select an item to issue"
+          value={pendingItemId}
+          onChange={setPendingItemId}
+          options={itemOptions}
+          showSearch
+          filterOption={(input, option) =>
+            String(option?.label ?? '')
+              .toLowerCase()
+              .includes(input.toLowerCase())
+          }
+        />
+        <Button icon={<PlusOutlined />} onClick={handleAddItem} disabled={!pendingItemId}>
+          Add Item
+        </Button>
+      </div>
+
+      {itemLines.length === 0 && (
+        <Typography.Text type="secondary">Add at least one item to issue.</Typography.Text>
+      )}
+
+      {itemLines.map(line => (
+        <DirectIssueItemPanel
+          key={line.itemId}
+          itemId={line.itemId}
+          itemLabel={line.itemLabel}
+          qtyByLot={line.qtyByLot}
+          onQtyChange={(key, qty) => setLotQty(line.itemId, key, qty)}
+          onRemove={() => setItemLines(prev => prev.filter(l => l.itemId !== line.itemId))}
+        />
+      ))}
     </Modal>
   )
 }
 
-interface DirectIssueLineRowProps {
-  field: FormListFieldData
-  itemOptions: { label: string; value: string }[]
-  locationOptions: { label: string; value: string }[]
-  items: ProcurementItemOption[]
-  onRemove?: () => void
+interface DirectIssueItemPanelProps {
+  itemId: string
+  itemLabel: string
+  qtyByLot: Record<string, number>
+  onQtyChange: (key: string, qty: number | null) => void
+  onRemove: () => void
 }
 
-const DirectIssueLineRow: FC<DirectIssueLineRowProps> = ({
-  field,
-  itemOptions,
-  locationOptions,
-  items,
+// Mirrors the job-card Issue Material picker: show every real (location,
+// batch, heat) lot this item actually has stock in, with the available
+// quantity right next to the input — instead of asking the user to type a
+// location/batch/heat combination and hope it matches something real.
+const DirectIssueItemPanel: FC<DirectIssueItemPanelProps> = ({
+  itemId,
+  itemLabel,
+  qtyByLot,
+  onQtyChange,
   onRemove,
 }) => {
-  const selectedItemId = Form.useWatch(['lines', field.name, 'itemId']) as string | undefined
-  const selectedItem = items.find(i => i.id === selectedItemId)
+  const { data: rows, isLoading } = useStockBalance(itemId)
+  const { data: locations } = useLocations()
+  const locationNameById = new Map(locations.map(l => [l.id, l.name]))
+
+  const columns: TableColumnsType<StockBalanceRow> = [
+    {
+      title: 'Location',
+      dataIndex: 'locationId',
+      key: 'locationId',
+      render: (locationId: string) => locationNameById.get(locationId) ?? locationId,
+    },
+    { title: 'Batch No', dataIndex: 'batchNo', key: 'batchNo' },
+    { title: 'Heat No', dataIndex: 'heatNo', key: 'heatNo' },
+    { title: 'Available Qty', dataIndex: 'qty', key: 'qty', align: 'right' },
+    {
+      title: 'Issue Qty',
+      key: 'issueQty',
+      render: (_, row) => {
+        const key = lotKey(row)
+        return (
+          <InputNumber
+            min={0}
+            max={row.qty}
+            value={qtyByLot[key] || undefined}
+            onChange={v => onQtyChange(key, v)}
+            style={{ width: '100%' }}
+          />
+        )
+      },
+    },
+  ]
 
   return (
-    <Row gutter={8} align="top">
-      <Col span={7}>
-        <Form.Item name={[field.name, 'itemId']} rules={[{ required: true, message: 'Required' }]}>
-          <Select
-            placeholder="Item"
-            options={itemOptions}
-            showSearch
-            filterOption={(input, option) =>
-              String(option?.label ?? '')
-                .toLowerCase()
-                .includes(input.toLowerCase())
-            }
-          />
-        </Form.Item>
-      </Col>
-      <Col span={5}>
-        <Form.Item
-          name={[field.name, 'storeLocationId']}
-          rules={[{ required: true, message: 'Required' }]}
-        >
-          <Select placeholder="Store location" options={locationOptions} showSearch />
-        </Form.Item>
-      </Col>
-      <Col span={4}>
-        <Form.Item
-          name={[field.name, 'batchNo']}
-          rules={selectedItem?.batchTracking ? [{ required: true, message: 'Required' }] : []}
-        >
-          <Input placeholder="Batch No" />
-        </Form.Item>
-      </Col>
-      <Col span={4}>
-        <Form.Item
-          name={[field.name, 'heatNo']}
-          rules={selectedItem?.heatTracking ? [{ required: true, message: 'Required' }] : []}
-        >
-          <Input placeholder="Heat No" />
-        </Form.Item>
-      </Col>
-      <Col span={3}>
-        <Form.Item
-          name={[field.name, 'issuedQty']}
-          rules={[{ required: true, message: 'Required' }]}
-        >
-          <InputNumber placeholder="Qty" min={0.001} style={{ width: '100%' }} />
-        </Form.Item>
-      </Col>
-      <Col span={1}>
-        {onRemove && <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />}
-      </Col>
-    </Row>
+    <Card
+      size="small"
+      title={itemLabel}
+      extra={<Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />}
+      style={{ marginBottom: 12 }}
+    >
+      <DataTable<StockBalanceRow>
+        columns={columns}
+        dataSource={rows}
+        rowKey={row => lotKey(row)}
+        loading={isLoading}
+        pagination={false}
+        size="small"
+        locale={{ emptyText: 'No stock available for this item.' }}
+      />
+    </Card>
   )
 }

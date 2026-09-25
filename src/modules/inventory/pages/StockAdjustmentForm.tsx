@@ -1,5 +1,17 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, DatePicker, Form, Input, InputNumber, Row, Select } from 'antd'
+import {
+  App,
+  AutoComplete,
+  Button,
+  Card,
+  Col,
+  DatePicker,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Select,
+} from 'antd'
 import type { FormListFieldData } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
@@ -13,6 +25,7 @@ import { STOCK_ADJUSTMENT_REASON_OPTIONS } from '../constants'
 import { useCreateStockAdjustment } from '../hooks/useStockAdjustments'
 import type { StockAdjustmentItemInput } from '../hooks/useStockAdjustments'
 import { useLocations } from '../hooks/useLocations'
+import { useStockBalance } from '../hooks/useStockBalance'
 import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
@@ -31,6 +44,7 @@ export const StockAdjustmentForm: FC = () => {
   const { data: items } = useProcurementItems()
   const { data: locations } = useLocations()
   const { mutateAsync: createAdjustment, isPending: creating } = useCreateStockAdjustment()
+  const locationId = Form.useWatch('locationId', form) as string | undefined
 
   const locationOptions = locations.map(l => ({ label: l.name, value: l.id }))
 
@@ -159,6 +173,7 @@ export const StockAdjustmentForm: FC = () => {
                       key={field.key}
                       field={field}
                       items={items}
+                      locationId={locationId}
                       onRemove={() => remove(field.name)}
                     />
                   ))}
@@ -184,12 +199,23 @@ export const StockAdjustmentForm: FC = () => {
 interface AdjustmentItemRowProps {
   field: FormListFieldData
   items: ProcurementItemOption[]
+  locationId?: string
   onRemove: () => void
 }
 
-const AdjustmentItemRow: FC<AdjustmentItemRowProps> = ({ field, items, onRemove }) => {
+const AdjustmentItemRow: FC<AdjustmentItemRowProps> = ({ field, items, locationId, onRemove }) => {
   const selectedItemId = Form.useWatch(['items', field.name, 'itemId']) as string | undefined
   const selectedItem = items.find(i => i.id === selectedItemId)
+
+  // Suggest batch/heat values this item already has stock under at the
+  // chosen location, instead of asking the user to type one blind — they
+  // can still type a new value (e.g. seeding a lot that doesn't exist yet).
+  const { data: balanceRows } = useStockBalance(selectedItemId)
+  const lotsAtLocation = locationId ? balanceRows.filter(r => r.locationId === locationId) : []
+  const batchOptions = [...new Set(lotsAtLocation.map(r => r.batchNo))].map(value => ({ value }))
+  const heatOptions = [...new Set(lotsAtLocation.map(r => r.heatNo))].map(value => ({ value }))
+  const autoCompleteFilter = (input: string, option?: { value: string }) =>
+    (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
 
   return (
     <div
@@ -220,7 +246,11 @@ const AdjustmentItemRow: FC<AdjustmentItemRowProps> = ({ field, items, onRemove 
             : []
         }
       >
-        <Input placeholder={selectedItem?.batchTracking ? 'Batch No (required)' : 'Batch No'} />
+        <AutoComplete
+          options={batchOptions}
+          filterOption={autoCompleteFilter}
+          placeholder={selectedItem?.batchTracking ? 'Batch No (required)' : 'Batch No'}
+        />
       </Form.Item>
       <Form.Item
         name={[field.name, 'heatNo']}
@@ -230,7 +260,11 @@ const AdjustmentItemRow: FC<AdjustmentItemRowProps> = ({ field, items, onRemove 
             : []
         }
       >
-        <Input placeholder={selectedItem?.heatTracking ? 'Heat No (required)' : 'Heat No'} />
+        <AutoComplete
+          options={heatOptions}
+          filterOption={autoCompleteFilter}
+          placeholder={selectedItem?.heatTracking ? 'Heat No (required)' : 'Heat No'}
+        />
       </Form.Item>
       <Form.Item
         name={[field.name, 'physicalQty']}

@@ -129,54 +129,28 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
 
     const issueDate = values.issueDate ? values.issueDate.format('YYYY-MM-DD') : undefined
 
-    // The API issues N batches from ONE location per call (store_location_id
-    // is scoped to the whole request, not per batch line) — group selections
-    // by location so each group becomes a single atomic call instead of one
-    // call per row.
-    const groupsByLocation = new Map<string, typeof selections>()
-    for (const entry of selections) {
-      const key = entry.row.locationId
-      const group = groupsByLocation.get(key) ?? []
-      group.push(entry)
-      groupsByLocation.set(key, group)
-    }
-
-    const failures: string[] = []
     setSubmitting(true)
-    for (const [locationId, group] of groupsByLocation) {
-      const label = locationNameById.get(locationId) ?? locationId
-      try {
-        await issueMaterial({
-          component_item_id: Number(values.componentItemId),
-          store_location_id: Number(locationId),
-          issue_date: issueDate,
-          batches: group.map(({ row, qty }) => ({
-            batch_no: row.batchNo || undefined,
-            heat_no: row.heatNo || undefined,
-            issued_qty: qty,
-          })),
-        })
-        for (const { row } of group) {
-          setIssueQtyByRow(prev => {
-            const next = { ...prev }
-            delete next[rowKey(row)]
-            return next
-          })
-        }
-      } catch (error) {
-        failures.push(`${label} — ${getErrorMessage(error, 'failed')}`)
-      }
-    }
-    setSubmitting(false)
-
-    if (failures.length === 0) {
+    try {
+      await issueMaterial({
+        component_item_id: Number(values.componentItemId),
+        issue_date: issueDate,
+        batches: selections.map(({ row, qty }) => ({
+          store_location_id: Number(row.locationId),
+          batch_no: row.batchNo || undefined,
+          heat_no: row.heatNo || undefined,
+          issued_qty: qty,
+        })),
+      })
       message.success(
         `Material issued from ${selections.length} ${selections.length > 1 ? 'lots' : 'lot'}`,
       )
+      setIssueQtyByRow({})
       form.resetFields()
       onClose()
-    } else {
-      message.error(`Some issues failed — ${failures.join('; ')}`)
+    } catch (error) {
+      message.error(getErrorMessage(error))
+    } finally {
+      setSubmitting(false)
     }
   }
 
