@@ -16,7 +16,7 @@ export const ANTD_THEME: ThemeConfig = {
     borderRadiusXS: 2,
     fontFamily: FONT_BODY,
     fontSize: 14,
-    controlHeight: 36,
+    controlHeight: 32,
     boxShadow: '0 1px 2px rgba(27, 29, 34, 0.06)',
     boxShadowSecondary: '0 4px 16px rgba(27, 29, 34, 0.10)',
     ...NEUTRAL_TOKENS,
@@ -37,31 +37,38 @@ export const ANTD_THEME: ThemeConfig = {
       headerBg: '#FFFFFF',
       bodyBg: NEUTRAL_TOKENS.colorBgLayout,
     },
+    // Density is tuned for shop-floor use: more of a record visible without scrolling.
     Card: {
-      paddingLG: 16,
+      paddingLG: 14,
+      headerHeight: 44,
+      headerFontSize: 15,
     },
     Form: {
-      itemMarginBottom: 14,
-      verticalLabelPadding: '0 0 4px',
+      itemMarginBottom: 12,
+      verticalLabelPadding: '0 0 2px',
     },
     Table: {
       headerBg: NEUTRAL_TOKENS.colorBgContainer,
       headerColor: NEUTRAL_TOKENS.colorTextSecondary,
       rowHoverBg: '#F7F6F2',
-      cellPaddingBlock: 10,
+      cellPaddingBlock: 8,
+      cellPaddingBlockSM: 6,
+    },
+    Descriptions: {
+      itemPaddingBottom: 8,
     },
     Button: {
-      controlHeight: 36,
+      controlHeight: 32,
       fontWeight: 500,
     },
     Input: {
-      controlHeight: 36,
+      controlHeight: 32,
     },
     Select: {
-      controlHeight: 36,
+      controlHeight: 32,
     },
     DatePicker: {
-      controlHeight: 36,
+      controlHeight: 32,
     },
   },
 }

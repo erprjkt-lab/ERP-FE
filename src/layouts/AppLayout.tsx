@@ -12,6 +12,9 @@ import { FONT_DISPLAY } from '@/theme/typography'
 
 const { Header, Sider, Content } = Layout
 
+// Shared by the top bar and the sidebar logo block so their bottom borders line up.
+const HEADER_HEIGHT = 48
+
 const NAV_ITEMS = [
   DASHBOARD_ITEM,
   ...NAV_GROUPS.map(group => ({
@@ -76,11 +79,11 @@ export const AppLayout: FC = () => {
       >
         <div
           style={{
-            height: 64,
+            height: HEADER_HEIGHT,
             display: 'flex',
             alignItems: 'center',
             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            padding: sidebarCollapsed ? 0 : '0 24px',
+            padding: sidebarCollapsed ? 0 : '0 20px',
             borderBottom: `1px solid ${SIDEBAR_BORDER}`,
             position: 'sticky',
             top: 0,
@@ -90,24 +93,29 @@ export const AppLayout: FC = () => {
         >
           <div
             style={{
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               flexShrink: 0,
-              borderRadius: 8,
+              borderRadius: 6,
               background: `linear-gradient(135deg, ${BRAND_GRADIENT_FROM}, ${BRAND_GRADIENT_TO})`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Typography.Text strong style={{ fontSize: 16, color: '#fff' }}>
+            <Typography.Text strong style={{ fontSize: 14, color: '#fff' }}>
               E
             </Typography.Text>
           </div>
           {!sidebarCollapsed && (
             <Typography.Title
               level={4}
-              style={{ margin: '0 0 0 12px', color: '#fff', fontFamily: FONT_DISPLAY }}
+              style={{
+                margin: '0 0 0 10px',
+                fontSize: 18,
+                color: '#fff',
+                fontFamily: FONT_DISPLAY,
+              }}
             >
               ERP App
             </Typography.Title>
@@ -135,12 +143,13 @@ export const AppLayout: FC = () => {
         <Header
           style={{
             background: token.colorBgContainer,
-            padding: '0 24px',
+            padding: '0 16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
-            height: 64,
+            height: HEADER_HEIGHT,
+            lineHeight: `${HEADER_HEIGHT}px`,
             flexShrink: 0,
           }}
         >
@@ -162,14 +171,14 @@ export const AppLayout: FC = () => {
             <Button
               type="text"
               style={{
-                height: 40,
+                height: 34,
                 paddingInline: 8,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
               }}
             >
-              <Avatar size={28} icon={<UserOutlined />} />
+              <Avatar size={24} icon={<UserOutlined />} />
               <Typography.Text style={{ fontWeight: 500 }}>Admin</Typography.Text>
               <DownOutlined style={{ fontSize: 10, color: token.colorTextTertiary }} />
             </Button>
@@ -177,7 +186,7 @@ export const AppLayout: FC = () => {
         </Header>
 
         <Content
-          style={{ padding: 24, background: token.colorBgLayout, overflow: 'auto', flex: 1 }}
+          style={{ padding: 16, background: token.colorBgLayout, overflow: 'auto', flex: 1 }}
         >
           <div style={{ maxWidth: 1600, margin: '0 auto' }}>
             <Outlet />

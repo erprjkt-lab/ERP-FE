@@ -14,9 +14,45 @@ import { useProcurementFilters, useProcurementStore } from '../store/procurement
 const STATUS_OPTIONS = Object.entries(GRN_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
 const getColumns = (onView: (record: Grn) => void): TableColumnsType<Grn> => [
-  { title: 'GRN #', dataIndex: 'grnNo', key: 'grnNo', width: 130 },
-  { title: 'Date', dataIndex: 'grnDate', key: 'grnDate', width: 120 },
+  {
+    title: 'GRN No / Date',
+    key: 'grnNo',
+    width: 140,
+    render: (_, record) => (
+      <div>
+        <div style={{ fontWeight: 600 }}>{record.grnNo}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.grnDate}</div>
+      </div>
+    ),
+  },
   { title: 'Supplier', dataIndex: 'supplierName', key: 'supplierName' },
+  {
+    title: 'Item Code',
+    key: 'itemCode',
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      return record.items[0]?.itemCode ?? '—'
+    },
+  },
+  {
+    title: 'Item Name',
+    key: 'itemName',
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      return record.items[0]?.itemName ?? record.items[0]?.itemId ?? '—'
+    },
+  },
+  {
+    title: 'Qty',
+    key: 'qty',
+    align: 'right' as const,
+    width: 80,
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      const totalQty = record.items.reduce((sum, item) => sum + (item.orderedQty ?? 0), 0)
+      return totalQty > 0 ? totalQty : '—'
+    },
+  },
   {
     title: 'Status',
     dataIndex: 'status',
@@ -31,7 +67,7 @@ const getColumns = (onView: (record: Grn) => void): TableColumnsType<Grn> => [
   {
     title: 'Actions',
     key: 'actions',
-    width: 60,
+    width: 80,
     render: (_, record) => (
       <Tooltip title="View">
         <Button

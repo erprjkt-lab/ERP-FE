@@ -10,6 +10,7 @@ import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } f
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { StockIssue, StockRequisitionItem } from '@/types/inventory'
@@ -254,10 +255,10 @@ export const StockRequisitionDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={STOCK_REQUISITION_STATUS_BADGE[requisition.status]}
@@ -277,7 +278,7 @@ export const StockRequisitionDetail: FC = () => {
               <Descriptions.Item label="Approved By">
                 {requisition.approvedBy ?? '—'}
               </Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {requisition.remarks ?? '—'}
               </Descriptions.Item>
             </Descriptions>

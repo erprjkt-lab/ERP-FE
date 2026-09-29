@@ -21,19 +21,25 @@ export const PRIORITY_OPTIONS: { label: string; value: Priority }[] = [
   { label: 'Urgent', value: 'URGENT' },
 ]
 
-export const REQUISITION_STATUS_LABELS: Record<PurchaseRequisitionStatus, string> = {
+// ENQUIRY_CREATED is display-only: the backend keeps the PR at APPROVED and
+// zeroes every item's pending_qty once an enquiry is raised from it.
+export type RequisitionDisplayStatus = PurchaseRequisitionStatus | 'ENQUIRY_CREATED'
+
+export const REQUISITION_STATUS_LABELS: Record<RequisitionDisplayStatus, string> = {
   DRAFT: 'Draft',
   PENDING_APPROVAL: 'Pending Approval',
   APPROVED: 'Approved',
+  ENQUIRY_CREATED: 'Enquiry Created',
   REJECTED: 'Rejected',
   CLOSED: 'Closed',
   CANCELLED: 'Cancelled',
 }
 
-export const REQUISITION_STATUS_BADGE: Record<PurchaseRequisitionStatus, StatusBadgeStatus> = {
+export const REQUISITION_STATUS_BADGE: Record<RequisitionDisplayStatus, StatusBadgeStatus> = {
   DRAFT: 'draft',
   PENDING_APPROVAL: 'pending',
   APPROVED: 'approved',
+  ENQUIRY_CREATED: 'completed',
   REJECTED: 'rejected',
   CLOSED: 'archived',
   CANCELLED: 'cancelled',

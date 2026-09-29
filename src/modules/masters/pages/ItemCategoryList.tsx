@@ -31,7 +31,6 @@ export const ItemCategoryList: FC = () => {
       loading={isLoading}
       columns={[
         { title: 'Category Name', dataIndex: 'name', key: 'name' },
-        { title: 'Category Code', dataIndex: 'code', key: 'code', width: 120 },
         { title: 'Parent Category', dataIndex: 'parentName', key: 'parentName' },
         {
           title: 'Is Final',

@@ -13,6 +13,7 @@ import type { FC } from 'react'
 import { useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesQuotationItem } from '@/types/sales'
@@ -228,10 +229,10 @@ export const SalesQuotationDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={QUOTATION_STATUS_BADGE[quotation.status]}
@@ -270,7 +271,7 @@ export const SalesQuotationDetail: FC = () => {
               <Descriptions.Item label="Net Amount">
                 <Typography.Text strong>{quotation.netAmount.toFixed(2)}</Typography.Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {quotation.remarks || '—'}
               </Descriptions.Item>
             </Descriptions>

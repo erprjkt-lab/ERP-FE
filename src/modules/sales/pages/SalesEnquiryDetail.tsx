@@ -10,6 +10,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesEnquiryItem } from '@/types/sales'
@@ -194,10 +195,10 @@ export const SalesEnquiryDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={ENQUIRY_STATUS_BADGE[enquiry.status]}
@@ -211,7 +212,7 @@ export const SalesEnquiryDetail: FC = () => {
               <Descriptions.Item label="Ref By">{enquiry.refBy || '—'}</Descriptions.Item>
               <Descriptions.Item label="Ref No">{enquiry.refNo || '—'}</Descriptions.Item>
               <Descriptions.Item label="Created By">{enquiry.createdBy}</Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {enquiry.remarks || '—'}
               </Descriptions.Item>
             </Descriptions>

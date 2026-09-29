@@ -1,10 +1,10 @@
 import { Tag } from 'antd'
 import type { FC } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { useFinishedGood } from '@/modules/masters/hooks/useFinishedGoods'
+import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import type { InspectionParamType, InspectionParameter } from '@/types/production'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import {
@@ -28,7 +28,12 @@ const FREQ_UNIT_OPTIONS = [
 
 export const ItemInspectionParameterForm: FC = () => {
   const { itemId } = useParams()
-  const { data: finishedGood } = useFinishedGood(itemId)
+  const { pathname } = useLocation()
+  const { data: items } = useProcurementItems()
+  const item = items.find(i => i.id === itemId)
+  const breadcrumbParent = pathname.startsWith('/masters/raw-materials')
+    ? { label: 'Raw Materials', href: '/masters/raw-materials' }
+    : { label: 'BOM', href: '/production/bom' }
   const { data: parameters = [], isLoading } = useInspectionParameters(itemId)
   const { data: processes = [] } = useProcesses()
   const { mutateAsync: createParameter } = useCreateInspectionParameter(itemId)
@@ -39,12 +44,8 @@ export const ItemInspectionParameterForm: FC = () => {
 
   return (
     <SimpleMasterList<InspectionParameter>
-      title={
-        finishedGood
-          ? `Inspection Parameters — ${finishedGood.code} · ${finishedGood.name}`
-          : 'Inspection Parameters'
-      }
-      breadcrumbParent={{ label: 'BOM', href: '/production/bom' }}
+      title={item ? `Inspection Parameters — ${item.code} · ${item.name}` : 'Inspection Parameters'}
+      breadcrumbParent={breadcrumbParent}
       breadcrumbLabel="Inspection Parameter"
       totalLabel="parameters"
       addButtonLabel="Add Parameter"

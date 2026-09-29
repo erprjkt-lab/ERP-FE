@@ -108,7 +108,7 @@ export const PurchaseGrnForm: FC = () => {
     }))
 
     try {
-      const created = await createGrn({
+      await createGrn({
         supplierId: values.supplierId,
         supplierDocNo: values.supplierDocNo ?? null,
         supplierDocDate: values.supplierDocDate
@@ -119,7 +119,7 @@ export const PurchaseGrnForm: FC = () => {
         items: itemRows,
       })
       message.success('GRN created successfully')
-      navigate(`/purchase/grn/${created.id}`)
+      navigate('/purchase/grn')
     } catch (error) {
       message.error(getErrorMessage(error))
     }

@@ -69,7 +69,7 @@ export const StockAdjustmentForm: FC = () => {
     })
 
     try {
-      const created = await createAdjustment({
+      await createAdjustment({
         adjustmentDate: values.adjustmentDate.format('YYYY-MM-DD'),
         locationId: values.locationId,
         reason: values.reason,
@@ -77,7 +77,7 @@ export const StockAdjustmentForm: FC = () => {
         items: itemRows,
       })
       message.success('Stock adjustment created')
-      navigate(`/inventory/adjustments/${created.id}`)
+      navigate('/inventory/adjustments')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -112,7 +112,7 @@ export const StockAdjustmentForm: FC = () => {
           initialValues={{
             adjustmentDate: dayjs(),
             reason: 'PHYSICAL_COUNT',
-            items: [],
+            items: [{}],
           }}
         >
           <FormSection title="Adjustment Details">

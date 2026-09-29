@@ -19,9 +19,45 @@ const STATUS_OPTIONS = Object.entries(ENQUIRY_STATUS_LABELS).map(([value, label]
 const getColumns = (
   onView: (record: PurchaseEnquiry) => void,
 ): TableColumnsType<PurchaseEnquiry> => [
-  { title: 'Enquiry #', dataIndex: 'enquiryNumber', key: 'enquiryNumber', width: 140 },
-  { title: 'Date', dataIndex: 'enquiryDate', key: 'enquiryDate', width: 120 },
+  {
+    title: 'P.E. No / Date',
+    key: 'peNumber',
+    width: 140,
+    render: (_, record) => (
+      <div>
+        <div style={{ fontWeight: 600 }}>{record.enquiryNumber}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.enquiryDate}</div>
+      </div>
+    ),
+  },
   { title: 'Due Date', dataIndex: 'enquiryDueDate', key: 'enquiryDueDate', render: v => v ?? '—' },
+  {
+    title: 'Item Code',
+    key: 'itemCode',
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      return record.items[0]?.itemCode ?? '—'
+    },
+  },
+  {
+    title: 'Item Name',
+    key: 'itemName',
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      return record.items[0]?.itemName ?? record.items[0]?.itemId ?? '—'
+    },
+  },
+  {
+    title: 'Qty',
+    key: 'qty',
+    align: 'right' as const,
+    width: 80,
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      const totalQty = record.items.reduce((sum, item) => sum + item.requiredQty, 0)
+      return totalQty > 0 ? totalQty : '—'
+    },
+  },
   { title: 'Suppliers', key: 'suppliers', width: 90, render: (_, r) => r.suppliers.length },
   {
     title: 'Status',
@@ -37,7 +73,7 @@ const getColumns = (
   {
     title: 'Actions',
     key: 'actions',
-    width: 60,
+    width: 80,
     render: (_, record) => (
       <Tooltip title="View">
         <Button

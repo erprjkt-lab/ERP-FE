@@ -20,6 +20,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { Modal } from '@/components/ui/Modal'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { IncomingInspectionReports } from '@/modules/quality/components/IncomingInspectionReports'
@@ -171,10 +172,10 @@ export const PurchaseGrnDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={GRN_STATUS_BADGE[grn.status]}
@@ -192,7 +193,7 @@ export const PurchaseGrnDetail: FC = () => {
                 {grn.supplierDocDate ?? '—'}
               </Descriptions.Item>
               <Descriptions.Item label="Created By">{grn.createdBy}</Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {grn.remarks ?? '—'}
               </Descriptions.Item>
             </Descriptions>

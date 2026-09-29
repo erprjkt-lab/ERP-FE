@@ -73,7 +73,7 @@ export const PurchaseOrderForm: FC = () => {
     })
 
     try {
-      const po = await createDirect({
+      await createDirect({
         poDate: values.poDate.format('YYYY-MM-DD'),
         supplierId: values.supplierId,
         supplierName: supplier?.name,
@@ -85,7 +85,7 @@ export const PurchaseOrderForm: FC = () => {
         items: itemRows,
       })
       message.success('Purchase order created successfully')
-      navigate(`/purchase/orders/${po.id}`)
+      navigate('/purchase/orders')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -120,7 +120,7 @@ export const PurchaseOrderForm: FC = () => {
             poDate: dayjs(),
             freightAmount: 0,
             otherCharges: 0,
-            items: [],
+            items: [{ discountPercent: 0, taxPercent: 0 }],
           }}
         >
           <FormSection title="Order Details">

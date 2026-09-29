@@ -17,20 +17,20 @@ export const FormSection: FC<FormSectionProps> = ({ title, description, children
   const { token } = antTheme.useToken()
 
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{ marginBottom: 12 }}>
       <div
         style={{
           display: 'flex',
           alignItems: 'baseline',
           gap: 10,
-          marginBottom: 14,
-          padding: '9px 14px',
+          marginBottom: 10,
+          padding: '6px 12px',
           borderRadius: token.borderRadiusSM,
           background: SURFACE_MUTED,
           borderLeft: `3px solid ${BRAND_ACCENT}`,
         }}
       >
-        <Typography.Text strong style={{ fontSize: 15, fontWeight: 700 }}>
+        <Typography.Text strong style={{ fontSize: 14, fontWeight: 700 }}>
           {title}
         </Typography.Text>
         {description && (

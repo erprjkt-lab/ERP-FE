@@ -124,15 +124,13 @@ export const StockRequisitionForm: FC = () => {
     }
 
     try {
-      let requisitionId = requisition?.id
       if (isEdit && requisition) {
         await updateRequisition({ id: requisition.id, payload })
       } else {
-        const created = await createRequisition(payload)
-        requisitionId = created.id
+        await createRequisition(payload)
       }
       message.success(`Requisition ${isEdit ? 'updated' : 'created'} successfully`)
-      navigate(`/inventory/requisitions/${requisitionId}`)
+      navigate('/inventory/requisitions')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -164,7 +162,7 @@ export const StockRequisitionForm: FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleFinish}
-          initialValues={{ requisitionDate: dayjs(), priority: 'NORMAL', items: [] }}
+          initialValues={{ requisitionDate: dayjs(), priority: 'NORMAL', items: [{}] }}
         >
           <FormSection title="Requisition Details">
             <Row gutter={24}>

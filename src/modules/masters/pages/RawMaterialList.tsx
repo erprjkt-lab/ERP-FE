@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, ExperimentOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
@@ -15,6 +15,7 @@ import { getErrorMessage } from '@/api/client'
 const getColumns = (
   onEdit: (record: RawMaterial) => void,
   onDelete: (record: RawMaterial) => void,
+  onInspectionParameters: (record: RawMaterial) => void,
 ): TableColumnsType<RawMaterial> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   {
@@ -39,9 +40,17 @@ const getColumns = (
   {
     title: 'Actions',
     key: 'actions',
-    width: 90,
+    width: 120,
     render: (_, record) => (
       <Space size="small" onClick={e => e.stopPropagation()}>
+        <Tooltip title="Inspection Parameters">
+          <Button
+            type="text"
+            size="small"
+            icon={<ExperimentOutlined />}
+            onClick={() => onInspectionParameters(record)}
+          />
+        </Tooltip>
         <Tooltip title="Edit">
           <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
         </Tooltip>
@@ -88,6 +97,7 @@ export const RawMaterialList: FC = () => {
   const columns = getColumns(
     record => navigate(`/masters/raw-materials/${record.id}/edit`),
     handleDelete,
+    record => navigate(`/masters/raw-materials/${record.id}/inspection-parameters`),
   )
 
   const filtered = rawMaterials.filter(r => {

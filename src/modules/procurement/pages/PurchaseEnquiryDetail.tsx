@@ -8,11 +8,13 @@ import {
   ShoppingCartOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Row, Select, Space, Typography } from 'antd'
+import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { Modal } from '@/components/ui/Modal'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
@@ -26,11 +28,18 @@ import {
 import {
   useAddSupplierToEnquiry,
   usePurchaseEnquiry,
+  useQuotationComparison,
   useRemoveSupplierFromEnquiry,
   useSendPurchaseEnquiry,
 } from '../hooks/usePurchaseEnquiries'
-import { useCreatePurchaseOrderFromEnquiry, usePurchaseOrders } from '../hooks/usePurchaseOrders'
+import {
+  useCreatePurchaseOrderFromEnquiry,
+  usePurchaseOrders,
+  useSelectSupplierForEnquiry,
+} from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
+
+const formatDateTime = (v?: string | null) => (v ? dayjs(v).format('DD-MM-YYYY HH:mm') : '—')
 
 export const PurchaseEnquiryDetail: FC = () => {
   const { id } = useParams()
@@ -43,10 +52,12 @@ export const PurchaseEnquiryDetail: FC = () => {
   const { mutateAsync: addSupplier, isPending: addingSupplier } = useAddSupplierToEnquiry()
   const { mutateAsync: removeSupplier } = useRemoveSupplierFromEnquiry()
   const { mutateAsync: createPO, isPending: creatingPO } = useCreatePurchaseOrderFromEnquiry()
+  const { mutateAsync: selectSupplier, isPending: selectingSupplier } =
+    useSelectSupplierForEnquiry()
+  const { data: comparison } = useQuotationComparison(id)
 
   const [addSupplierOpen, setAddSupplierOpen] = useState(false)
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | undefined>()
-
   if (!enquiry) {
     return (
       <div>
@@ -105,6 +116,22 @@ export const PurchaseEnquiryDetail: FC = () => {
     })
   }
 
+  const handleSelectSupplier = async (enquiryId: string, supplier: PurchaseEnquirySupplier) => {
+    const quotationId = comparison
+      .flatMap(row => row.quotes)
+      .find(q => q.supplierId === supplier.supplierId)?.supplierQuotationId
+    if (!quotationId) {
+      message.error('No recorded quotation found for this supplier')
+      return
+    }
+    try {
+      await selectSupplier({ enquiryId, supplierId: supplier.supplierId, quotationId })
+      message.success('Quotation accepted')
+    } catch (error) {
+      message.error(getErrorMessage(error))
+    }
+  }
+
   const handleCreatePO = async () => {
     try {
       const po = await createPO({ enquiryId: enquiry.id })
@@ -159,18 +186,18 @@ export const PurchaseEnquiryDetail: FC = () => {
         />
       ),
     },
-    { title: 'Sent At', dataIndex: 'sentAt', key: 'sentAt', render: (v: string) => v ?? '—' },
+    { title: 'Sent At', dataIndex: 'sentAt', key: 'sentAt', render: formatDateTime },
     {
       title: 'Responded At',
       dataIndex: 'responseReceivedAt',
       key: 'responseReceivedAt',
-      render: (v: string) => v ?? '—',
+      render: formatDateTime,
     },
     {
       title: 'Actions',
       key: 'actions',
       render: (_: unknown, r: PurchaseEnquirySupplier) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {enquiry.status !== 'DRAFT' && (
             <Button
               type="link"
@@ -181,8 +208,18 @@ export const PurchaseEnquiryDetail: FC = () => {
               {r.supplierStatus === 'RESPONDED' ||
               r.supplierStatus === 'SELECTED' ||
               r.supplierStatus === 'NOT_SELECTED'
-                ? 'View / Edit Quotation'
-                : 'Record Quotation'}
+                ? 'View / Edit'
+                : 'Record'}
+            </Button>
+          )}
+          {r.supplierStatus === 'RESPONDED' && (
+            <Button
+              type="primary"
+              size="small"
+              loading={selectingSupplier}
+              onClick={() => handleSelectSupplier(enquiry.id, r)}
+            >
+              Accept
             </Button>
           )}
           {enquiry.status === 'DRAFT' && (
@@ -248,10 +285,10 @@ export const PurchaseEnquiryDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={ENQUIRY_STATUS_BADGE[enquiry.status]}

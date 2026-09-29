@@ -35,15 +35,26 @@ interface ItemRowValues {
   itemId: string
   qty: number
   rate: number
-  toolCost?: number
-  gaugeCost?: number
-  sampleCost?: number
-  discountPercent?: number
   taxPercent?: number
-  deliveryTime?: string
-  drawingRevNo?: string
   itemRemark?: string
 }
+
+const ROW_GRID = {
+  display: 'grid',
+  // minmax(0, …) stops a long item label from widening its own row's columns.
+  gridTemplateColumns:
+    'minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) 32px',
+  gap: '0 12px',
+  alignItems: 'start',
+}
+const HEADER_ROW = { padding: '10px 12px', background: '#fafafa', fontWeight: 500 }
+const SUMMARY_LINE = { display: 'flex', justifyContent: 'space-between', padding: '4px 0' }
+
+const money = (n: number) => n.toFixed(2)
+
+// Mirrors SalesQuotationService: amount is before tax, tax is on that amount.
+// ponytail: ignores per-line discount (not on this form); saved discounts still apply server-side.
+const lineAmount = (row?: Partial<ItemRowValues>) => (row?.qty ?? 0) * (row?.rate ?? 0)
 
 interface QuotationFormValues {
   quotationDate: dayjs.Dayjs
@@ -71,6 +82,19 @@ export const SalesQuotationForm: FC = () => {
   const { mutateAsync: create, isPending: creating } = useCreateSalesQuotation()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesQuotation()
 
+  const watchedItems = Form.useWatch('items', form) as Partial<ItemRowValues>[] | undefined
+  const totals = (watchedItems ?? []).reduce<{ qty: number; amount: number; tax: number }>(
+    (acc, row) => {
+      const amount = lineAmount(row)
+      return {
+        qty: acc.qty + (row?.qty ?? 0),
+        amount: acc.amount + amount,
+        tax: acc.tax + (amount * (row?.taxPercent ?? 0)) / 100,
+      }
+    },
+    { qty: 0, amount: 0, tax: 0 },
+  )
+
   const customerOptions = customers.map(c => ({ label: `${c.code} — ${c.name}`, value: c.id }))
   const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
 
@@ -86,9 +110,7 @@ export const SalesQuotationForm: FC = () => {
         itemId: String(item.itemId),
         qty: item.qty,
         rate: 0,
-        discountPercent: 0,
         taxPercent: 0,
-        drawingRevNo: undefined,
         itemRemark: item.itemRemark ?? undefined,
       })),
     })
@@ -108,13 +130,7 @@ export const SalesQuotationForm: FC = () => {
         itemId: String(item.itemId),
         qty: item.qty,
         rate: item.rate,
-        toolCost: item.toolCost,
-        gaugeCost: item.gaugeCost,
-        sampleCost: item.sampleCost,
-        discountPercent: item.discountPercent,
         taxPercent: item.taxPercent,
-        deliveryTime: item.deliveryTime ?? undefined,
-        drawingRevNo: item.drawingRevNo ?? undefined,
         itemRemark: item.itemRemark ?? undefined,
       })),
     })
@@ -123,19 +139,21 @@ export const SalesQuotationForm: FC = () => {
   const handleFinish = async (values: QuotationFormValues) => {
     const itemRows: SalesQuotationItemInput[] = values.items.map(row => {
       const item = items.find(i => i.id === row.itemId)
+      // Fields no longer on the form keep whatever was saved before, instead of being nulled.
+      const prev = existing?.items.find(i => String(i.itemId) === row.itemId)
       return {
         salesEnquiryItemId: row.salesEnquiryItemId ?? null,
         itemId: row.itemId,
         uomId: item?.uomId ?? null,
         qty: row.qty,
         rate: row.rate,
-        toolCost: row.toolCost ?? null,
-        gaugeCost: row.gaugeCost ?? null,
-        sampleCost: row.sampleCost ?? null,
-        discountPercent: row.discountPercent ?? null,
+        toolCost: prev?.toolCost ?? null,
+        gaugeCost: prev?.gaugeCost ?? null,
+        sampleCost: prev?.sampleCost ?? null,
+        discountPercent: prev?.discountPercent ?? null,
         taxPercent: row.taxPercent ?? null,
-        deliveryTime: row.deliveryTime ?? null,
-        drawingRevNo: row.drawingRevNo ?? null,
+        deliveryTime: prev?.deliveryTime ?? null,
+        drawingRevNo: prev?.drawingRevNo ?? null,
         itemRemark: row.itemRemark ?? null,
       }
     })
@@ -152,9 +170,10 @@ export const SalesQuotationForm: FC = () => {
     }
 
     try {
-      const quotation = isEdit ? await update({ id, input }) : await create(input)
+      if (isEdit) await update({ id, input })
+      else await create(input)
       message.success(isEdit ? 'Quotation updated' : 'Quotation created')
-      navigate(`/sales/quotations/${quotation.id}`)
+      navigate('/sales/quotations')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -195,7 +214,7 @@ export const SalesQuotationForm: FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleFinish}
-          initialValues={{ quotationDate: dayjs(), items: [] }}
+          initialValues={{ quotationDate: dayjs(), items: [{ taxPercent: 0, rate: 0 }] }}
         >
           <FormSection title="Quotation Details">
             <Row gutter={24}>
@@ -264,21 +283,25 @@ export const SalesQuotationForm: FC = () => {
               ]}
             >
               {(fields, { add, remove }, { errors }) => (
-                <>
-                  {fields.map(field => (
-                    <Card
-                      key={field.key}
-                      size="small"
-                      style={{ marginBottom: 8 }}
-                      styles={{ body: { paddingBottom: 0 } }}
-                    >
-                      <Form.Item name={[field.name, 'salesEnquiryItemId']} hidden>
-                        <Input />
-                      </Form.Item>
-                      <Row gutter={12}>
-                        <Col xs={24} md={7}>
+                <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: 820 }}>
+                    <div style={{ ...ROW_GRID, ...HEADER_ROW }}>
+                      <span>Item</span>
+                      <span>Qty</span>
+                      <span>Rate</span>
+                      <span>Tax %</span>
+                      <span style={{ textAlign: 'right' }}>Amount</span>
+                      <span>Remark</span>
+                      <span />
+                    </div>
+                    {fields.map(field => {
+                      const row = watchedItems?.[field.name]
+                      return (
+                        <div key={field.key} style={{ ...ROW_GRID, padding: '8px 12px 0' }}>
+                          <Form.Item name={[field.name, 'salesEnquiryItemId']} hidden>
+                            <Input />
+                          </Form.Item>
                           <Form.Item
-                            label="Item"
                             name={[field.name, 'itemId']}
                             rules={[{ required: true, message: 'Required' }]}
                           >
@@ -293,92 +316,94 @@ export const SalesQuotationForm: FC = () => {
                               }
                             />
                           </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
                           <Form.Item
-                            label="Qty"
                             name={[field.name, 'qty']}
                             rules={[{ required: true, message: 'Required' }]}
                           >
                             <InputNumber min={0.0001} style={{ width: '100%' }} />
                           </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
                           <Form.Item
-                            label="Rate"
                             name={[field.name, 'rate']}
                             rules={[{ required: true, message: 'Required' }]}
                           >
                             <InputNumber min={0} style={{ width: '100%' }} />
                           </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Discount %" name={[field.name, 'discountPercent']}>
-                            <InputNumber min={0} max={100} style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Tax %" name={[field.name, 'taxPercent']}>
+                          <Form.Item name={[field.name, 'taxPercent']}>
                             <InputNumber min={0} style={{ width: '100%' }} />
                           </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Delivery Time" name={[field.name, 'deliveryTime']}>
-                            <Input placeholder="e.g. 4 weeks" />
+                          <div
+                            style={{
+                              textAlign: 'right',
+                              lineHeight: '32px',
+                              fontWeight: 500,
+                              background: '#fafafa',
+                              border: '1px solid #f0f0f0',
+                              borderRadius: 6,
+                              padding: '0 11px',
+                            }}
+                          >
+                            {money(lineAmount(row))}
+                          </div>
+                          <Form.Item name={[field.name, 'itemRemark']}>
+                            <Input />
                           </Form.Item>
-                        </Col>
-                        <Col
-                          xs={12}
-                          md={2}
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'end' }}
-                        >
                           <Button
                             type="text"
                             danger
                             icon={<DeleteOutlined />}
                             onClick={() => remove(field.name)}
                           />
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Tool Cost" name={[field.name, 'toolCost']}>
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Gauge Cost" name={[field.name, 'gaugeCost']}>
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Sample Cost" name={[field.name, 'sampleCost']}>
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Drawing Rev" name={[field.name, 'drawingRevNo']}>
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                          <Form.Item label="Item Remark" name={[field.name, 'itemRemark']}>
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                    </Card>
-                  ))}
-                  <Form.ErrorList errors={errors} />
-                  <Button
-                    type="dashed"
-                    icon={<PlusOutlined />}
-                    onClick={() => add({ discountPercent: 0, taxPercent: 0, rate: 0 })}
-                    style={{ width: '100%', marginTop: 8 }}
-                  >
-                    Add Item
-                  </Button>
-                </>
+                        </div>
+                      )
+                    })}
+                    {fields.length > 0 && (
+                      <div style={{ ...ROW_GRID, ...HEADER_ROW, fontWeight: 600 }}>
+                        <span>Total</span>
+                        <span>{totals.qty}</span>
+                        <span />
+                        <span />
+                        <span style={{ textAlign: 'right' }}>{money(totals.amount)}</span>
+                        <span />
+                        <span />
+                      </div>
+                    )}
+                    <Form.ErrorList errors={errors} />
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => add({ taxPercent: 0, rate: 0 })}
+                      style={{ width: '100%', marginTop: 8 }}
+                    >
+                      Add Item
+                    </Button>
+                  </div>
+                </div>
               )}
             </Form.List>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+              <div style={{ width: 280, fontSize: 14 }}>
+                <div style={SUMMARY_LINE}>
+                  <span>Subtotal</span>
+                  <span>{money(totals.amount)}</span>
+                </div>
+                <div style={SUMMARY_LINE}>
+                  <span>Tax</span>
+                  <span>{money(totals.tax)}</span>
+                </div>
+                <div
+                  style={{
+                    ...SUMMARY_LINE,
+                    borderTop: '1px solid #f0f0f0',
+                    fontWeight: 600,
+                    fontSize: 16,
+                  }}
+                >
+                  <span>Grand Total</span>
+                  <span>₹ {money(totals.amount + totals.tax)}</span>
+                </div>
+              </div>
+            </div>
           </FormSection>
         </Form>
       </Card>

@@ -9,6 +9,7 @@ import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } f
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseRequisitionItem } from '@/types/procurement'
@@ -16,6 +17,7 @@ import { REQUISITION_STATUS_BADGE, REQUISITION_STATUS_LABELS } from '../constant
 import {
   useApproveRequisition,
   usePurchaseRequisition,
+  requisitionDisplayStatus,
   useRejectRequisition,
   useSubmitRequisitionForApproval,
 } from '../hooks/usePurchaseRequisitions'
@@ -30,7 +32,6 @@ export const PurchaseRequisitionDetail: FC = () => {
     useSubmitRequisitionForApproval()
   const { mutateAsync: approve, isPending: approving } = useApproveRequisition()
   const { mutateAsync: reject, isPending: rejecting } = useRejectRequisition()
-
   if (!requisition) {
     return (
       <div>
@@ -41,6 +42,8 @@ export const PurchaseRequisitionDetail: FC = () => {
       </div>
     )
   }
+
+  const displayStatus = requisitionDisplayStatus(requisition)
 
   const handleSubmit = async () => {
     try {
@@ -85,7 +88,6 @@ export const PurchaseRequisitionDetail: FC = () => {
       },
     })
   }
-
   const columns = [
     {
       title: 'Item',
@@ -115,7 +117,7 @@ export const PurchaseRequisitionDetail: FC = () => {
     <div>
       <PageHeader
         title={requisition.requisitionNumber}
-        subtitle={REQUISITION_STATUS_LABELS[requisition.status]}
+        subtitle={REQUISITION_STATUS_LABELS[displayStatus]}
         breadcrumbs={[
           { label: 'Purchase', href: '/purchase' },
           { label: 'Requisitions', href: '/purchase/requisitions' },
@@ -159,7 +161,7 @@ export const PurchaseRequisitionDetail: FC = () => {
                 </Button>
               </>
             )}
-            {requisition.status === 'APPROVED' && (
+            {displayStatus === 'APPROVED' && (
               <Button
                 type="primary"
                 onClick={() => navigate(`/purchase/enquiries/new?fromPr=${requisition.id}`)}
@@ -171,14 +173,14 @@ export const PurchaseRequisitionDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
-                  status={REQUISITION_STATUS_BADGE[requisition.status]}
-                  label={REQUISITION_STATUS_LABELS[requisition.status]}
+                  status={REQUISITION_STATUS_BADGE[displayStatus]}
+                  label={REQUISITION_STATUS_LABELS[displayStatus]}
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Requisition Date">
@@ -192,7 +194,7 @@ export const PurchaseRequisitionDetail: FC = () => {
               <Descriptions.Item label="Approved By">
                 {requisition.approvedBy ?? '—'}
               </Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {requisition.remarks ?? '—'}
               </Descriptions.Item>
             </Descriptions>

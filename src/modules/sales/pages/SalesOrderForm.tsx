@@ -110,9 +110,10 @@ export const SalesOrderForm: FC = () => {
     }
 
     try {
-      const order = isEdit ? await update({ id, input }) : await create(input)
+      if (isEdit) await update({ id, input })
+      else await create(input)
       message.success(isEdit ? 'Sales order updated' : 'Sales order created')
-      navigate(`/sales/orders/${order.id}`)
+      navigate('/sales/orders')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -143,7 +144,7 @@ export const SalesOrderForm: FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleFinish}
-          initialValues={{ orderDate: dayjs(), items: [] }}
+          initialValues={{ orderDate: dayjs(), items: [{ discountPercent: 0, taxPercent: 0 }] }}
         >
           <FormSection title="Order Details">
             <Row gutter={24}>

@@ -172,6 +172,10 @@ function App() {
                 <Route path="/masters/raw-materials" element={<RawMaterialList />} />
                 <Route path="/masters/raw-materials/new" element={<RawMaterialForm />} />
                 <Route path="/masters/raw-materials/:id/edit" element={<RawMaterialForm />} />
+                <Route
+                  path="/masters/raw-materials/:itemId/inspection-parameters"
+                  element={<ItemInspectionParameterForm />}
+                />
 
                 <Route path="/masters/items" element={<ItemsLayout />}>
                   <Route index element={<Navigate to="consumables" replace />} />

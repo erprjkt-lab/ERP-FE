@@ -14,9 +14,37 @@ import { useProcurementFilters, useProcurementStore } from '../store/procurement
 const STATUS_OPTIONS = Object.entries(PO_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
 const getColumns = (onView: (record: PurchaseOrder) => void): TableColumnsType<PurchaseOrder> => [
-  { title: 'PO #', dataIndex: 'poNumber', key: 'poNumber', width: 130 },
-  { title: 'Date', dataIndex: 'poDate', key: 'poDate', width: 120 },
+  {
+    title: 'P.O. No / Date',
+    key: 'poNumber',
+    width: 140,
+    render: (_, record) => (
+      <div>
+        <div style={{ fontWeight: 600 }}>{record.poNumber}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.poDate}</div>
+      </div>
+    ),
+  },
   { title: 'Supplier', dataIndex: 'supplierName', key: 'supplierName' },
+  {
+    title: 'Item Name',
+    key: 'itemName',
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      return record.items[0]?.itemName ?? record.items[0]?.itemId ?? '—'
+    },
+  },
+  {
+    title: 'Qty',
+    key: 'qty',
+    align: 'right' as const,
+    width: 80,
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      const totalQty = record.items.reduce((sum, item) => sum + item.orderedQty, 0)
+      return totalQty > 0 ? totalQty : '—'
+    },
+  },
   {
     title: 'Source',
     key: 'source',
@@ -42,7 +70,7 @@ const getColumns = (onView: (record: PurchaseOrder) => void): TableColumnsType<P
   {
     title: 'Actions',
     key: 'actions',
-    width: 60,
+    width: 80,
     render: (_, record) => (
       <Tooltip title="View">
         <Button

@@ -146,9 +146,11 @@ export function useSalesQuotation(id: string | undefined) {
   const query = useQuery({
     queryKey: ['sales-quotations', id],
     queryFn: async () => (await getSalesQuotation(Number(id))).data,
+    // select keeps the mapped object referentially stable, so form-prefill effects don't re-fire.
+    select: toSalesQuotation,
     enabled: !!id,
   })
-  return { data: query.data ? toSalesQuotation(query.data) : undefined, isLoading: query.isLoading }
+  return { data: query.data, isLoading: query.isLoading }
 }
 
 // Both create paths invalidate sales-enquiries too: quoting an enquiry flips

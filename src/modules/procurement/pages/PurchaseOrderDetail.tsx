@@ -3,6 +3,7 @@ import { Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseOrderItem } from '@/types/procurement'
@@ -73,10 +74,10 @@ export const PurchaseOrderDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={PO_STATUS_BADGE[order.status]}
