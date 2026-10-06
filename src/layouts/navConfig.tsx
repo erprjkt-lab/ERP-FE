@@ -117,6 +117,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { path: '/production/bom', label: 'BOM' },
       { path: '/production/work-orders', label: 'Work Order (Jobcard)' },
       { path: '/production/outsource', label: 'Outsource' },
+      { path: '/production/rejection-review', label: 'Rejection Review' },
       { path: '/production/entries', label: 'Production Entry' },
     ],
   },

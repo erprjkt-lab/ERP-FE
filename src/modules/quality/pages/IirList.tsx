@@ -4,12 +4,11 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
-import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ITEM_TYPE_RAW_MATERIAL } from '@/modules/procurement/constants'
 import { useGrns } from '@/modules/procurement/hooks/usePurchaseGrns'
 import type { GrnItem } from '@/types/procurement'
-import { IncomingInspectionReports } from '../components/IncomingInspectionReports'
+import { IncomingInspectionDrawer } from '../components/IncomingInspectionDrawer'
 import { useIncomingInspectionReportsForGrnItem } from '../hooks/useInspectionReports'
 
 interface RmLineRow extends GrnItem {
@@ -107,17 +106,14 @@ export const IirList: FC = () => {
         />
       </Card>
 
-      {activeLine && (
-        <Modal
-          title={`IIR — ${activeLine.itemName ?? activeLine.itemId} (${activeLine.grnNo})`}
-          open
-          onCancel={() => setActiveLine(undefined)}
-          footer={null}
-          width={840}
-        >
-          <IncomingInspectionReports grnItemId={activeLine.id} itemId={activeLine.itemId} />
-        </Modal>
-      )}
+      <IncomingInspectionDrawer
+        open={!!activeLine}
+        grnItemId={activeLine?.id}
+        itemId={activeLine?.itemId}
+        itemName={activeLine?.itemName ?? activeLine?.itemId}
+        grnNo={activeLine?.grnNo}
+        onClose={() => setActiveLine(undefined)}
+      />
     </div>
   )
 }

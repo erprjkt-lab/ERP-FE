@@ -7,11 +7,9 @@ import {
   updateCustomer,
 } from '@/api/customers'
 import type { ApiGstType, ApiParty, CreatePartyPayload, PartyPayload } from '@/types/api/masters'
-import type { ApiCountry } from '@/types/api/world'
 import type { Customer, GstType } from '@/types/masters'
 import { useMastersLocalStore } from '../store/mastersLocalStore'
 import type { CustomerInput } from '../store/mastersStore'
-import { useCountries } from './useCountries'
 
 const GST_TYPE_TO_API: Record<GstType, ApiGstType> = {
   regular: 'Regular',
@@ -29,20 +27,11 @@ const GST_TYPE_FROM_API: Partial<Record<ApiGstType, GstType>> = {
   Consumer: 'consumer',
 }
 
-function useCountriesById() {
-  const { data: countries = [] } = useCountries()
-  return new Map<string, ApiCountry>(countries.map(c => [String(c.id), c]))
-}
-
 // BE `city` is a free-text column (no city_id foreign key), so cityId can't be
 // resolved back to a world-master city on read — only the display name survives
-// the round trip. stateName is left unresolved for the same reason: the world API
-// only supports listing states scoped to a known country, not a single state by id.
-function toCustomer(
-  api: ApiParty,
-  customerType: Customer['customerType'],
-  countriesById: Map<string, ApiCountry>,
-): Customer {
+// the round trip. country/state come back as expanded {id, name} objects already,
+// so no separate country-list lookup is needed to show their names.
+function toCustomer(api: ApiParty, customerType: Customer['customerType']): Customer {
   return {
     id: String(api.id),
     code: api.party_code,
@@ -54,10 +43,10 @@ function toCustomer(
     email: api.email ?? '',
     website: api.website ?? undefined,
     address: api.address ?? '',
-    countryId: api.country_id ? String(api.country_id) : null,
-    countryName: api.country_id ? countriesById.get(String(api.country_id))?.name : undefined,
-    stateId: api.state_id ? String(api.state_id) : null,
-    stateName: undefined,
+    countryId: api.country ? String(api.country.id) : null,
+    countryName: api.country?.name,
+    stateId: api.state ? String(api.state.id) : null,
+    stateName: api.state?.name,
     cityId: null,
     cityName: api.city ?? undefined,
     pincode: api.pincode ?? '',
@@ -114,30 +103,25 @@ function toCreatePayload(input: CustomerInput): CreatePartyPayload {
 
 export function useCustomers() {
   const customerTypes = useMastersLocalStore(s => s.customerTypes)
-  const countriesById = useCountriesById()
   const query = useQuery({
     queryKey: ['customers'],
     queryFn: async () => (await listCustomers()).data,
   })
 
-  const data = query.data?.map(api =>
-    toCustomer(api, customerTypes[String(api.id)] ?? null, countriesById),
-  )
+  const data = query.data?.map(api => toCustomer(api, customerTypes[String(api.id)] ?? null))
 
   return { ...query, data, isLoading: query.isLoading }
 }
 
 export function useCustomer(id: string | undefined) {
   const customerTypes = useMastersLocalStore(s => s.customerTypes)
-  const countriesById = useCountriesById()
   const query = useQuery({
     queryKey: ['customers', id],
-    queryFn: () => getCustomer(Number(id)),
+    queryFn: async () => (await getCustomer(Number(id))).data,
     enabled: !!id,
   })
 
-  const data =
-    query.data && id ? toCustomer(query.data, customerTypes[id] ?? null, countriesById) : undefined
+  const data = query.data && id ? toCustomer(query.data, customerTypes[id] ?? null) : undefined
 
   return { ...query, data, isLoading: query.isLoading }
 }
@@ -147,7 +131,7 @@ export function useCreateCustomer() {
   const setCustomerType = useMastersLocalStore(s => s.setCustomerType)
   return useMutation({
     mutationFn: async (input: CustomerInput) => {
-      const result = await createCustomer(toCreatePayload(input))
+      const result = (await createCustomer(toCreatePayload(input))).data
       setCustomerType(String(result.id), input.customerType ?? null)
       return result
     },

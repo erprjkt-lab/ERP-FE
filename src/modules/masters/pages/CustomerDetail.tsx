@@ -1,16 +1,19 @@
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
 import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as antTheme } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ledgerText } from '@/theme/typography'
+import { CustomerFormDrawer } from '../components/CustomerFormDrawer'
 import { useCustomer } from '../hooks/useCustomers'
 
 export const CustomerDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { token } = antTheme.useToken()
+  const [editOpen, setEditOpen] = useState(false)
   const { data: customer, isLoading } = useCustomer(id)
 
   if (!customer) {
@@ -39,11 +42,7 @@ export const CustomerDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/customers')}>
               Back
             </Button>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/masters/customers/${id}/edit`)}
-            >
+            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
           </Space>
@@ -183,6 +182,8 @@ export const CustomerDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <CustomerFormDrawer open={editOpen} customerId={id} onClose={() => setEditOpen(false)} />
     </div>
   )
 }

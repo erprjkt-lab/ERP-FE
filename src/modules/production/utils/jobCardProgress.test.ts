@@ -132,4 +132,35 @@ describe('computeStepProgress', () => {
     expect(progress[0].isLast).toBe(false)
     expect(progress[2].isLast).toBe(true)
   })
+
+  it('never shows the last step as ready to move — its OK qty goes straight to stock', () => {
+    const progress = computeStepProgress(
+      routes,
+      [log('10', 20, 0), log('20', 20, 0), log('30', 20, 0)],
+      [
+        movement('10', '20', 20, [{ acceptedQty: 20 }]),
+        movement('20', '30', 20, [{ acceptedQty: 20 }]),
+      ],
+      20,
+    )
+
+    const inspection = progress[2]
+    expect(inspection.isLast).toBe(true)
+    expect(inspection.okQty).toBe(20)
+    expect(inspection.readyToMoveQty).toBe(0)
+  })
+
+  it('marks no step as current once every step is fully produced', () => {
+    const progress = computeStepProgress(
+      routes,
+      [log('10', 20, 0), log('20', 20, 0), log('30', 20, 0)],
+      [
+        movement('10', '20', 20, [{ acceptedQty: 20 }]),
+        movement('20', '30', 20, [{ acceptedQty: 20 }]),
+      ],
+      20,
+    )
+
+    expect(progress.every(row => !row.isCurrent)).toBe(true)
+  })
 })

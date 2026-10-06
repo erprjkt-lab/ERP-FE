@@ -29,6 +29,10 @@ export const OutsourceList = () => {
   const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([])
   const [createChallanOpen, setCreateChallanOpen] = useState(false)
   const [acceptTarget, setAcceptTarget] = useState<{ challan: Challan; item: ChallanItem }>()
+  // Challans start expanded; track only the ones the user collapsed so refetches
+  // don't need an effect to re-open newly arrived rows.
+  const [collapsedKeys, setCollapsedKeys] = useState<string[]>([])
+  const expandedRowKeys = challans.map(c => c.id).filter(id => !collapsedKeys.includes(id))
 
   const handleMarkReceived = async (challanId: string) => {
     try {
@@ -188,6 +192,9 @@ export const OutsourceList = () => {
                   pagination={false}
                   totalLabel="challans"
                   expandable={{
+                    expandedRowKeys,
+                    onExpandedRowsChange: keys =>
+                      setCollapsedKeys(challans.map(c => c.id).filter(id => !keys.includes(id))),
                     expandedRowRender: challan => (
                       <Table<ChallanItem>
                         columns={[
@@ -195,19 +202,35 @@ export const OutsourceList = () => {
                           {
                             title: 'Action',
                             key: 'action',
-                            width: 110,
-                            render: (_, item) => (
-                              <Button
-                                size="small"
-                                icon={
-                                  item.outstandingQty > 0 ? <InboxOutlined /> : <CheckOutlined />
-                                }
-                                disabled={item.outstandingQty <= 0 || challan.status === 'closed'}
-                                onClick={() => setAcceptTarget({ challan, item })}
-                              >
-                                Accept
-                              </Button>
-                            ),
+                            width: 120,
+                            render: (_, item) => {
+                              const isFullyReceived =
+                                Number(item.outstandingQty) <= 0 ||
+                                (Number(item.receivedQty) >= Number(item.dispatchedQty) &&
+                                  Number(item.dispatchedQty) > 0) ||
+                                challan.status === 'closed'
+
+                              return (
+                                <Tooltip
+                                  title={
+                                    isFullyReceived
+                                      ? 'All dispatched quantity for this item has been accepted/received'
+                                      : undefined
+                                  }
+                                >
+                                  <span>
+                                    <Button
+                                      size="small"
+                                      icon={isFullyReceived ? <CheckOutlined /> : <InboxOutlined />}
+                                      disabled={isFullyReceived}
+                                      onClick={() => setAcceptTarget({ challan, item })}
+                                    >
+                                      {isFullyReceived ? 'Accepted' : 'Accept'}
+                                    </Button>
+                                  </span>
+                                </Tooltip>
+                              )
+                            },
                           },
                         ]}
                         dataSource={challan.items}

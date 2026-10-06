@@ -26,6 +26,8 @@ const FREQ_UNIT_OPTIONS = [
   { label: 'Lot', value: 'Lot' },
 ]
 
+const CONTROL_METHOD_OPTIONS = ['IPR', 'FIR', 'IIR'].map(v => ({ label: v, value: v }))
+
 export const ItemInspectionParameterForm: FC = () => {
   const { itemId } = useParams()
   const { pathname } = useLocation()
@@ -130,7 +132,12 @@ export const ItemInspectionParameterForm: FC = () => {
               fieldType="select"
               options={FREQ_UNIT_OPTIONS}
             />
-            <FormField label="Control Method" name="controlMethod" />
+            <FormField
+              label="Control Method"
+              name="controlMethod"
+              fieldType="select"
+              options={CONTROL_METHOD_OPTIONS}
+            />
             <FormField
               label="Status"
               name="status"

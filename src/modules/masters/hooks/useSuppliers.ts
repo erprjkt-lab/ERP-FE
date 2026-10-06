@@ -7,18 +7,11 @@ import {
   updateSupplier,
 } from '@/api/suppliers'
 import type { ApiParty, CreatePartyPayload, PartyPayload } from '@/types/api/masters'
-import type { ApiCountry } from '@/types/api/world'
 import type { Supplier } from '@/types/masters'
 import type { SupplierInput } from '../store/mastersStore'
-import { useCountries } from './useCountries'
 
-function useCountriesById() {
-  const { data: countries = [] } = useCountries()
-  return new Map<string, ApiCountry>(countries.map(c => [String(c.id), c]))
-}
-
-// See useCustomers.ts for why stateName/cityId aren't resolvable from the API response.
-function toSupplier(api: ApiParty, countriesById: Map<string, ApiCountry>): Supplier {
+// See useCustomers.ts for why cityId isn't resolvable from the API response.
+function toSupplier(api: ApiParty): Supplier {
   return {
     id: String(api.id),
     code: api.party_code,
@@ -28,10 +21,10 @@ function toSupplier(api: ApiParty, countriesById: Map<string, ApiCountry>): Supp
     mobile: api.mobile,
     email: api.email ?? '',
     address: api.address ?? '',
-    countryId: api.country_id ? String(api.country_id) : null,
-    countryName: api.country_id ? countriesById.get(String(api.country_id))?.name : undefined,
-    stateId: api.state_id ? String(api.state_id) : null,
-    stateName: undefined,
+    countryId: api.country ? String(api.country.id) : null,
+    countryName: api.country?.name,
+    stateId: api.state ? String(api.state.id) : null,
+    stateName: api.state?.name,
     cityId: null,
     cityName: api.city ?? undefined,
     pincode: api.pincode ?? '',
@@ -76,26 +69,24 @@ function toCreatePayload(input: SupplierInput): CreatePartyPayload {
 }
 
 export function useSuppliers() {
-  const countriesById = useCountriesById()
   const query = useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => (await listSuppliers()).data,
   })
 
-  const data = query.data?.map(api => toSupplier(api, countriesById))
+  const data = query.data?.map(toSupplier)
 
   return { ...query, data, isLoading: query.isLoading }
 }
 
 export function useSupplier(id: string | undefined) {
-  const countriesById = useCountriesById()
   const query = useQuery({
     queryKey: ['suppliers', id],
-    queryFn: () => getSupplier(Number(id)),
+    queryFn: async () => (await getSupplier(Number(id))).data,
     enabled: !!id,
   })
 
-  const data = query.data ? toSupplier(query.data, countriesById) : undefined
+  const data = query.data ? toSupplier(query.data) : undefined
 
   return { ...query, data, isLoading: query.isLoading }
 }

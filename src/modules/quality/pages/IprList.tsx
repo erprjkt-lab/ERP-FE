@@ -4,12 +4,11 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
-import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useJobCards } from '@/modules/production/hooks/useJobCards'
 import type { JobCard } from '@/types/production'
-import { JobCardInspectionReports } from '../components/JobCardInspectionReports'
+import { JobCardInspectionDrawer } from '../components/JobCardInspectionDrawer'
 
 const getColumns = (onOpen: (record: JobCard) => void): TableColumnsType<JobCard> => [
   { title: 'Job Card No', dataIndex: 'jobCardNumber', key: 'jobCardNumber', width: 130 },
@@ -80,25 +79,18 @@ export const IprList: FC = () => {
         />
       </Card>
 
-      {activeJobCard && (
-        <Modal
-          title={`IPR — ${activeJobCard.jobCardNumber}`}
-          open
-          onCancel={() => setActiveJobCard(undefined)}
-          footer={null}
-          width={860}
-        >
-          <JobCardInspectionReports
-            jobCardId={activeJobCard.id}
-            itemId={activeJobCard.itemId}
-            routeProcesses={activeJobCard.routes.map(r => ({
-              id: r.processId,
-              name: r.processName,
-            }))}
-            reportType="IPR"
-          />
-        </Modal>
-      )}
+      <JobCardInspectionDrawer
+        open={!!activeJobCard}
+        jobCardId={activeJobCard?.id}
+        jobCardNumber={activeJobCard?.jobCardNumber}
+        itemId={activeJobCard?.itemId}
+        routes={activeJobCard?.routes.map(r => ({
+          processId: r.processId,
+          processName: r.processName,
+        }))}
+        reportType="IPR"
+        onClose={() => setActiveJobCard(undefined)}
+      />
     </div>
   )
 }

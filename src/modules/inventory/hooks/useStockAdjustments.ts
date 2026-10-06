@@ -6,6 +6,7 @@ import {
   deleteStockAdjustment,
   getStockAdjustment,
   listStockAdjustments,
+  updateStockAdjustment,
 } from '@/api/stockAdjustments'
 import type {
   ApiStockAdjustment,
@@ -90,6 +91,24 @@ function toCreatePayload(input: StockAdjustmentInput): CreateStockAdjustmentPayl
   }
 }
 
+function toUpdatePayload(
+  input: Partial<StockAdjustmentInput>,
+): Partial<CreateStockAdjustmentPayload> {
+  return {
+    adjustment_date: input.adjustmentDate,
+    location_id: input.locationId ? Number(input.locationId) : undefined,
+    reason: input.reason,
+    remarks: input.remarks ?? null,
+    items: input.items?.map(item => ({
+      item_id: Number(item.itemId),
+      batch_no: item.batchNo ?? null,
+      heat_no: item.heatNo ?? null,
+      physical_qty: item.physicalQty,
+      remarks: item.remarks ?? null,
+    })),
+  }
+}
+
 export function useStockAdjustments() {
   const query = useQuery({
     queryKey: ['stock-adjustments'],
@@ -118,6 +137,17 @@ export function useCreateStockAdjustment() {
       return toStockAdjustment(result.data)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['stock-adjustments'] }),
+  })
+}
+
+export function useUpdateStockAdjustment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<StockAdjustmentInput> }) => {
+      const result = await updateStockAdjustment(Number(id), toUpdatePayload(payload))
+      return toStockAdjustment(result.data)
+    },
+    onSuccess: (_result, variables) => invalidateOne(queryClient, variables.id),
   })
 }
 

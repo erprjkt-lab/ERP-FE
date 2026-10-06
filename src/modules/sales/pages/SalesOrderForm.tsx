@@ -60,6 +60,9 @@ export const SalesOrderForm: FC = () => {
 
   const customerOptions = customers.map(c => ({ label: `${c.code} — ${c.name}`, value: c.id }))
   const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
+  // One order line per item — exclude whatever's already picked on another
+  // row so the same item can't be added twice.
+  const watchedItems = Form.useWatch('items', form) as ItemRowValues[] | undefined
 
   useEffect(() => {
     if (!existing) return
@@ -214,68 +217,79 @@ export const SalesOrderForm: FC = () => {
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <div
-                      key={field.key}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 90px 90px 90px 90px 140px 1fr 32px',
-                        gap: '0 8px',
-                        alignItems: 'start',
-                      }}
-                    >
-                      <Form.Item
-                        name={[field.name, 'itemId']}
-                        rules={[{ required: true, message: 'Required' }]}
+                  {fields.map(field => {
+                    const selectedElsewhere = new Set(
+                      (watchedItems ?? [])
+                        .filter((_, idx) => idx !== field.name)
+                        .map(row => row?.itemId)
+                        .filter(Boolean),
+                    )
+                    const rowItemOptions = itemOptions.filter(
+                      opt => !selectedElsewhere.has(opt.value),
+                    )
+                    return (
+                      <div
+                        key={field.key}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 90px 90px 90px 90px 140px 1fr 32px',
+                          gap: '0 8px',
+                          alignItems: 'start',
+                        }}
                       >
-                        <Select
-                          placeholder="Select item"
-                          options={itemOptions}
-                          showSearch
-                          filterOption={(input, option) =>
-                            String(option?.label ?? '')
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
+                        <Form.Item
+                          name={[field.name, 'itemId']}
+                          rules={[{ required: true, message: 'Required' }]}
+                        >
+                          <Select
+                            placeholder="Select item"
+                            options={rowItemOptions}
+                            showSearch
+                            filterOption={(input, option) =>
+                              String(option?.label ?? '')
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          name={[field.name, 'qty']}
+                          rules={[{ required: true, message: 'Required' }]}
+                        >
+                          <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
+                        </Form.Item>
+                        <Form.Item
+                          name={[field.name, 'rate']}
+                          rules={[{ required: true, message: 'Required' }]}
+                        >
+                          <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
+                        </Form.Item>
+                        <Form.Item name={[field.name, 'discountPercent']}>
+                          <InputNumber
+                            placeholder="Disc %"
+                            min={0}
+                            max={100}
+                            style={{ width: '100%' }}
+                          />
+                        </Form.Item>
+                        <Form.Item name={[field.name, 'taxPercent']}>
+                          <InputNumber placeholder="Tax %" min={0} style={{ width: '100%' }} />
+                        </Form.Item>
+                        <Form.Item name={[field.name, 'committedDate']}>
+                          <DatePicker placeholder="Committed" style={{ width: '100%' }} />
+                        </Form.Item>
+                        <Form.Item name={[field.name, 'itemRemark']}>
+                          <Input placeholder="Remarks" />
+                        </Form.Item>
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => remove(field.name)}
                         />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, 'qty']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, 'rate']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'discountPercent']}>
-                        <InputNumber
-                          placeholder="Disc %"
-                          min={0}
-                          max={100}
-                          style={{ width: '100%' }}
-                        />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'taxPercent']}>
-                        <InputNumber placeholder="Tax %" min={0} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'committedDate']}>
-                        <DatePicker placeholder="Committed" style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'itemRemark']}>
-                        <Input placeholder="Remarks" />
-                      </Form.Item>
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    </div>
-                  ))}
+                      </div>
+                    )
+                  })}
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"

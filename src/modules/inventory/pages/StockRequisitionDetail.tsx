@@ -223,6 +223,12 @@ export const StockRequisitionDetail: FC = () => {
                 >
                   Cancel
                 </Button>
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={() => navigate(`/inventory/requisitions/${requisition.id}/edit`)}
+                >
+                  Edit
+                </Button>
                 <Button danger icon={<CloseOutlined />} loading={rejecting} onClick={handleReject}>
                   Reject
                 </Button>

@@ -1,4 +1,16 @@
-import { App, Button, Card, Col, DatePicker, Form, Input, InputNumber, Row, Space } from 'antd'
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Col,
+  DatePicker,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Space,
+} from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
@@ -121,24 +133,40 @@ export const SupplierQuotationForm: FC = () => {
     }
   }
 
+  const supplierLabel = peSupplier.supplierName ?? peSupplier.supplierId
+
   return (
     <div>
       <PageHeader
-        title={`Quotation — ${peSupplier.supplierName ?? peSupplier.supplierId}`}
+        title={`${existingQuotation ? 'Edit' : 'Record'} Quotation — ${supplierLabel}`}
         subtitle={enquiry.enquiryNumber}
         breadcrumbs={[
           { label: 'Purchase', href: '/purchase' },
           { label: 'Enquiries', href: '/purchase/enquiries' },
           { label: enquiry.enquiryNumber, href: `/purchase/enquiries/${enquiry.id}` },
-          { label: peSupplier.supplierName ?? 'Quotation' },
+          { label: supplierLabel },
         ]}
         actions={
           <Space>
             <Button onClick={() => navigate(`/purchase/enquiries/${enquiry.id}`)}>Cancel</Button>
             <Button type="primary" loading={saving} onClick={() => form.submit()}>
-              Save Quotation
+              {existingQuotation ? 'Update Quotation' : 'Record Quotation'}
             </Button>
           </Space>
+        }
+      />
+
+      <Alert
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+        message={
+          existingQuotation ? 'Editing a recorded quotation' : 'Recording a supplier quotation'
+        }
+        description={
+          existingQuotation
+            ? `Update the quotation on file from ${supplierLabel} for ${enquiry.enquiryNumber}.`
+            : `${supplierLabel} responded to this enquiry outside the system — by phone, email, or on paper. Enter what they quoted below (number, rates, terms). Once saved, it shows up on the Compare Quotations screen alongside the other suppliers on ${enquiry.enquiryNumber}.`
         }
       />
 

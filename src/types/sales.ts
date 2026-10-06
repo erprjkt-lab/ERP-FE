@@ -125,3 +125,57 @@ export interface SalesOrder extends BaseEntity {
   netAmount: number
   createdBy: string
 }
+
+export type DeliveryChallanStatus = 'DISPATCHED' | 'CANCELLED'
+
+export interface DeliveryChallanItemStock {
+  id: ID
+  locationId: ID
+  locationName?: string
+  batchNo: string | null
+  heatNo: string | null
+  serialNo: string | null
+  qty: number
+}
+
+export interface DeliveryChallanItem {
+  id: ID
+  salesOrderItemId?: ID | null
+  salesOrderId?: ID | null
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  uomId: ID | null
+  uomName?: string
+  dispatchQty: number
+  rate: number
+  orderRate?: number | null
+  discountPercent: number
+  discountAmount: number
+  taxPercent: number
+  taxAmount: number
+  lineTotal: number
+  billedQty: number
+  itemRemark?: string | null
+  stocks: DeliveryChallanItemStock[]
+}
+
+export interface DeliveryChallan extends BaseEntity {
+  challanNumber: string
+  partyId: ID
+  partyName?: string
+  partyStateCode?: string | null
+  gstin?: string | null
+  gstType?: string | null
+  challanDate: string
+  vehicleNo?: string | null
+  lrNo?: string | null
+  lrDate?: string | null
+  transporterName?: string | null
+  status: DeliveryChallanStatus
+  remarks?: string | null
+  items: DeliveryChallanItem[]
+  /** Summed from line totals — the API exposes no header-level total. */
+  netAmount: number
+  createdBy: string
+}

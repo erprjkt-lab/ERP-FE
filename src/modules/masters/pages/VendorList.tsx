@@ -2,11 +2,13 @@ import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-de
 import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Vendor } from '@/types/masters'
+import { VendorFormDrawer } from '../components/VendorFormDrawer'
 import { MASTER_STATUS_OPTIONS, VENDOR_TYPE_OPTIONS } from '../constants'
 import { useDeleteVendor, useVendors } from '../hooks/useVendors'
 import { useMastersStore } from '../store/mastersStore'
@@ -65,6 +67,7 @@ const getColumns = (
 export const VendorList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { data: vendors = [], isLoading } = useVendors()
   const { mutateAsync: deleteVendor } = useDeleteVendor()
   const filters = useMastersStore(s => s.vendorFilters)
@@ -90,7 +93,7 @@ export const VendorList: FC = () => {
 
   const columns = getColumns(
     record => navigate(`/masters/vendors/${record.id}`),
-    record => navigate(`/masters/vendors/${record.id}/edit`),
+    record => setDrawerState({ mode: 'edit', id: record.id }),
     handleDelete,
   )
 
@@ -113,7 +116,7 @@ export const VendorList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/masters/vendors/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             Add Vendor
           </Button>
@@ -173,6 +176,12 @@ export const VendorList: FC = () => {
           })}
         />
       </Card>
+
+      <VendorFormDrawer
+        open={!!drawerState}
+        vendorId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
     </div>
   )
 }

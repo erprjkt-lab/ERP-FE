@@ -1,5 +1,6 @@
 import {
   ArrowLeftOutlined,
+  CarOutlined,
   CheckOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -8,18 +9,28 @@ import {
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { SalesOrderItem } from '@/types/sales'
-import { ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from '../constants'
+import type { DeliveryChallan, SalesOrderItem } from '@/types/sales'
+import { DeliveryChallanFormDrawer } from '../components/DeliveryChallanFormDrawer'
+import { SalesOrderFormDrawer } from '../components/SalesOrderFormDrawer'
+import {
+  CHALLAN_STATUS_BADGE,
+  CHALLAN_STATUS_LABELS,
+  ORDER_STATUS_BADGE,
+  ORDER_STATUS_LABELS,
+} from '../constants'
+import { useSalesOrderDispatchedQtyByItem } from '../hooks/useDeliveryChallans'
 import { useDeleteSalesOrder, useSalesOrder, useSalesOrderAction } from '../hooks/useSalesOrders'
 import { getErrorMessage } from '@/api/client'
 
-const ITEM_COLUMNS: TableColumnsType<SalesOrderItem> = [
+const getItemColumns = (
+  dispatchedByItemId: Map<string, number>,
+): TableColumnsType<SalesOrderItem> => [
   {
     title: 'Item',
     key: 'item',
@@ -27,6 +38,18 @@ const ITEM_COLUMNS: TableColumnsType<SalesOrderItem> = [
   },
   { title: 'Qty', dataIndex: 'qty', key: 'qty', width: 90 },
   { title: 'UOM', dataIndex: 'uomName', key: 'uomName', width: 90, render: v => v ?? '—' },
+  {
+    title: 'Dispatched',
+    key: 'dispatched',
+    width: 100,
+    render: (_, r) => dispatchedByItemId.get(r.id) ?? 0,
+  },
+  {
+    title: 'Pending',
+    key: 'pending',
+    width: 90,
+    render: (_, r) => Math.max(0, r.qty - (dispatchedByItemId.get(r.id) ?? 0)),
+  },
   { title: 'Rate', dataIndex: 'rate', key: 'rate', width: 100 },
   {
     // Only differs from rate when the order overrode the quoted price, so it
@@ -55,6 +78,24 @@ const ITEM_COLUMNS: TableColumnsType<SalesOrderItem> = [
   },
 ]
 
+const CHALLAN_COLUMNS: TableColumnsType<DeliveryChallan> = [
+  { title: 'Challan #', dataIndex: 'challanNumber', key: 'challanNumber', width: 150 },
+  { title: 'Date', dataIndex: 'challanDate', key: 'challanDate', width: 120 },
+  { title: 'Vehicle No', dataIndex: 'vehicleNo', key: 'vehicleNo', render: v => v || '—' },
+  {
+    title: 'Status',
+    dataIndex: 'status',
+    key: 'status',
+    width: 120,
+    render: status => (
+      <StatusBadge
+        status={CHALLAN_STATUS_BADGE[status as DeliveryChallan['status']]}
+        label={CHALLAN_STATUS_LABELS[status as DeliveryChallan['status']]}
+      />
+    ),
+  },
+]
+
 export const SalesOrderDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -62,7 +103,10 @@ export const SalesOrderDetail: FC = () => {
   const { data: order, isLoading } = useSalesOrder(id)
   const { mutateAsync: runAction, isPending } = useSalesOrderAction()
   const { mutateAsync: removeOrder, isPending: deleting } = useDeleteSalesOrder()
+  const { challans, dispatchedByItemId } = useSalesOrderDispatchedQtyByItem(id)
   const cancelReason = useRef('')
+  const [editOpen, setEditOpen] = useState(false)
+  const [challanDrawerOpen, setChallanDrawerOpen] = useState(false)
 
   if (!order) {
     return (
@@ -158,11 +202,7 @@ export const SalesOrderDetail: FC = () => {
               Back
             </Button>
             {/* Backend only permits edits while the order is still a draft. */}
-            <Button
-              icon={<EditOutlined />}
-              disabled={!isDraft}
-              onClick={() => navigate(`/sales/orders/${order.id}/edit`)}
-            >
+            <Button icon={<EditOutlined />} disabled={!isDraft} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
             <Button
@@ -176,6 +216,15 @@ export const SalesOrderDetail: FC = () => {
             </Button>
             <Button danger icon={<StopOutlined />} disabled={isFinished} onClick={handleCancel}>
               Cancel Order
+            </Button>
+            {/* Dispatch only makes sense once the order is confirmed and not yet fully shipped/cancelled. */}
+            <Button
+              type={order.status === 'CONFIRMED' ? 'primary' : 'default'}
+              icon={<CarOutlined />}
+              disabled={order.status !== 'CONFIRMED'}
+              onClick={() => setChallanDrawerOpen(true)}
+            >
+              Create Delivery Challan
             </Button>
             {/* Backend only permits deletion while still a draft. */}
             <Button
@@ -244,7 +293,7 @@ export const SalesOrderDetail: FC = () => {
             }
           >
             <DataTable<SalesOrderItem>
-              columns={ITEM_COLUMNS}
+              columns={getItemColumns(dispatchedByItemId)}
               dataSource={order.items}
               rowKey="id"
               pagination={false}
@@ -253,7 +302,38 @@ export const SalesOrderDetail: FC = () => {
             />
           </Card>
         </Col>
+        {challans.length > 0 && (
+          <Col span={24}>
+            <Card
+              title={
+                <Typography.Title level={5} style={{ margin: 0 }}>
+                  Delivery Challans
+                </Typography.Title>
+              }
+            >
+              <DataTable<DeliveryChallan>
+                columns={CHALLAN_COLUMNS}
+                dataSource={challans}
+                rowKey="id"
+                pagination={false}
+                size="small"
+                totalLabel="challans"
+                onRow={record => ({
+                  onClick: () => navigate(`/sales/delivery-challans/${record.id}`),
+                  style: { cursor: 'pointer' },
+                })}
+              />
+            </Card>
+          </Col>
+        )}
       </Row>
+
+      <SalesOrderFormDrawer open={editOpen} orderId={order.id} onClose={() => setEditOpen(false)} />
+      <DeliveryChallanFormDrawer
+        open={challanDrawerOpen}
+        salesOrderId={order.id}
+        onClose={() => setChallanDrawerOpen(false)}
+      />
     </div>
   )
 }

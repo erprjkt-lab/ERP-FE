@@ -28,9 +28,9 @@ import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { JobCardInspectionReports } from '@/modules/quality/components/JobCardInspectionReports'
-import { ledgerText } from '@/theme/typography'
 import type { JobCardMovement, MaterialIssue, ProcessLog } from '@/types/production'
 import { AcceptProductionModal } from '../components/AcceptProductionModal'
+import { MetaItem, SummaryStat } from '../components/JobCardStats'
 import { LogProductionModal } from '../components/LogProductionModal'
 import { MoveForwardModal } from '../components/MoveForwardModal'
 import { RequestOutsourceModal } from '../components/RequestOutsourceModal'
@@ -49,30 +49,6 @@ interface MaterialRow {
   issuedQty: number
   pendingQty: number
 }
-
-const SummaryStat: FC<{ label: string; value: number; tone?: string }> = ({
-  label,
-  value,
-  tone,
-}) => (
-  <div>
-    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
-      {label}
-    </Typography.Text>
-    <span style={{ ...ledgerText, fontSize: 24, fontWeight: 600, color: tone }}>{value}</span>
-  </div>
-)
-
-const MetaItem: FC<{ label: string; value?: string }> = ({ label, value }) => (
-  <span style={{ fontSize: 13 }}>
-    <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-      {label}:{' '}
-    </Typography.Text>
-    <Typography.Text strong style={{ fontSize: 13 }}>
-      {value || '—'}
-    </Typography.Text>
-  </span>
-)
 
 export const JobCardDetail: FC = () => {
   const { id } = useParams()
@@ -100,6 +76,14 @@ export const JobCardDetail: FC = () => {
   const finalOk = progress.length ? progress[progress.length - 1].okQty : 0
   const totalRejected = progress.reduce((sum, row) => sum + row.rejectedQty, 0)
   const completionPercent = orderedQty > 0 ? Math.round((finalOk / orderedQty) * 100) : 0
+  // Nothing left unaccepted or pending anywhere on the route — there's no
+  // backend "complete" action for a job card yet, so this is a display-only
+  // signal, not the real jobCard.status.
+  const isFullyProduced =
+    progress.length > 0 &&
+    finalOk > 0 &&
+    finalOk + totalRejected >= orderedQty &&
+    progress.every(row => row.pendingQty === 0 && row.unacceptedQty === 0)
 
   const openDrawer = (step: StepProgress, which: 'accept' | 'log' | 'move' | 'outsource') => {
     setActiveStepId(step.step.processId)
@@ -291,11 +275,15 @@ export const JobCardDetail: FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <Progress
                 percent={completionPercent}
-                status={isClosed ? 'success' : 'active'}
+                status={isClosed || isFullyProduced ? 'success' : 'active'}
                 style={{ flex: 1, marginBottom: 0 }}
               />
-              <Tag color="blue" style={{ marginInlineEnd: 0 }}>
-                {currentStep ? `At ${currentStep.step.processName}` : 'Not started'}
+              <Tag color={isFullyProduced ? 'green' : 'blue'} style={{ marginInlineEnd: 0 }}>
+                {isFullyProduced
+                  ? 'Completed'
+                  : currentStep
+                    ? `At ${currentStep.step.processName}`
+                    : 'Not started'}
               </Tag>
             </div>
           </Col>

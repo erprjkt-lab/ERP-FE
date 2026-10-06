@@ -1,21 +1,37 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
+import {
+  ApartmentOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  ExperimentOutlined,
+  PlusOutlined,
+  UnorderedListOutlined,
+} from '@ant-design/icons'
 import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { InspectionParametersDrawer } from '@/modules/production/components/InspectionParametersDrawer'
+import { ItemBomDrawer } from '@/modules/production/components/ItemBomDrawer'
+import { ItemProcessRouteDrawer } from '@/modules/production/components/ItemProcessRouteDrawer'
 import type { FinishedGood } from '@/types/masters'
+import { FinishedGoodFormDrawer } from '../components/FinishedGoodFormDrawer'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteFinishedGood, useFinishedGoods } from '../hooks/useFinishedGoods'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-const getColumns = (
-  onEdit: (record: FinishedGood) => void,
-  onDelete: (record: FinishedGood) => void,
-): TableColumnsType<FinishedGood> => [
+interface RowActions {
+  onEdit: (record: FinishedGood) => void
+  onDelete: (record: FinishedGood) => void
+  onProcessRoute: (record: FinishedGood) => void
+  onBom: (record: FinishedGood) => void
+  onInspectionParameters: (record: FinishedGood) => void
+}
+
+const getColumns = (a: RowActions): TableColumnsType<FinishedGood> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   {
     title: 'Name',
@@ -39,11 +55,16 @@ const getColumns = (
   {
     title: 'Actions',
     key: 'actions',
-    width: 90,
+    width: 220,
     render: (_, record) => (
       <Space size="small" onClick={e => e.stopPropagation()}>
         <Tooltip title="Edit">
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => a.onEdit(record)}
+          />
         </Tooltip>
         <Tooltip title="Delete">
           <Button
@@ -51,7 +72,31 @@ const getColumns = (
             size="small"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => onDelete(record)}
+            onClick={() => a.onDelete(record)}
+          />
+        </Tooltip>
+        <Tooltip title="Define the ordered shop-floor operations for this item">
+          <Button
+            type="text"
+            size="small"
+            icon={<ApartmentOutlined />}
+            onClick={() => a.onProcessRoute(record)}
+          />
+        </Tooltip>
+        <Tooltip title="Define the materials consumed per unit of this item">
+          <Button
+            type="text"
+            size="small"
+            icon={<UnorderedListOutlined />}
+            onClick={() => a.onBom(record)}
+          />
+        </Tooltip>
+        <Tooltip title="Define the quality control-plan characteristics to check for this item">
+          <Button
+            type="text"
+            size="small"
+            icon={<ExperimentOutlined />}
+            onClick={() => a.onInspectionParameters(record)}
           />
         </Tooltip>
       </Space>
@@ -60,8 +105,11 @@ const getColumns = (
 ]
 
 export const FinishedGoodList: FC = () => {
-  const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
+  const [inspectionItemId, setInspectionItemId] = useState<string>()
+  const [processRouteItemId, setProcessRouteItemId] = useState<string>()
+  const [bomItemId, setBomItemId] = useState<string>()
   const { data: finishedGoods = [], isLoading } = useFinishedGoods()
   const { mutateAsync: deleteFinishedGood } = useDeleteFinishedGood()
   const filters = useMastersStore(s => s.finishedGoodFilters)
@@ -85,10 +133,13 @@ export const FinishedGoodList: FC = () => {
     })
   }
 
-  const columns = getColumns(
-    record => navigate(`/masters/finished-goods/${record.id}/edit`),
-    handleDelete,
-  )
+  const columns = getColumns({
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+    onDelete: handleDelete,
+    onProcessRoute: record => setProcessRouteItemId(record.id),
+    onBom: record => setBomItemId(record.id),
+    onInspectionParameters: record => setInspectionItemId(record.id),
+  })
 
   const filtered = finishedGoods.filter(f => {
     if (filters.search && !f.name.toLowerCase().includes(filters.search.toLowerCase())) {
@@ -108,7 +159,7 @@ export const FinishedGoodList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/masters/finished-goods/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             Add Finished Good
           </Button>
@@ -153,11 +204,35 @@ export const FinishedGoodList: FC = () => {
           totalLabel="finished goods"
           fillHeight
           onRow={record => ({
-            onClick: () => navigate(`/masters/finished-goods/${record.id}/edit`),
+            onClick: () => setDrawerState({ mode: 'edit', id: record.id }),
             style: { cursor: 'pointer' },
           })}
         />
       </Card>
+
+      <FinishedGoodFormDrawer
+        open={!!drawerState}
+        finishedGoodId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
+
+      <InspectionParametersDrawer
+        open={!!inspectionItemId}
+        itemId={inspectionItemId}
+        onClose={() => setInspectionItemId(undefined)}
+      />
+
+      <ItemProcessRouteDrawer
+        open={!!processRouteItemId}
+        itemId={processRouteItemId}
+        onClose={() => setProcessRouteItemId(undefined)}
+      />
+
+      <ItemBomDrawer
+        open={!!bomItemId}
+        itemId={bomItemId}
+        onClose={() => setBomItemId(undefined)}
+      />
     </div>
   )
 }

@@ -264,8 +264,10 @@ export interface CreateProcessLogPayload {
   performed_by_type: number
   processor_employee_id?: number | null
   processor_party_id?: number | null
-  operator_id: number
-  shift_id: number
+  // Shop-floor concepts — the backend only requires these for in-house logs,
+  // never for outsourced work done at a vendor's premises.
+  operator_id?: number | null
+  shift_id?: number | null
   log_date?: string | null
   ok_qty?: number
   rejected_qty?: number
@@ -352,4 +354,74 @@ export interface JobCardFilters {
   party_id?: number
   from_date?: string
   to_date?: string
+}
+
+// ---------- Rejections & Rejection Review ----------
+
+export interface ApiRejection {
+  id: number
+  job_card_id: number
+  job_card_number?: string | null
+  process_id: number
+  process_name?: string | null
+  process_log_id: number | null
+  rejected_qty: number
+  // Only present when the `reviews` relation is loaded (index/pending/byJobCard) —
+  // absent on a bare single-resource response.
+  pending_qty?: string | null
+  reason_code: string | null
+  review_status: number
+  created_at: string | null
+}
+
+export interface ApiRejectionReview {
+  id: number
+  rejection_id: number
+  reviewed_qty: number
+  decision: number
+  reason_id: number
+  reason?: string | null
+  origin_type: number | null
+  machine_id: number | null
+  machine_name?: string | null
+  vendor_id: number | null
+  vendor_name?: string | null
+  challan_item_id: number | null
+  challan_number?: string | null
+  rework_process_id: number | null
+  rework_process_name?: string | null
+  status: number
+  reviewed_by: number | null
+  approved_by: number | null
+  approved_at: string | null
+  remark: string | null
+  created_at: string | null
+}
+
+export interface CreateRejectionReviewPayload {
+  reviewed_qty: number
+  decision: number
+  reason_id: number
+  origin_type?: number
+  machine_id?: number
+  vendor_id?: number
+  challan_item_id?: number
+  rework_process_id?: number
+  remark?: string | null
+}
+
+export interface ApiRejectionReason {
+  id: number
+  type: number
+  reason: string
+  code: string | null
+  status: number
+  created_at: string | null
+}
+
+export interface RejectionReasonPayload {
+  type: number
+  reason: string
+  code?: string | null
+  status?: number
 }

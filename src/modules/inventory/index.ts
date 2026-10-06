@@ -12,3 +12,8 @@ export { StockAdjustmentForm } from './pages/StockAdjustmentForm'
 export { StockAdjustmentDetail } from './pages/StockAdjustmentDetail'
 
 export { StockIssueList } from './pages/StockIssueList'
+
+export { DirectStockIssueFormDrawer } from './components/DirectStockIssueFormDrawer'
+export { IssueMaterialDrawer } from './components/IssueMaterialDrawer'
+export { StockAdjustmentFormDrawer } from './components/StockAdjustmentFormDrawer'
+export { StockRequisitionFormDrawer } from './components/StockRequisitionFormDrawer'

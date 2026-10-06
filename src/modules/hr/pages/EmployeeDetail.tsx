@@ -1,10 +1,12 @@
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
 import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as antTheme } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ledgerText } from '@/theme/typography'
+import { EmployeeFormDrawer } from '../components/EmployeeFormDrawer'
 import { getBranchLabel } from '../constants'
 import { useEmployee } from '../hooks/useEmployees'
 import { getDepartmentColor } from '../utils/departmentColor'
@@ -13,6 +15,7 @@ export const EmployeeDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { token } = antTheme.useToken()
+  const [editOpen, setEditOpen] = useState(false)
   const { data: employee, isLoading } = useEmployee(id)
 
   if (!employee) {
@@ -41,11 +44,7 @@ export const EmployeeDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/hr/employees')}>
               Back
             </Button>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/hr/employees/${id}/edit`)}
-            >
+            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
           </Space>
@@ -143,6 +142,8 @@ export const EmployeeDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <EmployeeFormDrawer open={editOpen} employeeId={id} onClose={() => setEditOpen(false)} />
     </div>
   )
 }

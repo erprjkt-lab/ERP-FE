@@ -1,21 +1,15 @@
-import { EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Space } from 'antd'
-import type { TableColumnsType } from 'antd'
+import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Space } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { getErrorMessage } from '@/api/client'
-import { DataTable } from '@/components/ui/DataTable'
-import { Modal } from '@/components/ui/Modal'
-import { StatusBadge } from '@/components/ui/StatusBadge'
+import { FormSection } from '@/components/ui/FormSection'
 import { useInspectionParameters } from '@/modules/production/hooks/useInspectionParameters'
-import type { InspectionReport } from '@/types/quality'
-import { REPORT_STATUS_BADGE, REPORT_STATUS_LABELS } from '../constants'
 import {
   useCreateIncomingInspectionReport,
   useIncomingInspectionReportsForGrnItem,
 } from '../hooks/useInspectionReports'
-import { InspectionReportDetailModal } from './InspectionReportDetailModal'
+import { InspectionReportDetail } from './InspectionReportDetailDrawer'
 import { ReportReadingsFields, toReadingsPayload } from './ReportReadingsFields'
 
 export interface IncomingInspectionReportsProps {
@@ -37,16 +31,16 @@ export const IncomingInspectionReports: FC<IncomingInspectionReportsProps> = ({
   itemId,
 }) => {
   const { message } = App.useApp()
-  const [createOpen, setCreateOpen] = useState(false)
   const [activeReportId, setActiveReportId] = useState<string>()
   const [form] = Form.useForm<CreateFormValues>()
   const { data: reports, isLoading } = useIncomingInspectionReportsForGrnItem(grnItemId)
-  const { data: parameters } = useInspectionParameters(itemId)
+  const { data: parameters = [] } = useInspectionParameters(itemId)
   const { mutateAsync: createReport, isPending: creating } =
     useCreateIncomingInspectionReport(grnItemId)
 
-  const handleCreate = async (values: CreateFormValues) => {
+  const handleCreate = async () => {
     try {
+      const values = await form.validateFields()
       await createReport({
         report_date: values.reportDate ? values.reportDate.format('YYYY-MM-DD') : undefined,
         item_revision: values.itemRevision ?? null,
@@ -56,104 +50,71 @@ export const IncomingInspectionReports: FC<IncomingInspectionReportsProps> = ({
         readings: toReadingsPayload(values.readings),
       })
       message.success('Incoming Inspection Report created')
-      setCreateOpen(false)
       form.resetFields()
     } catch (error) {
-      message.error(getErrorMessage(error))
+      if (error instanceof Error) message.error(getErrorMessage(error))
     }
   }
 
-  const columns: TableColumnsType<InspectionReport> = [
-    { title: 'Report #', dataIndex: 'reportNumber', key: 'reportNumber' },
-    { title: 'Date', dataIndex: 'reportDate', key: 'reportDate', render: v => v ?? '—' },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: InspectionReport['status']) => (
-        <StatusBadge status={REPORT_STATUS_BADGE[status]} label={REPORT_STATUS_LABELS[status]} />
-      ),
-    },
-    { title: 'Readings', key: 'readings', render: (_, r) => r.readings.length },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, r) => (
-        <Button size="small" icon={<EyeOutlined />} onClick={() => setActiveReportId(r.id)}>
-          View
-        </Button>
-      ),
-    },
-  ]
+  if (isLoading) return null
+
+  // Reports exist → show them inline (no second drawer); otherwise the create form.
+  if (reports.length > 0) {
+    const active = reports.find(r => r.id === activeReportId) ?? reports[0]
+    return (
+      <div>
+        {reports.length > 1 && (
+          <Select
+            value={active.id}
+            onChange={setActiveReportId}
+            style={{ width: 280, marginBottom: 16 }}
+            options={reports.map(r => ({ label: r.reportNumber, value: r.id }))}
+          />
+        )}
+        <InspectionReportDetail reportId={active.id} itemId={itemId} />
+      </div>
+    )
+  }
 
   return (
     <div>
-      <Space style={{ marginBottom: 12 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-          New IIR
+      <Form form={form} layout="vertical" initialValues={{ reportDate: dayjs() }}>
+        <FormSection title="Report Details">
+          <Row gutter={24}>
+            <Col xs={24} sm={12}>
+              <Form.Item label="Report Date" name="reportDate">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item label="Item Revision" name="itemRevision">
+                <Input placeholder="e.g. Rev A" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col xs={24} sm={12}>
+              <Form.Item label="Sampling Qty" name="samplingQty">
+                <InputNumber min={1} style={{ width: '100%' }} placeholder="Qty inspected" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item label="OK Qty" name="okQty">
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="Qty accepted" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </FormSection>
+
+        <FormSection title="Parameter Readings">
+          <ReportReadingsFields parameters={parameters} form={form} />
+        </FormSection>
+      </Form>
+      <Space style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+        <Button type="primary" loading={creating} onClick={handleCreate}>
+          Create IIR
         </Button>
       </Space>
-
-      <DataTable<InspectionReport>
-        columns={columns}
-        dataSource={reports}
-        rowKey="id"
-        loading={isLoading}
-        pagination={false}
-        size="small"
-        locale={{ emptyText: 'No IIR reports yet for this line.' }}
-      />
-
-      {createOpen && (
-        <Modal
-          title="New Incoming Inspection Report"
-          open
-          onCancel={() => setCreateOpen(false)}
-          onOk={() => form.submit()}
-          confirmLoading={creating}
-          width={720}
-          okText="Create"
-        >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleCreate}
-            initialValues={{ reportDate: dayjs() }}
-          >
-            <Row gutter={16}>
-              <Col span={8}>
-                <Form.Item label="Report Date" name="reportDate">
-                  <DatePicker style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item label="Item Revision" name="itemRevision">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={4}>
-                <Form.Item label="Sampling Qty" name="samplingQty">
-                  <InputNumber min={1} style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-              <Col span={4}>
-                <Form.Item label="OK Qty" name="okQty">
-                  <InputNumber min={0} style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-            </Row>
-            <ReportReadingsFields parameters={parameters} />
-          </Form>
-        </Modal>
-      )}
-
-      {activeReportId && (
-        <InspectionReportDetailModal
-          reportId={activeReportId}
-          itemId={itemId}
-          onClose={() => setActiveReportId(undefined)}
-        />
-      )}
     </div>
   )
 }

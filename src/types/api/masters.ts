@@ -15,8 +15,11 @@ export interface ApiParty {
   email: string | null
   website: string | null
   address: string | null
-  country_id: number | null
-  state_id: number | null
+  // CustomerResource/SupplierResource/VendorResource all return these as
+  // expanded relations on read, not flat ids — the write-side PartyPayload
+  // below is the one that takes flat country_id/state_id.
+  country: { id: number; name: string } | null
+  state: { id: number; name: string } | null
   city: string | null
   pincode: string | null
   gst_number: string | null
@@ -79,20 +82,10 @@ export interface CreatePartyPayload extends PartyPayload {
 
 export type UpdatePartyPayload = PartyPayload
 
-// The party master endpoints predate the app's shared ApiEnvelope/PaginatedEnvelope
-// convention (see src/types/api.ts) — they return Laravel's raw paginator/model JSON
-// directly, with no {status, message, ...} wrapper.
-export interface LaravelPaginator<T> {
-  current_page: number
-  data: T[]
-  per_page: number
-  total: number
-  last_page: number
-}
-
 // Item-master/category/uom/material-grade endpoints (added in ERP-BE commit a5190aa)
-// DO go through the shared ApiEnvelope/PaginatedEnvelope convention, unlike party
-// master above — see src/types/api.ts.
+// go through the shared ApiEnvelope/PaginatedEnvelope convention — see src/types/api.ts.
+// Party master (customers/suppliers/vendors) uses the same convention too; see
+// src/api/customers.ts et al.
 
 export interface ApiUom {
   id: number

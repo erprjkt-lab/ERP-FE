@@ -2,11 +2,13 @@ import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-de
 import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Customer } from '@/types/masters'
+import { CustomerFormDrawer } from '../components/CustomerFormDrawer'
 import { CUSTOMER_TYPE_OPTIONS, MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteCustomer, useCustomers } from '../hooks/useCustomers'
 import { useMastersStore } from '../store/mastersStore'
@@ -70,6 +72,7 @@ const getColumns = (
 export const CustomerList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { data: customers = [], isLoading } = useCustomers()
   const { mutateAsync: deleteCustomer } = useDeleteCustomer()
   const filters = useMastersStore(s => s.customerFilters)
@@ -95,7 +98,7 @@ export const CustomerList: FC = () => {
 
   const columns = getColumns(
     record => navigate(`/masters/customers/${record.id}`),
-    record => navigate(`/masters/customers/${record.id}/edit`),
+    record => setDrawerState({ mode: 'edit', id: record.id }),
     handleDelete,
   )
 
@@ -118,7 +121,7 @@ export const CustomerList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/masters/customers/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             Add Customer
           </Button>
@@ -178,6 +181,12 @@ export const CustomerList: FC = () => {
           })}
         />
       </Card>
+
+      <CustomerFormDrawer
+        open={!!drawerState}
+        customerId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
     </div>
   )
 }

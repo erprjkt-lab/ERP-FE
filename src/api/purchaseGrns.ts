@@ -1,6 +1,12 @@
 import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
-import type { ApiGrn, ApiGrnItem, GrnPayload, QcResultPayload } from '@/types/api/procurement'
+import type {
+  ApiGrn,
+  ApiGrnItem,
+  GrnPayload,
+  GrnUpdatePayload,
+  QcResultPayload,
+} from '@/types/api/procurement'
 
 export interface ListGrnsQuery {
   status?: number
@@ -19,6 +25,10 @@ export function getGrn(id: number): Promise<ApiEnvelope<ApiGrn>> {
 
 export function createGrn(payload: GrnPayload): Promise<ApiEnvelope<ApiGrn>> {
   return apiRequest('/api/v1/grn', { method: 'POST', body: payload })
+}
+
+export function updateGrn(id: number, payload: GrnUpdatePayload): Promise<ApiEnvelope<ApiGrn>> {
+  return apiRequest(`/api/v1/grn/${id}`, { method: 'PUT', body: payload })
 }
 
 export function cancelGrn(id: number): Promise<ApiEnvelope<ApiGrn>> {

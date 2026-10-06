@@ -61,7 +61,7 @@ describe('DepartmentList page', () => {
     )
     await user.click(buttonByText('Add Department'))
     await user.type(screen.getByLabelText('Department Name'), 'Engineering')
-    await user.click(buttonByText('OK'))
+    await user.click(buttonByText('Submit'))
 
     await waitFor(() => expect(createDepartment).toHaveBeenCalledWith({ name: 'Engineering' }))
   })

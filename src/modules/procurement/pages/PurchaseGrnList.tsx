@@ -1,19 +1,26 @@
-import { EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Input, Row, Select, Tooltip } from 'antd'
+import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
+import { Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Grn } from '@/types/procurement'
+import { GrnFormDrawer } from '../components/GrnFormDrawer'
 import { GRN_STATUS_BADGE, GRN_STATUS_LABELS } from '../constants'
 import { useGrns } from '../hooks/usePurchaseGrns'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 
 const STATUS_OPTIONS = Object.entries(GRN_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
-const getColumns = (onView: (record: Grn) => void): TableColumnsType<Grn> => [
+interface RowActions {
+  onView: (record: Grn) => void
+  onEdit: (record: Grn) => void
+}
+
+const getColumns = ({ onView, onEdit }: RowActions): TableColumnsType<Grn> => [
   {
     title: 'GRN No / Date',
     key: 'grnNo',
@@ -67,31 +74,32 @@ const getColumns = (onView: (record: Grn) => void): TableColumnsType<Grn> => [
   {
     title: 'Actions',
     key: 'actions',
-    width: 80,
+    width: 110,
     render: (_, record) => (
-      <Tooltip title="View">
-        <Button
-          type="text"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={e => {
-            e.stopPropagation()
-            onView(record)
-          }}
-        />
-      </Tooltip>
+      <Space size="small" onClick={e => e.stopPropagation()}>
+        <Tooltip title="View">
+          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
+        </Tooltip>
+        <Tooltip title="Edit">
+          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
+        </Tooltip>
+      </Space>
     ),
   },
 ]
 
 export const PurchaseGrnList: FC = () => {
   const navigate = useNavigate()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { data: grns, isLoading } = useGrns()
   const filters = useProcurementFilters('grn')
   const setFilter = useProcurementStore(s => s.setFilter)
   const resetFilters = useProcurementStore(s => s.resetFilter)
 
-  const columns = getColumns(record => navigate(`/purchase/grn/${record.id}`))
+  const columns = getColumns({
+    onView: record => navigate(`/purchase/grn/${record.id}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+  })
 
   const filtered = grns.filter(grn => {
     if (filters.search && !grn.grnNo.toLowerCase().includes(filters.search.toLowerCase())) {
@@ -111,7 +119,7 @@ export const PurchaseGrnList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/purchase/grn/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             New GRN
           </Button>
@@ -161,6 +169,12 @@ export const PurchaseGrnList: FC = () => {
           })}
         />
       </Card>
+
+      <GrnFormDrawer
+        open={!!drawerState}
+        grnId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
     </div>
   )
 }

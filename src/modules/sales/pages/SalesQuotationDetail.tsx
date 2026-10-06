@@ -10,13 +10,14 @@ import {
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesQuotationItem } from '@/types/sales'
+import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
 import { QUOTATION_STATUS_BADGE, QUOTATION_STATUS_LABELS } from '../constants'
 import { useCreateSalesOrderFromQuotation } from '../hooks/useSalesOrders'
 import {
@@ -65,6 +66,7 @@ export const SalesQuotationDetail: FC = () => {
   const { mutateAsync: createOrder, isPending: creatingOrder } = useCreateSalesOrderFromQuotation()
   const { mutateAsync: removeQuotation, isPending: deleting } = useDeleteSalesQuotation()
   const rejectReason = useRef('')
+  const [editOpen, setEditOpen] = useState(false)
 
   if (!quotation) {
     return (
@@ -167,11 +169,7 @@ export const SalesQuotationDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/quotations')}>
               Back
             </Button>
-            <Button
-              icon={<EditOutlined />}
-              disabled={isLocked}
-              onClick={() => navigate(`/sales/quotations/${quotation.id}/edit`)}
-            >
+            <Button icon={<EditOutlined />} disabled={isLocked} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
             <Button
@@ -296,6 +294,12 @@ export const SalesQuotationDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <SalesQuotationFormDrawer
+        open={editOpen}
+        quotationId={quotation.id}
+        onClose={() => setEditOpen(false)}
+      />
     </div>
   )
 }

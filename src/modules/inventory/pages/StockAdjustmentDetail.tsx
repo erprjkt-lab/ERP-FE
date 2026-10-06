@@ -1,12 +1,14 @@
-import { ArrowLeftOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { StockAdjustmentItem } from '@/types/inventory'
+import { StockAdjustmentFormDrawer } from '../components/StockAdjustmentFormDrawer'
 import { STOCK_ADJUSTMENT_STATUS_BADGE, STOCK_ADJUSTMENT_STATUS_LABELS } from '../constants'
 import {
   useApproveStockAdjustment,
@@ -22,6 +24,7 @@ export const StockAdjustmentDetail: FC = () => {
   const { data: adjustment, isLoading } = useStockAdjustment(id)
   const { mutateAsync: approve, isPending: approving } = useApproveStockAdjustment()
   const { mutateAsync: cancel, isPending: cancelling } = useCancelStockAdjustment()
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   if (!adjustment) {
     return (
@@ -129,6 +132,9 @@ export const StockAdjustmentDetail: FC = () => {
                 <Button danger icon={<CloseOutlined />} loading={cancelling} onClick={handleCancel}>
                   Cancel
                 </Button>
+                <Button icon={<EditOutlined />} onClick={() => setDrawerOpen(true)}>
+                  Edit
+                </Button>
                 <Button
                   type="primary"
                   icon={<CheckOutlined />}
@@ -190,6 +196,12 @@ export const StockAdjustmentDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <StockAdjustmentFormDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        adjustmentId={adjustment.id}
+      />
     </div>
   )
 }

@@ -1,15 +1,18 @@
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
 import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as antTheme } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { SupplierFormDrawer } from '../components/SupplierFormDrawer'
 import { useSupplier } from '../hooks/useSuppliers'
 
 export const SupplierDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { token } = antTheme.useToken()
+  const [editOpen, setEditOpen] = useState(false)
   const { data: supplier, isLoading } = useSupplier(id)
 
   if (!supplier) {
@@ -38,11 +41,7 @@ export const SupplierDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/suppliers')}>
               Back
             </Button>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/masters/suppliers/${id}/edit`)}
-            >
+            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
           </Space>
@@ -151,6 +150,8 @@ export const SupplierDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <SupplierFormDrawer open={editOpen} supplierId={id} onClose={() => setEditOpen(false)} />
     </div>
   )
 }

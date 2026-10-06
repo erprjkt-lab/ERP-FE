@@ -67,19 +67,19 @@ describe('SimpleMasterList', () => {
     expect(screen.getByText('India')).toBeInTheDocument()
   })
 
-  it('opens a create modal with the add button label as its title', async () => {
+  it('opens a create drawer with the add button label as its title', async () => {
     const user = userEvent.setup()
     renderList()
     await user.click(buttonByText('Add Country'))
-    expect(document.querySelector('.ant-modal-title')).toHaveTextContent('Add Country')
+    expect(document.querySelector('.ant-drawer-title')).toHaveTextContent('Add Country')
     expect(screen.getByLabelText('Country Name')).toHaveValue('')
   })
 
-  it('opens an edit modal pre-filled via getInitialValues', async () => {
+  it('opens an edit drawer pre-filled via getInitialValues', async () => {
     const user = userEvent.setup()
     renderList({ getInitialValues: record => ({ name: record.name }) })
     await user.click(iconButton('edit'))
-    expect(document.querySelector('.ant-modal-title')).toHaveTextContent('Edit Country')
+    expect(document.querySelector('.ant-drawer-title')).toHaveTextContent('Edit Country')
     expect(screen.getByLabelText('Country Name')).toHaveValue('India')
   })
 
@@ -89,7 +89,7 @@ describe('SimpleMasterList', () => {
 
     await user.click(buttonByText('Add Country'))
     await user.type(screen.getByLabelText('Country Name'), 'USA')
-    await user.click(buttonByText('OK'))
+    await user.click(buttonByText('Submit'))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ name: 'USA' }, null))
     expect(await screen.findByText('Country created successfully')).toBeInTheDocument()
@@ -100,7 +100,7 @@ describe('SimpleMasterList', () => {
     const { onSubmit } = renderList()
 
     await user.click(buttonByText('Add Country'))
-    await user.click(buttonByText('OK'))
+    await user.click(buttonByText('Submit'))
 
     expect(onSubmit).not.toHaveBeenCalled()
   })
@@ -112,7 +112,7 @@ describe('SimpleMasterList', () => {
 
     await user.click(buttonByText('Add Country'))
     await user.type(screen.getByLabelText('Country Name'), 'India')
-    await user.click(buttonByText('OK'))
+    await user.click(buttonByText('Submit'))
 
     expect(await screen.findByText('Name already exists')).toBeInTheDocument()
   })
@@ -126,7 +126,14 @@ describe('SimpleMasterList', () => {
       'Delete this country?',
     )
 
-    await user.click(buttonByText('Delete'))
+    // Scope to the confirm dialog's button row — the antd tooltip for the
+    // delete icon also renders "Delete" text in the DOM, so getByText would
+    // find multiple matches if queried globally.
+    const confirmDeleteBtn = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.ant-modal-confirm-btns button'),
+    ).find(btn => btn.textContent?.trim() === 'Delete')
+    if (!confirmDeleteBtn) throw new Error('No Delete button found in the confirm dialog')
+    await user.click(confirmDeleteBtn)
     await waitFor(() => expect(onDelete).toHaveBeenCalledWith({ id: '1', name: 'India' }))
     expect(await screen.findByText('Country deleted successfully')).toBeInTheDocument()
   })
@@ -136,7 +143,12 @@ describe('SimpleMasterList', () => {
     const { onDelete } = renderList()
 
     await user.click(iconButton('delete'))
-    await user.click(buttonByText('Cancel'))
+    // The add/edit FormDrawer's own Cancel button stays in the DOM (hidden)
+    // even while closed, so scope this query to the confirm dialog's button
+    // row rather than matching "Cancel" text anywhere on the page.
+    const confirmCancel = document.querySelector('.ant-modal-confirm-btns')?.querySelector('button')
+    if (!confirmCancel) throw new Error('No Cancel button found in the confirm dialog')
+    await user.click(confirmCancel)
 
     expect(onDelete).not.toHaveBeenCalled()
   })

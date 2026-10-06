@@ -7,12 +7,15 @@ import {
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseRequisitionItem } from '@/types/procurement'
+import { PurchaseEnquiryFormDrawer } from '../components/PurchaseEnquiryFormDrawer'
+import { PurchaseRequisitionFormDrawer } from '../components/PurchaseRequisitionFormDrawer'
 import { REQUISITION_STATUS_BADGE, REQUISITION_STATUS_LABELS } from '../constants'
 import {
   useApproveRequisition,
@@ -27,6 +30,8 @@ export const PurchaseRequisitionDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const [editOpen, setEditOpen] = useState(false)
+  const [createEnquiryOpen, setCreateEnquiryOpen] = useState(false)
   const { data: requisition, isLoading } = usePurchaseRequisition(id)
   const { mutateAsync: submitForApproval, isPending: submitting } =
     useSubmitRequisitionForApproval()
@@ -130,10 +135,7 @@ export const PurchaseRequisitionDetail: FC = () => {
             </Button>
             {requisition.status === 'DRAFT' && (
               <>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`/purchase/requisitions/${requisition.id}/edit`)}
-                >
+                <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
                   Edit
                 </Button>
                 <Button
@@ -162,10 +164,7 @@ export const PurchaseRequisitionDetail: FC = () => {
               </>
             )}
             {displayStatus === 'APPROVED' && (
-              <Button
-                type="primary"
-                onClick={() => navigate(`/purchase/enquiries/new?fromPr=${requisition.id}`)}
-              >
+              <Button type="primary" onClick={() => setCreateEnquiryOpen(true)}>
                 Create Enquiry
               </Button>
             )}
@@ -218,6 +217,18 @@ export const PurchaseRequisitionDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <PurchaseRequisitionFormDrawer
+        open={editOpen}
+        requisitionId={requisition.id}
+        onClose={() => setEditOpen(false)}
+      />
+
+      <PurchaseEnquiryFormDrawer
+        open={createEnquiryOpen}
+        fromRequisitionId={requisition.id}
+        onClose={() => setCreateEnquiryOpen(false)}
+      />
     </div>
   )
 }

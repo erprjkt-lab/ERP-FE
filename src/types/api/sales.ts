@@ -206,3 +206,95 @@ export interface SalesOrderFromQuotationPayload {
   customer_po_date?: string | null
   remarks?: string | null
 }
+
+// ---------- Delivery Challan ----------
+
+export interface ApiDeliveryChallanItemStock {
+  id: number
+  delivery_challan_item_id: number
+  location_id: number
+  location_name?: string | null
+  batch_no: string | null
+  heat_no: string | null
+  serial_no: string | null
+  qty: number
+  stock_movement_id: number | null
+}
+
+export interface ApiDeliveryChallanItem {
+  id: number
+  delivery_challan_id: number
+  sales_order_item_id: number | null
+  sales_order_id?: number | null
+  item_id: number
+  item?: ApiItemMaster
+  uom_id: number
+  uom?: ApiUom
+  dispatch_qty: number
+  rate: number
+  order_rate: number | null
+  discount_percent: number | null
+  discount_amount: number | null
+  tax_percent: number | null
+  tax_amount: number | null
+  line_total: number
+  billed_qty: number
+  item_remark: string | null
+  stocks?: ApiDeliveryChallanItemStock[]
+}
+
+export interface ApiDeliveryChallan {
+  id: number
+  challan_number: string
+  party_id: number
+  party_name?: string | null
+  party_state_code: string | null
+  gstin: string | null
+  gst_type: string | null
+  challan_date: string | null
+  vehicle_no: string | null
+  lr_no: string | null
+  lr_date: string | null
+  transporter_name: string | null
+  status: string
+  remarks: string | null
+  items?: ApiDeliveryChallanItem[]
+  created_at: string | null
+  created_by: number | null
+  updated_by: number | null
+}
+
+export interface DeliveryChallanItemStockPayload {
+  location_id: number
+  batch_no?: string | null
+  heat_no?: string | null
+  serial_no?: string | null
+  qty: number
+}
+
+export interface DeliveryChallanItemPayload {
+  sales_order_item_id?: number
+  item_id?: number
+  uom_id?: number
+  rate?: number
+  discount_percent?: number | null
+  discount_amount?: number | null
+  tax_percent?: number | null
+  tax_amount?: number | null
+  item_remark?: string | null
+  stocks: DeliveryChallanItemStockPayload[]
+}
+
+export interface DeliveryChallanPayload {
+  party_id: number
+  party_state_code?: string | null
+  gstin?: string | null
+  gst_type?: string | null
+  challan_date: string
+  vehicle_no?: string | null
+  lr_no?: string | null
+  lr_date?: string | null
+  transporter_name?: string | null
+  remarks?: string | null
+  items: DeliveryChallanItemPayload[]
+}

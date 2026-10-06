@@ -8,12 +8,15 @@ import {
 import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesEnquiryItem } from '@/types/sales'
+import { SalesEnquiryFormDrawer } from '../components/SalesEnquiryFormDrawer'
+import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
 import {
   ENQUIRY_ITEM_STATUS_BADGE,
   ENQUIRY_ITEM_STATUS_LABELS,
@@ -91,6 +94,8 @@ export const SalesEnquiryDetail: FC = () => {
   const { data: enquiry, isLoading } = useSalesEnquiry(id)
   const { mutateAsync: closeEnquiry, isPending: closing } = useCloseSalesEnquiry()
   const { mutateAsync: removeEnquiry, isPending: deleting } = useDeleteSalesEnquiry()
+  const [editOpen, setEditOpen] = useState(false)
+  const [quoteOpen, setQuoteOpen] = useState(false)
 
   if (!enquiry) {
     return (
@@ -105,6 +110,26 @@ export const SalesEnquiryDetail: FC = () => {
 
   const isClosed = enquiry.status === 'CLOSED'
   const isOpen = enquiry.status === 'OPEN'
+  const isQuoted = enquiry.status === 'QUOTED'
+
+  // The backend deliberately allows raising another quotation off an
+  // already-quoted enquiry (re-quote after a rejection/expiry) rather than
+  // force-closing it — so this stays enabled, just confirmed so it's clear
+  // it's a new quotation, not a revision of the existing one.
+  const handleCreateQuotation = () => {
+    const go = () => setQuoteOpen(true)
+    if (!isQuoted) {
+      go()
+      return
+    }
+    modal.confirm({
+      title: 'Create another quotation?',
+      content:
+        'This enquiry has already been quoted. This raises a separate, new quotation against the same enquiry — it does not revise the existing one.',
+      okText: 'Create Quotation',
+      onOk: go,
+    })
+  }
 
   const handleClose = () => {
     modal.confirm({
@@ -157,20 +182,16 @@ export const SalesEnquiryDetail: FC = () => {
               Back
             </Button>
             {/* The backend only allows edits while the enquiry is still OPEN. */}
-            <Button
-              icon={<EditOutlined />}
-              disabled={!isOpen}
-              onClick={() => navigate(`/sales/enquiries/${enquiry.id}/edit`)}
-            >
+            <Button icon={<EditOutlined />} disabled={!isOpen} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
             <Button
               type="primary"
               icon={<FileTextOutlined />}
               disabled={isClosed}
-              onClick={() => navigate(`/sales/quotations/new?enquiryId=${enquiry.id}`)}
+              onClick={handleCreateQuotation}
             >
-              Create Quotation
+              {isQuoted ? 'Create Another Quotation' : 'Create Quotation'}
             </Button>
             <Button
               danger
@@ -237,6 +258,18 @@ export const SalesEnquiryDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <SalesEnquiryFormDrawer
+        open={editOpen}
+        enquiryId={enquiry.id}
+        onClose={() => setEditOpen(false)}
+      />
+
+      <SalesQuotationFormDrawer
+        open={quoteOpen}
+        sourceEnquiryId={enquiry.id}
+        onClose={() => setQuoteOpen(false)}
+      />
     </div>
   )
 }

@@ -74,9 +74,16 @@ import {
   JobCardList,
   OutsourceList,
   ProcessList,
+  ProductionEntryList,
+  RejectionReasonList,
+  RejectionReviewDetail,
+  RejectionReviewList,
 } from '@/modules/production'
 import { FirList, IirList, IprList } from '@/modules/quality'
 import {
+  DeliveryChallanDetail,
+  DeliveryChallanForm,
+  DeliveryChallanList,
   SalesEnquiryDetail,
   SalesEnquiryForm,
   SalesEnquiryList,
@@ -115,6 +122,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/sales/enquiries',
   '/sales/quotations',
   '/sales/orders',
+  '/sales/delivery-challans',
   '/inventory/ledger',
   '/inventory/stock-balance',
   '/inventory/requisitions',
@@ -125,6 +133,8 @@ const IMPLEMENTED_PATHS = new Set([
   '/production/bom',
   '/production/work-orders',
   '/production/outsource',
+  '/production/rejection-review',
+  '/production/entries',
   '/quality/ipr',
   '/quality/fir',
   '/quality/iir',
@@ -234,6 +244,10 @@ function App() {
                 <Route path="/sales/orders/:id" element={<SalesOrderDetail />} />
                 <Route path="/sales/orders/:id/edit" element={<SalesOrderForm />} />
 
+                <Route path="/sales/delivery-challans" element={<DeliveryChallanList />} />
+                <Route path="/sales/delivery-challans/new" element={<DeliveryChallanForm />} />
+                <Route path="/sales/delivery-challans/:id" element={<DeliveryChallanDetail />} />
+
                 <Route path="/inventory/ledger" element={<StockLedger />} />
                 <Route path="/inventory/stock-balance" element={<StockBalance />} />
 
@@ -264,6 +278,14 @@ function App() {
                 <Route path="/production/work-orders/new" element={<JobCardForm />} />
                 <Route path="/production/work-orders/:id" element={<JobCardDetail />} />
                 <Route path="/production/outsource" element={<OutsourceList />} />
+
+                <Route path="/production/rejection-review" element={<RejectionReviewList />} />
+                <Route path="/production/entries" element={<ProductionEntryList />} />
+                <Route
+                  path="/production/entries/job-cards/:jobCardId"
+                  element={<RejectionReviewDetail />}
+                />
+                <Route path="/production/rejection-reasons" element={<RejectionReasonList />} />
 
                 <Route path="/quality/ipr" element={<IprList />} />
                 <Route path="/quality/fir" element={<FirList />} />

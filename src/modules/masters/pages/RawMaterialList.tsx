@@ -2,11 +2,13 @@ import { DeleteOutlined, EditOutlined, ExperimentOutlined, PlusOutlined } from '
 import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { InspectionParametersDrawer } from '@/modules/production/components/InspectionParametersDrawer'
 import type { RawMaterial } from '@/types/masters'
+import { RawMaterialFormDrawer } from '../components/RawMaterialFormDrawer'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteRawMaterial, useRawMaterials } from '../hooks/useRawMaterials'
 import { useMastersStore } from '../store/mastersStore'
@@ -69,8 +71,9 @@ const getColumns = (
 ]
 
 export const RawMaterialList: FC = () => {
-  const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
+  const [inspectionItemId, setInspectionItemId] = useState<string>()
   const { data: rawMaterials = [], isLoading } = useRawMaterials()
   const { mutateAsync: deleteRawMaterial } = useDeleteRawMaterial()
   const filters = useMastersStore(s => s.rawMaterialFilters)
@@ -95,9 +98,9 @@ export const RawMaterialList: FC = () => {
   }
 
   const columns = getColumns(
-    record => navigate(`/masters/raw-materials/${record.id}/edit`),
+    record => setDrawerState({ mode: 'edit', id: record.id }),
     handleDelete,
-    record => navigate(`/masters/raw-materials/${record.id}/inspection-parameters`),
+    record => setInspectionItemId(record.id),
   )
 
   const filtered = rawMaterials.filter(r => {
@@ -118,7 +121,7 @@ export const RawMaterialList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/masters/raw-materials/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             Add Raw Material
           </Button>
@@ -163,11 +166,23 @@ export const RawMaterialList: FC = () => {
           totalLabel="raw materials"
           fillHeight
           onRow={record => ({
-            onClick: () => navigate(`/masters/raw-materials/${record.id}/edit`),
+            onClick: () => setDrawerState({ mode: 'edit', id: record.id }),
             style: { cursor: 'pointer' },
           })}
         />
       </Card>
+
+      <RawMaterialFormDrawer
+        open={!!drawerState}
+        rawMaterialId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
+
+      <InspectionParametersDrawer
+        open={!!inspectionItemId}
+        itemId={inspectionItemId}
+        onClose={() => setInspectionItemId(undefined)}
+      />
     </div>
   )
 }

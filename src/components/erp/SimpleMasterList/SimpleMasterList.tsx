@@ -4,13 +4,14 @@ import type { FormInstance, TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
-import { Modal } from '@/components/ui/Modal'
+import { FormDrawer } from '@/components/ui/FormDrawer'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { getErrorMessage } from '@/api/client'
 
 export interface SimpleMasterListProps<T extends { id: string }> {
-  title: string
-  breadcrumbParent: { label: string; href?: string }
+  title?: string
+  subtitle?: string
+  breadcrumbParent?: { label: string; href?: string }
   breadcrumbLabel: string
   totalLabel: string
   addButtonLabel: string
@@ -22,10 +23,13 @@ export interface SimpleMasterListProps<T extends { id: string }> {
   getInitialValues?: (record: T) => Record<string, unknown>
   onSubmit: (values: Record<string, unknown>, editing: T | null) => Promise<void>
   onDelete: (record: T) => Promise<void>
+  /** Drops the PageHeader/Card page chrome for use inside another drawer. */
+  embedded?: boolean
 }
 
 export function SimpleMasterList<T extends { id: string }>({
   title,
+  subtitle,
   breadcrumbParent,
   breadcrumbLabel,
   totalLabel,
@@ -38,6 +42,7 @@ export function SimpleMasterList<T extends { id: string }>({
   getInitialValues,
   onSubmit,
   onDelete,
+  embedded = false,
 }: SimpleMasterListProps<T>) {
   const { modal, message } = App.useApp()
   const [form] = Form.useForm()
@@ -126,11 +131,54 @@ export function SimpleMasterList<T extends { id: string }>({
     },
   ]
 
+  const formDrawer = (
+    <FormDrawer
+      title={editing ? `Edit ${breadcrumbLabel}` : addButtonLabel}
+      open={open}
+      onClose={() => setOpen(false)}
+      onSubmit={handleOk}
+      submitting={submitting}
+      width={modalWidth}
+    >
+      <Form form={form} layout="vertical">
+        {renderFields(form)}
+      </Form>
+    </FormDrawer>
+  )
+
+  // embedded is fixed for an instance's whole lifetime (never toggles), so
+  // branching with an early return — rather than a ternary inside one JSX
+  // tree — keeps the normal page's tree exactly as it was before this prop
+  // existed, instead of risking a reconciliation/effect-order shift from
+  // antd's Tooltip portals sitting one level deeper in a conditional.
+  if (embedded) {
+    return (
+      <>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+            {addButtonLabel}
+          </Button>
+        </div>
+        <Card styles={{ body: { padding: 0 } }}>
+          <DataTable<T>
+            columns={columnsWithActions}
+            dataSource={data}
+            rowKey="id"
+            loading={loading}
+            totalLabel={totalLabel}
+          />
+        </Card>
+        {formDrawer}
+      </>
+    )
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
-        title={title}
-        breadcrumbs={[breadcrumbParent, { label: breadcrumbLabel }]}
+        title={title ?? ''}
+        subtitle={subtitle}
+        breadcrumbs={[breadcrumbParent ?? { label: '' }, { label: breadcrumbLabel }]}
         actions={
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             {addButtonLabel}
@@ -154,18 +202,7 @@ export function SimpleMasterList<T extends { id: string }>({
         />
       </Card>
 
-      <Modal
-        title={editing ? `Edit ${breadcrumbLabel}` : addButtonLabel}
-        open={open}
-        onCancel={() => setOpen(false)}
-        onOk={handleOk}
-        confirmLoading={submitting}
-        width={modalWidth}
-      >
-        <Form form={form} layout="vertical">
-          {renderFields(form)}
-        </Form>
-      </Modal>
+      {formDrawer}
     </div>
   )
 }

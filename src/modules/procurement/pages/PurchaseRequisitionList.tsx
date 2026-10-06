@@ -11,11 +11,14 @@ import {
 import { App, Button, Card, Col, Input, Row, Space, Tabs, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC, ReactNode } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseRequisition } from '@/types/procurement'
+import { PurchaseEnquiryFormDrawer } from '../components/PurchaseEnquiryFormDrawer'
+import { PurchaseRequisitionFormDrawer } from '../components/PurchaseRequisitionFormDrawer'
 import { REQUISITION_STATUS_BADGE, REQUISITION_STATUS_LABELS } from '../constants'
 import type { RequisitionDisplayStatus } from '../constants'
 import {
@@ -139,6 +142,8 @@ const getColumns = (a: RowActions): TableColumnsType<PurchaseRequisition> => [
 export const PurchaseRequisitionList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
+  const [createEnquiryFromPrId, setCreateEnquiryFromPrId] = useState<string>()
   const { data: requisitions, isLoading } = usePurchaseRequisitions()
   const { mutateAsync: deleteRequisition } = useDeletePurchaseRequisition()
   const { mutateAsync: submitForApproval } = useSubmitRequisitionForApproval()
@@ -159,7 +164,7 @@ export const PurchaseRequisitionList: FC = () => {
 
   const columns = getColumns({
     onView: record => navigate(`/purchase/requisitions/${record.id}`),
-    onEdit: record => navigate(`/purchase/requisitions/${record.id}/edit`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: record =>
       modal.confirm({
         title: `Delete ${record.requisitionNumber}?`,
@@ -208,7 +213,7 @@ export const PurchaseRequisitionList: FC = () => {
           message.info(`An enquiry has already been created for ${record.requisitionNumber}`)
           return
         }
-        navigate(`/purchase/enquiries/new?fromPr=${record.id}`)
+        setCreateEnquiryFromPrId(record.id)
       } catch (error) {
         message.error(getErrorMessage(error))
       }
@@ -238,7 +243,7 @@ export const PurchaseRequisitionList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/purchase/requisitions/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             New Requisition
           </Button>
@@ -286,6 +291,18 @@ export const PurchaseRequisitionList: FC = () => {
           })}
         />
       </Card>
+
+      <PurchaseRequisitionFormDrawer
+        open={!!drawerState}
+        requisitionId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
+
+      <PurchaseEnquiryFormDrawer
+        open={!!createEnquiryFromPrId}
+        fromRequisitionId={createEnquiryFromPrId}
+        onClose={() => setCreateEnquiryFromPrId(undefined)}
+      />
     </div>
   )
 }

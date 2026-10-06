@@ -33,3 +33,10 @@ export function cancelStockAdjustment(
     body: { remarks },
   })
 }
+
+export function updateStockAdjustment(
+  id: number,
+  payload: Partial<CreateStockAdjustmentPayload>,
+): Promise<ApiEnvelope<ApiStockAdjustment>> {
+  return apiRequest(`/api/v1/stock-adjustments/${id}`, { method: 'PUT', body: payload })
+}

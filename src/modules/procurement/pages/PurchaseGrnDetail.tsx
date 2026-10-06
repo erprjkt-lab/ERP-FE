@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined, StopOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, EditOutlined, StopOutlined } from '@ant-design/icons'
 import {
   App,
   Button,
@@ -23,9 +23,10 @@ import { Modal } from '@/components/ui/Modal'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { IncomingInspectionReports } from '@/modules/quality/components/IncomingInspectionReports'
+import { IncomingInspectionDrawer } from '@/modules/quality/components/IncomingInspectionDrawer'
 import { useIncomingInspectionReportsForGrnItem } from '@/modules/quality/hooks/useInspectionReports'
 import type { GrnItem } from '@/types/procurement'
+import { GrnFormDrawer } from '../components/GrnFormDrawer'
 import {
   GRN_LINE_STATUS_BADGE,
   GRN_LINE_STATUS_LABELS,
@@ -45,6 +46,7 @@ export const PurchaseGrnDetail: FC = () => {
   const { mutateAsync: cancelGrnMutation, isPending: cancelling } = useCancelGrn()
   const [qcItem, setQcItem] = useState<GrnItem | null>(null)
   const [iirItem, setIirItem] = useState<GrnItem | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   if (!grn) {
     return (
@@ -163,6 +165,9 @@ export const PurchaseGrnDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/grn')}>
               Back
             </Button>
+            <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+              Edit
+            </Button>
             {grn.status !== 4 && (
               <Button danger icon={<StopOutlined />} loading={cancelling} onClick={handleCancel}>
                 Cancel GRN
@@ -220,17 +225,15 @@ export const PurchaseGrnDetail: FC = () => {
       </Row>
 
       {qcItem && <QcModal item={qcItem} grnId={grn.id} onClose={() => setQcItem(null)} />}
-      {iirItem && (
-        <Modal
-          title={`Incoming Inspection — ${iirItem.itemName ?? iirItem.itemId}`}
-          open
-          onCancel={() => setIirItem(null)}
-          footer={null}
-          width={840}
-        >
-          <IncomingInspectionReports grnItemId={iirItem.id} itemId={iirItem.itemId} />
-        </Modal>
-      )}
+      <IncomingInspectionDrawer
+        open={!!iirItem}
+        grnItemId={iirItem?.id}
+        itemId={iirItem?.itemId}
+        itemName={iirItem?.itemName ?? iirItem?.itemId}
+        grnNo={grn.grnNo}
+        onClose={() => setIirItem(null)}
+      />
+      <GrnFormDrawer open={editOpen} grnId={grn.id} onClose={() => setEditOpen(false)} />
     </div>
   )
 }

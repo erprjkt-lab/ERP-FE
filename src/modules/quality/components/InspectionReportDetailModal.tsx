@@ -113,6 +113,12 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
       render: (v?: string) => v ?? '—',
     },
     {
+      title: 'Instrument',
+      key: 'instrument',
+      render: (_: unknown, r: InspectionReading) =>
+        parameters.find(p => p.id === r.parameterId)?.instrument ?? '—',
+    },
+    {
       title: 'Measured',
       dataIndex: 'measuredValue',
       key: 'measuredValue',
@@ -146,7 +152,7 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
       open
       onCancel={onClose}
       footer={null}
-      width={760}
+      width={1000}
     >
       {report && (
         <>
@@ -180,7 +186,7 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
               onFinish={handleAddReadings}
               style={{ marginTop: 16 }}
             >
-              <ReportReadingsFields parameters={unreadParameters} />
+              <ReportReadingsFields parameters={unreadParameters} form={form} />
               <Button icon={<PlusOutlined />} loading={addingReading} onClick={() => form.submit()}>
                 Save Readings
               </Button>

@@ -161,6 +161,59 @@ export interface ItemBomLine {
 
 export type InspectionParamType = 'product' | 'process'
 
+export type RejectionStatus = 'PENDING' | 'REVIEWED'
+export type RejectionDecision = 'REJECT' | 'REWORK'
+export type RejectionOrigin = 'INHOUSE' | 'OUTSOURCE'
+export type RejectionReviewStatus = 'SUBMITTED' | 'APPROVED'
+
+export interface Rejection {
+  id: string
+  jobCardId: string
+  jobCardNumber?: string
+  processId: string
+  processName?: string
+  processLogId?: string | null
+  rejectedQty: number
+  /** Only populated where the backend eager-loads reviews (list endpoints). */
+  pendingQty?: number
+  reasonCode?: string | null
+  status: RejectionStatus
+  createdAt?: string
+}
+
+export interface RejectionReview {
+  id: string
+  rejectionId: string
+  reviewedQty: number
+  decision: RejectionDecision
+  reasonId: string
+  reasonName?: string
+  originType?: RejectionOrigin | null
+  machineId?: string | null
+  machineName?: string
+  vendorId?: string | null
+  vendorName?: string
+  challanItemId?: string | null
+  challanNumber?: string
+  reworkProcessId?: string | null
+  reworkProcessName?: string
+  status: RejectionReviewStatus
+  reviewedBy?: string | null
+  approvedBy?: string | null
+  approvedAt?: string | null
+  remark?: string | null
+  createdAt?: string
+}
+
+export interface RejectionReason {
+  id: string
+  type: RejectionDecision
+  reason: string
+  code?: string | null
+  status: Status
+  createdAt?: string
+}
+
 export interface InspectionParameter {
   id: string
   processId: string

@@ -132,9 +132,11 @@ export function useSalesOrder(id: string | undefined) {
   const query = useQuery({
     queryKey: ['sales-orders', id],
     queryFn: async () => (await getSalesOrder(Number(id))).data,
+    // select keeps the mapped object referentially stable, so form-prefill effects don't re-fire.
+    select: toSalesOrder,
     enabled: !!id,
   })
-  return { data: query.data ? toSalesOrder(query.data) : undefined, isLoading: query.isLoading }
+  return { data: query.data, isLoading: query.isLoading }
 }
 
 export function useCreateSalesOrder() {

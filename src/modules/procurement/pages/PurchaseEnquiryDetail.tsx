@@ -2,6 +2,7 @@ import {
   ArrowLeftOutlined,
   DeleteOutlined,
   DiffOutlined,
+  EditOutlined,
   FileTextOutlined,
   PlusOutlined,
   SendOutlined,
@@ -18,7 +19,14 @@ import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
-import type { PurchaseEnquiryItem, PurchaseEnquirySupplier } from '@/types/procurement'
+import type {
+  PurchaseEnquiry,
+  PurchaseEnquiryItem,
+  PurchaseEnquirySupplier,
+} from '@/types/procurement'
+import { PurchaseEnquiryFormDrawer } from '../components/PurchaseEnquiryFormDrawer'
+import { QuotationComparisonDrawer } from '../components/QuotationComparisonDrawer'
+import { SupplierQuotationFormDrawer } from '../components/SupplierQuotationFormDrawer'
 import {
   ENQUIRY_STATUS_BADGE,
   ENQUIRY_STATUS_LABELS,
@@ -41,10 +49,19 @@ import { getErrorMessage } from '@/api/client'
 
 const formatDateTime = (v?: string | null) => (v ? dayjs(v).format('DD-MM-YYYY HH:mm') : '—')
 
+// Same LOCKED_STATUSES as ERP-BE's PurchaseEnquiryService::updateEnquiry.
+const LOCKED_STATUSES: PurchaseEnquiry['status'][] = [
+  'SUPPLIER_SELECTED',
+  'PO_CREATED',
+  'CLOSED',
+  'CANCELLED',
+]
+
 export const PurchaseEnquiryDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const [editOpen, setEditOpen] = useState(false)
   const { data: enquiry, isLoading } = usePurchaseEnquiry(id)
   const { data: suppliers = [] } = useSuppliers()
   const { data: purchaseOrders } = usePurchaseOrders()
@@ -58,6 +75,8 @@ export const PurchaseEnquiryDetail: FC = () => {
 
   const [addSupplierOpen, setAddSupplierOpen] = useState(false)
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | undefined>()
+  const [quotationPeSupplierId, setQuotationPeSupplierId] = useState<string | undefined>()
+  const [compareOpen, setCompareOpen] = useState(false)
   if (!enquiry) {
     return (
       <div>
@@ -198,18 +217,18 @@ export const PurchaseEnquiryDetail: FC = () => {
       key: 'actions',
       render: (_: unknown, r: PurchaseEnquirySupplier) => (
         <Space size="small" wrap>
-          {enquiry.status !== 'DRAFT' && (
+          {enquiry.status !== 'DRAFT' && !LOCKED_STATUSES.includes(enquiry.status) && (
             <Button
               type="link"
               size="small"
               icon={<FileTextOutlined />}
-              onClick={() => navigate(`/purchase/enquiries/${enquiry.id}/quotations/${r.id}`)}
+              onClick={() => setQuotationPeSupplierId(r.id)}
             >
               {r.supplierStatus === 'RESPONDED' ||
               r.supplierStatus === 'SELECTED' ||
               r.supplierStatus === 'NOT_SELECTED'
-                ? 'View / Edit'
-                : 'Record'}
+                ? 'View / Edit Quotation'
+                : 'Record Quotation'}
             </Button>
           )}
           {r.supplierStatus === 'RESPONDED' && (
@@ -253,16 +272,18 @@ export const PurchaseEnquiryDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/enquiries')}>
               Back
             </Button>
+            {!LOCKED_STATUSES.includes(enquiry.status) && (
+              <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
             {enquiry.status === 'DRAFT' && (
               <Button type="primary" icon={<SendOutlined />} loading={sending} onClick={handleSend}>
                 Send Enquiry
               </Button>
             )}
             {canCompare && (
-              <Button
-                icon={<DiffOutlined />}
-                onClick={() => navigate(`/purchase/enquiries/${enquiry.id}/compare`)}
-              >
+              <Button icon={<DiffOutlined />} onClick={() => setCompareOpen(true)}>
                 Compare Quotations
               </Button>
             )}
@@ -374,6 +395,25 @@ export const PurchaseEnquiryDetail: FC = () => {
           }
         />
       </Modal>
+
+      <PurchaseEnquiryFormDrawer
+        open={editOpen}
+        enquiryId={enquiry.id}
+        onClose={() => setEditOpen(false)}
+      />
+
+      <SupplierQuotationFormDrawer
+        open={!!quotationPeSupplierId}
+        enquiryId={enquiry.id}
+        initialPeSupplierId={quotationPeSupplierId}
+        onClose={() => setQuotationPeSupplierId(undefined)}
+      />
+
+      <QuotationComparisonDrawer
+        open={compareOpen}
+        enquiryId={enquiry.id}
+        onClose={() => setCompareOpen(false)}
+      />
     </div>
   )
 }

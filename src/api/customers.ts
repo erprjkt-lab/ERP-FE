@@ -1,24 +1,23 @@
 import { apiRequest } from '@/api/client'
-import type {
-  ApiParty,
-  CreatePartyPayload,
-  LaravelPaginator,
-  UpdatePartyPayload,
-} from '@/types/api/masters'
+import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
+import type { ApiParty, CreatePartyPayload, UpdatePartyPayload } from '@/types/api/masters'
 
-export function listCustomers(page = 1): Promise<LaravelPaginator<ApiParty>> {
+export function listCustomers(page = 1): Promise<PaginatedEnvelope<ApiParty>> {
   return apiRequest('/api/v1/customers', { query: { page, per_page: 100 } })
 }
 
-export function getCustomer(id: number): Promise<ApiParty> {
+export function getCustomer(id: number): Promise<ApiEnvelope<ApiParty>> {
   return apiRequest(`/api/v1/customers/${id}`)
 }
 
-export function createCustomer(payload: CreatePartyPayload): Promise<ApiParty> {
+export function createCustomer(payload: CreatePartyPayload): Promise<ApiEnvelope<ApiParty>> {
   return apiRequest('/api/v1/customers', { method: 'POST', body: payload })
 }
 
-export function updateCustomer(id: number, payload: UpdatePartyPayload): Promise<ApiParty> {
+export function updateCustomer(
+  id: number,
+  payload: UpdatePartyPayload,
+): Promise<ApiEnvelope<ApiParty>> {
   return apiRequest(`/api/v1/customers/${id}`, { method: 'PUT', body: payload })
 }
 

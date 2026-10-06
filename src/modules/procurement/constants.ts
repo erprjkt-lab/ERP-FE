@@ -69,6 +69,29 @@ export const ENQUIRY_STATUS_BADGE: Record<PurchaseEnquiryStatus, StatusBadgeStat
   CANCELLED: 'cancelled',
 }
 
+// Quick-filter buckets on the enquiry list: "Pending" = still needs someone to
+// act (send, chase quotes, compare, raise PO); "Completed" = PO raised or closed.
+export const ENQUIRY_STATUS_GROUPS: {
+  value: string
+  label: string
+  statuses: PurchaseEnquiryStatus[]
+}[] = [
+  {
+    value: 'pending',
+    label: 'Pending',
+    statuses: [
+      'DRAFT',
+      'SENT',
+      'PARTIALLY_RESPONDED',
+      'RESPONDED',
+      'COMPARISON_PENDING',
+      'SUPPLIER_SELECTED',
+    ],
+  },
+  { value: 'completed', label: 'Completed', statuses: ['PO_CREATED', 'CLOSED'] },
+  { value: 'cancelled', label: 'Cancelled', statuses: ['CANCELLED'] },
+]
+
 export const SUPPLIER_STATUS_LABELS: Record<PurchaseEnquirySupplierStatus, string> = {
   PENDING: 'Pending',
   SENT: 'Sent',

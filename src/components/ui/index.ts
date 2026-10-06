@@ -28,5 +28,8 @@ export type { ModalProps } from './Modal'
 export { Drawer } from './Drawer'
 export type { DrawerProps } from './Drawer'
 
+export { FormDrawer } from './FormDrawer'
+export type { FormDrawerProps } from './FormDrawer'
+
 export { UploadField } from './UploadField'
 export type { UploadFieldProps } from './UploadField'
