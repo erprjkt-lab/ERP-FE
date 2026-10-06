@@ -143,7 +143,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
     },
   ]
 
-  const statusBadge = report?.status ? REPORT_STATUS_BADGE[report.status] : 'default'
+  const statusBadge = report?.status ? REPORT_STATUS_BADGE[report.status] : 'draft'
   const statusLabel = report?.status ? REPORT_STATUS_LABELS[report.status] : ''
 
   return (
@@ -188,7 +188,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
               Submit for Approval
             </Button>
           )}
-          {report?.status === 'PENDING_APPROVAL' && (
+          {report?.status === 'SUBMITTED' && (
             <Button
               type="primary"
               icon={<CheckOutlined />}
@@ -217,7 +217,6 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
             <Descriptions.Item label="Sampling Qty">{report.samplingQty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="OK Qty">{report.okQty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Rejected Qty">{report.rejectedQty ?? '—'}</Descriptions.Item>
-            <Descriptions.Item label="Created By">{report.createdBy ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Approved By">{report.approvedBy ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Approved At">{report.approvedAt ?? '—'}</Descriptions.Item>
           </Descriptions>

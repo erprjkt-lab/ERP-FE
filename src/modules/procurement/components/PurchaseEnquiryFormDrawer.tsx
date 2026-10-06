@@ -8,7 +8,7 @@ import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormSection } from '@/components/ui/FormSection'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
-import type { Priority, PurchaseEnquiryStatus } from '@/types/procurement'
+import type { Priority, PurchaseEnquiryStatus, PurchaseEnquirySupplier } from '@/types/procurement'
 import {
   ENQUIRY_STATUS_BADGE,
   ENQUIRY_STATUS_LABELS,
@@ -308,21 +308,17 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
               </Form.Item>
             ) : (
               <Form.Item label="Suppliers">
-                <DataTable
+                <DataTable<PurchaseEnquirySupplier>
                   columns={[
                     {
                       title: 'Supplier',
                       key: 'supplier',
-                      render: (_: unknown, r: { supplierName?: string; supplierId: string }) =>
-                        r.supplierName ?? r.supplierId,
+                      render: (_, r) => r.supplierName ?? r.supplierId,
                     },
                     {
                       title: 'Status',
                       key: 'status',
-                      render: (
-                        _: unknown,
-                        r: { supplierStatus: keyof typeof SUPPLIER_STATUS_BADGE },
-                      ) => (
+                      render: (_, r) => (
                         <StatusBadge
                           status={SUPPLIER_STATUS_BADGE[r.supplierStatus]}
                           label={SUPPLIER_STATUS_LABELS[r.supplierStatus]}
