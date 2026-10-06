@@ -26,7 +26,7 @@ const meta = {
   argTypes: {
     fieldType: {
       control: 'select',
-      options: ['text', 'textarea', 'number', 'select', 'switch', 'date'],
+      options: ['text', 'textarea', 'number', 'select', 'multiselect', 'switch', 'date'],
     },
   },
 } satisfies Meta<typeof FormField>
@@ -51,6 +51,16 @@ export const SelectField: Story = {
     placeholder: 'Select department',
     options: DEPARTMENT_OPTIONS,
     rules: [{ required: true }],
+  },
+}
+
+export const MultiSelectField: Story = {
+  args: {
+    label: 'Departments',
+    name: 'departments',
+    fieldType: 'multiselect',
+    placeholder: 'Select one or more departments',
+    options: DEPARTMENT_OPTIONS,
   },
 }
 

@@ -1,5 +1,6 @@
 import type { StatusBadgeStatus } from '@/components/ui/StatusBadge'
 import type {
+  DeliveryChallanStatus,
   FeasibleStatus,
   SalesEnquiryItemStatus,
   SalesEnquiryStatus,
@@ -76,5 +77,15 @@ export const ORDER_STATUS_BADGE: Record<SalesOrderStatus, StatusBadgeStatus> = {
   DRAFT: 'draft',
   CONFIRMED: 'approved',
   CLOSED: 'closed',
+  CANCELLED: 'cancelled',
+}
+
+export const CHALLAN_STATUS_LABELS: Record<DeliveryChallanStatus, string> = {
+  DISPATCHED: 'Dispatched',
+  CANCELLED: 'Cancelled',
+}
+
+export const CHALLAN_STATUS_BADGE: Record<DeliveryChallanStatus, StatusBadgeStatus> = {
+  DISPATCHED: 'fulfilled',
   CANCELLED: 'cancelled',
 }

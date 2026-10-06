@@ -1,19 +1,23 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, ExperimentOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { InspectionParametersDrawer } from '@/modules/production/components/InspectionParametersDrawer'
 import type { RawMaterial } from '@/types/masters'
+import { RawMaterialFormDrawer } from '../components/RawMaterialFormDrawer'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteRawMaterial, useRawMaterials } from '../hooks/useRawMaterials'
 import { useMastersStore } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 const getColumns = (
   onEdit: (record: RawMaterial) => void,
   onDelete: (record: RawMaterial) => void,
+  onInspectionParameters: (record: RawMaterial) => void,
 ): TableColumnsType<RawMaterial> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   {
@@ -38,9 +42,17 @@ const getColumns = (
   {
     title: 'Actions',
     key: 'actions',
-    width: 90,
+    width: 120,
     render: (_, record) => (
       <Space size="small" onClick={e => e.stopPropagation()}>
+        <Tooltip title="Inspection Parameters">
+          <Button
+            type="text"
+            size="small"
+            icon={<ExperimentOutlined />}
+            onClick={() => onInspectionParameters(record)}
+          />
+        </Tooltip>
         <Tooltip title="Edit">
           <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
         </Tooltip>
@@ -59,8 +71,9 @@ const getColumns = (
 ]
 
 export const RawMaterialList: FC = () => {
-  const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
+  const [inspectionItemId, setInspectionItemId] = useState<string>()
   const { data: rawMaterials = [], isLoading } = useRawMaterials()
   const { mutateAsync: deleteRawMaterial } = useDeleteRawMaterial()
   const filters = useMastersStore(s => s.rawMaterialFilters)
@@ -78,15 +91,16 @@ export const RawMaterialList: FC = () => {
           await deleteRawMaterial(record.id)
           message.success('Raw material deleted successfully')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
   }
 
   const columns = getColumns(
-    record => navigate(`/masters/raw-materials/${record.id}/edit`),
+    record => setDrawerState({ mode: 'edit', id: record.id }),
     handleDelete,
+    record => setInspectionItemId(record.id),
   )
 
   const filtered = rawMaterials.filter(r => {
@@ -107,7 +121,7 @@ export const RawMaterialList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/masters/raw-materials/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             Add Raw Material
           </Button>
@@ -152,11 +166,23 @@ export const RawMaterialList: FC = () => {
           totalLabel="raw materials"
           fillHeight
           onRow={record => ({
-            onClick: () => navigate(`/masters/raw-materials/${record.id}/edit`),
+            onClick: () => setDrawerState({ mode: 'edit', id: record.id }),
             style: { cursor: 'pointer' },
           })}
         />
       </Card>
+
+      <RawMaterialFormDrawer
+        open={!!drawerState}
+        rawMaterialId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
+
+      <InspectionParametersDrawer
+        open={!!inspectionItemId}
+        itemId={inspectionItemId}
+        onClose={() => setInspectionItemId(undefined)}
+      />
     </div>
   )
 }

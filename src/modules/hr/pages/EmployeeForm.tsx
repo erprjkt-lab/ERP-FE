@@ -19,6 +19,7 @@ import { useDesignations } from '../hooks/useDesignations'
 import { useCreateEmployee, useEmployee, useUpdateEmployee } from '../hooks/useEmployees'
 import { useShifts } from '../hooks/useShifts'
 import type { EmployeeExtra } from '../store/hrLocalStore'
+import { getErrorMessage } from '@/api/client'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
@@ -118,7 +119,7 @@ export const EmployeeForm: FC = () => {
       message.success(`Employee ${isEdit ? 'updated' : 'created'} successfully`)
       navigate('/hr/employees')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

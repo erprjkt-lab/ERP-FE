@@ -37,6 +37,8 @@ export function useCreateProcessLog(jobCardId: string | undefined) {
     mutationFn: (payload: CreateProcessLogPayload) => createProcessLog(Number(jobCardId), payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['production', 'processLogs', jobCardId] })
+      queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
+      queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] })
       // A log can flip the card draft -> in progress, move current_process_id,
       // and (at the last step) post finished-goods stock.
       queryClient.invalidateQueries({ queryKey: ['production', 'jobCards'] })

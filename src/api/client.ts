@@ -70,3 +70,16 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return payload as T
 }
+
+// Laravel 422s put the useful detail in `errors` (e.g. "Insufficient stock
+// balance for this item/location/batch/heat/serial combination.") while
+// `message` is often just a generic "Validation failed" — surface the field
+// errors when present so the user sees what's actually wrong.
+export function getErrorMessage(error: unknown, fallback = 'Something went wrong'): string {
+  if (error instanceof ApiRequestError && error.fieldErrors) {
+    const messages = Object.values(error.fieldErrors).flat()
+    if (messages.length > 0) return messages.join(' ')
+  }
+  if (error instanceof Error) return error.message
+  return fallback
+}

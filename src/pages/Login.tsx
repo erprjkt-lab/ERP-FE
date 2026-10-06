@@ -2,6 +2,7 @@ import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import { App, Button, Card, Form, Input, Typography } from 'antd'
 import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getErrorMessage } from '@/api/client'
 import { useLogin } from '@/hooks/useAuth'
 import type { LoginPayload } from '@/types/api/auth'
 
@@ -17,7 +18,7 @@ export const Login: FC = () => {
         navigate('/', { replace: true })
       },
       onError: error => {
-        message.error(error instanceof Error ? error.message : 'Login failed')
+        message.error(getErrorMessage(error, 'Login failed'))
       },
     })
   }

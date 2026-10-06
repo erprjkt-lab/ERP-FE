@@ -1,15 +1,18 @@
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
 import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as antTheme } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { VendorFormDrawer } from '../components/VendorFormDrawer'
 import { useVendor } from '../hooks/useVendors'
 
 export const VendorDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { token } = antTheme.useToken()
+  const [editOpen, setEditOpen] = useState(false)
   const { data: vendor, isLoading } = useVendor(id)
 
   if (!vendor) {
@@ -38,11 +41,7 @@ export const VendorDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/vendors')}>
               Back
             </Button>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/masters/vendors/${id}/edit`)}
-            >
+            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
           </Space>
@@ -149,6 +148,8 @@ export const VendorDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <VendorFormDrawer open={editOpen} vendorId={id} onClose={() => setEditOpen(false)} />
     </div>
   )
 }

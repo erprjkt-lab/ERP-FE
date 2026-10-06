@@ -9,6 +9,7 @@ function toProcess(api: ApiProcess): Process {
     processName: api.process_name,
     processCode: api.process_code ?? undefined,
     cycleTime: api.cycle_time ?? undefined,
+    inspectionRequired: api.inspection_required,
     status: api.status === 0 ? 'inactive' : 'active',
     createdAt: api.created_at ?? '',
     updatedAt: api.created_at ?? '',

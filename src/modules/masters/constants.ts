@@ -45,3 +45,8 @@ export const PAN_REGEX = /^[A-Z]{5}\d{4}[A-Z]$/i
 export const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/i
 export const PINCODE_REGEX = /^\d{6}$/
 export const MOBILE_REGEX = /^[6-9]\d{9}$/
+
+// Default country pre-selected on new Customer/Vendor/Supplier records —
+// nearly all of this ERP's parties are domestic. Matched by name against the
+// fetched country list rather than a hardcoded id, since that id is BE data.
+export const DEFAULT_COUNTRY_NAME = 'India'

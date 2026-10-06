@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { DataTable } from '@/components/ui/DataTable'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
@@ -31,7 +32,11 @@ import type {
   PurchaseEnquiryItemInput,
   PurchaseEnquirySupplierInput,
 } from '../hooks/usePurchaseEnquiries'
-import { usePurchaseRequisitions } from '../hooks/usePurchaseRequisitions'
+import {
+  usePurchaseRequisitions,
+  usePurchaseRequisitionsByIds,
+} from '../hooks/usePurchaseRequisitions'
+import { getErrorMessage } from '@/api/client'
 
 type Mode = 'manual' | 'fromRequisitions'
 
@@ -55,19 +60,23 @@ export const PurchaseEnquiryForm: FC = () => {
   const { data: suppliers = [] } = useSuppliers()
   const { data: items } = useProcurementItems()
   const { data: requisitions } = usePurchaseRequisitions()
+  const selectedReqIds = Form.useWatch('requisitionIds', form) as string[] | undefined
   const { mutateAsync: createManual, isPending: creatingManual } = useCreatePurchaseEnquiryManual()
   const { mutateAsync: createFromRequisitions, isPending: creatingFromPr } =
     useCreatePurchaseEnquiryFromRequisitions()
 
   const supplierOptions = suppliers.map(s => ({ label: `${s.code} — ${s.name}`, value: s.id }))
   const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
-  const approvedRequisitions = requisitions.filter(
-    pr => pr.status === 'APPROVED' && pr.items.some(item => item.pendingQty > 0),
+  // The list endpoint doesn't return items, so pending qty is only known per selected PR.
+  const requisitionOptions = requisitions
+    .filter(pr => pr.status === 'APPROVED')
+    .map(pr => ({ label: pr.requisitionNumber, value: pr.id }))
+  const selectedPrs = usePurchaseRequisitionsByIds(selectedReqIds ?? [])
+  const previewItems = selectedPrs.flatMap(pr =>
+    pr.items
+      .filter(item => item.pendingQty > 0)
+      .map(item => ({ ...item, prNumber: pr.requisitionNumber })),
   )
-  const requisitionOptions = approvedRequisitions.map(pr => ({
-    label: `${pr.requisitionNumber} (${pr.items.filter(i => i.pendingQty > 0).length} pending items)`,
-    value: pr.id,
-  }))
 
   const buildSuppliers = (supplierIds: string[]): PurchaseEnquirySupplierInput[] =>
     supplierIds.map(id => {
@@ -85,7 +94,6 @@ export const PurchaseEnquiryForm: FC = () => {
     requisitionIds?: string[]
   }) => {
     try {
-      let enquiryId: string
       if (mode === 'manual') {
         const itemRows: PurchaseEnquiryItemInput[] = (values.items ?? []).map(row => {
           const item = items.find(i => i.id === row.itemId)
@@ -104,7 +112,7 @@ export const PurchaseEnquiryForm: FC = () => {
             remarks: row.remarks,
           }
         })
-        const created = await createManual({
+        await createManual({
           enquiryDate: values.enquiryDate.format('YYYY-MM-DD'),
           enquiryDueDate: values.enquiryDueDate ? values.enquiryDueDate.format('YYYY-MM-DD') : null,
           priority: values.priority,
@@ -112,9 +120,8 @@ export const PurchaseEnquiryForm: FC = () => {
           items: itemRows,
           suppliers: buildSuppliers(values.supplierIds),
         })
-        enquiryId = created.id
       } else {
-        const created = await createFromRequisitions({
+        await createFromRequisitions({
           requisitionIds: values.requisitionIds ?? [],
           enquiryDate: values.enquiryDate.format('YYYY-MM-DD'),
           enquiryDueDate: values.enquiryDueDate ? values.enquiryDueDate.format('YYYY-MM-DD') : null,
@@ -122,12 +129,11 @@ export const PurchaseEnquiryForm: FC = () => {
           remarks: values.remarks,
           suppliers: buildSuppliers(values.supplierIds),
         })
-        enquiryId = created.id
       }
       message.success('Purchase enquiry created successfully')
-      navigate(`/purchase/enquiries/${enquiryId}`)
+      navigate('/purchase/enquiries')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -161,7 +167,7 @@ export const PurchaseEnquiryForm: FC = () => {
           onFinish={handleFinish}
           initialValues={{
             priority: 'NORMAL',
-            items: [],
+            items: [{}],
             requisitionIds: fromPr ? [fromPr] : [],
           }}
         >
@@ -218,17 +224,43 @@ export const PurchaseEnquiryForm: FC = () => {
             </Form.Item>
 
             {mode === 'fromRequisitions' && (
-              <Form.Item
-                label="Purchase Requisitions"
-                name="requisitionIds"
-                rules={[{ required: true, message: 'Select at least one requisition' }]}
-              >
-                <Select
-                  mode="multiple"
-                  placeholder="Select approved requisitions with pending items"
-                  options={requisitionOptions}
-                />
-              </Form.Item>
+              <>
+                <Form.Item
+                  label="Purchase Requisitions"
+                  name="requisitionIds"
+                  rules={[{ required: true, message: 'Select at least one requisition' }]}
+                >
+                  <Select
+                    mode="multiple"
+                    placeholder="Select approved requisitions with pending items"
+                    options={requisitionOptions}
+                  />
+                </Form.Item>
+
+                {selectedReqIds?.length ? (
+                  <Form.Item label="Items">
+                    <DataTable
+                      columns={[
+                        { title: 'P.R. No', dataIndex: 'prNumber', key: 'prNumber' },
+                        { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode' },
+                        { title: 'Item Name', dataIndex: 'itemName', key: 'itemName' },
+                        { title: 'Pending Qty', dataIndex: 'pendingQty', key: 'pendingQty' },
+                        { title: 'UOM', dataIndex: 'uomName', key: 'uomName' },
+                        {
+                          title: 'Required Date',
+                          dataIndex: 'requiredDate',
+                          key: 'requiredDate',
+                          render: (v: string | null) => v ?? '—',
+                        },
+                      ]}
+                      dataSource={previewItems}
+                      rowKey="id"
+                      pagination={false}
+                      size="small"
+                    />
+                  </Form.Item>
+                ) : null}
+              </>
             )}
           </FormSection>
 

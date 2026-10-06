@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal'
 import type { JobCardMovement } from '@/types/production'
 import { useCreateMovement } from '../hooks/useJobCardMovements'
 import type { StepProgress } from '../utils/jobCardProgress'
+import { getErrorMessage } from '@/api/client'
 
 export interface MoveForwardModalProps {
   open: boolean
@@ -68,7 +69,7 @@ export const MoveForwardModal: FC<MoveForwardModalProps> = ({
       message.success(`Moved ${values.movedQty} to ${nextStep.step.processName}`)
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

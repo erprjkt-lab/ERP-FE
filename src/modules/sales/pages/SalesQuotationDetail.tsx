@@ -10,12 +10,14 @@ import {
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { SalesQuotationItem } from '@/types/sales'
+import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
 import { QUOTATION_STATUS_BADGE, QUOTATION_STATUS_LABELS } from '../constants'
 import { useCreateSalesOrderFromQuotation } from '../hooks/useSalesOrders'
 import {
@@ -23,6 +25,7 @@ import {
   useSalesQuotation,
   useSalesQuotationAction,
 } from '../hooks/useSalesQuotations'
+import { getErrorMessage } from '@/api/client'
 
 const ITEM_COLUMNS: TableColumnsType<SalesQuotationItem> = [
   {
@@ -63,6 +66,7 @@ export const SalesQuotationDetail: FC = () => {
   const { mutateAsync: createOrder, isPending: creatingOrder } = useCreateSalesOrderFromQuotation()
   const { mutateAsync: removeQuotation, isPending: deleting } = useDeleteSalesQuotation()
   const rejectReason = useRef('')
+  const [editOpen, setEditOpen] = useState(false)
 
   if (!quotation) {
     return (
@@ -88,7 +92,7 @@ export const SalesQuotationDetail: FC = () => {
       // A revision is a brand-new draft row — follow the user to it.
       if (action === 'revise' && result) navigate(`/sales/quotations/${result.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -116,7 +120,7 @@ export const SalesQuotationDetail: FC = () => {
           })
           message.success('Quotation rejected')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -128,7 +132,7 @@ export const SalesQuotationDetail: FC = () => {
       message.success(`Sales order ${order.orderNumber} created`)
       navigate(`/sales/orders/${order.id}`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -144,7 +148,7 @@ export const SalesQuotationDetail: FC = () => {
           message.success('Quotation deleted')
           navigate('/sales/quotations')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -165,11 +169,7 @@ export const SalesQuotationDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/quotations')}>
               Back
             </Button>
-            <Button
-              icon={<EditOutlined />}
-              disabled={isLocked}
-              onClick={() => navigate(`/sales/quotations/${quotation.id}/edit`)}
-            >
+            <Button icon={<EditOutlined />} disabled={isLocked} onClick={() => setEditOpen(true)}>
               Edit
             </Button>
             <Button
@@ -227,10 +227,10 @@ export const SalesQuotationDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={QUOTATION_STATUS_BADGE[quotation.status]}
@@ -269,7 +269,7 @@ export const SalesQuotationDetail: FC = () => {
               <Descriptions.Item label="Net Amount">
                 <Typography.Text strong>{quotation.netAmount.toFixed(2)}</Typography.Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {quotation.remarks || '—'}
               </Descriptions.Item>
             </Descriptions>
@@ -294,6 +294,12 @@ export const SalesQuotationDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <SalesQuotationFormDrawer
+        open={editOpen}
+        quotationId={quotation.id}
+        onClose={() => setEditOpen(false)}
+      />
     </div>
   )
 }

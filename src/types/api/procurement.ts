@@ -318,6 +318,18 @@ export interface PurchaseOrderPayload {
   items: PurchaseOrderItemPayload[]
 }
 
+export interface PurchaseOrderUpdatePayload {
+  po_date?: string
+  supplier_id?: number
+  currency_id?: number | null
+  payment_terms?: string | null
+  delivery_terms?: string | null
+  freight_amount?: number
+  other_charges?: number
+  remarks?: string | null
+  items?: PurchaseOrderItemPayload[]
+}
+
 // ---------- GRN (Goods Receipt Note) ----------
 
 export interface ApiGrnItem {
@@ -387,6 +399,14 @@ export interface GrnPayload {
   grn_date: string
   remark?: string | null
   items: GrnItemPayload[]
+}
+
+export interface GrnUpdatePayload {
+  supplier_id?: number
+  supplier_doc_no?: string | null
+  supplier_doc_date?: string | null
+  grn_date?: string
+  remark?: string | null
 }
 
 export interface QcResultPayload {

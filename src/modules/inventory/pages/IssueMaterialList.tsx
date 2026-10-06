@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { IssueMaterialModal } from '@/modules/production/components/IssueMaterialModal'
+import { IssueMaterialDrawer } from '../components/IssueMaterialDrawer'
 import { useJobCards } from '@/modules/production/hooks/useJobCards'
 import type { JobCard } from '@/types/production'
 
@@ -88,15 +88,14 @@ export const IssueMaterialList = () => {
         />
       </Card>
 
-      {activeJobCard && (
-        <IssueMaterialModal
-          open={!!activeJobCard}
-          onClose={() => setActiveJobCard(undefined)}
-          jobCardId={activeJobCard.id}
-          itemId={activeJobCard.itemId}
-          orderedQty={activeJobCard.orderedQty}
-        />
-      )}
+      <IssueMaterialDrawer
+        open={!!activeJobCard}
+        onClose={() => setActiveJobCard(undefined)}
+        jobCardId={activeJobCard?.id ?? ''}
+        jobCardNumber={activeJobCard?.jobCardNumber}
+        itemId={activeJobCard?.itemId ?? ''}
+        orderedQty={activeJobCard?.orderedQty ?? 0}
+      />
     </div>
   )
 }

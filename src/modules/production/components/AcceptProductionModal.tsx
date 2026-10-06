@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal'
 import type { JobCardMovement } from '@/types/production'
 import { useAcceptMovement } from '../hooks/useJobCardMovements'
 import type { StepProgress } from '../utils/jobCardProgress'
+import { getErrorMessage } from '@/api/client'
 
 export interface AcceptProductionModalProps {
   open: boolean
@@ -85,7 +86,7 @@ export const AcceptProductionModal: FC<AcceptProductionModalProps> = ({
       message.success(`Accepted ${values.acceptedQty} into ${step?.step.processName ?? 'process'}`)
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

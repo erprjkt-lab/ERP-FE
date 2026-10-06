@@ -2,7 +2,8 @@ import { Form, Input, InputNumber, Select, Switch, DatePicker, TimePicker } from
 import type { FormItemProps } from 'antd'
 import type { FC, ReactNode } from 'react'
 
-type FieldType = 'text' | 'textarea' | 'number' | 'select' | 'switch' | 'date' | 'time' | 'custom'
+type FieldType =
+  'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'switch' | 'date' | 'time' | 'custom'
 
 interface SelectOption {
   label: string
@@ -41,6 +42,22 @@ export const FormField: FC<FormFieldProps> = ({
             placeholder={placeholder}
             disabled={disabled}
             options={options}
+            showSearch
+            filterOption={(input, option) =>
+              String(option?.label ?? '')
+                .toLowerCase()
+                .includes(input.toLowerCase())
+            }
+          />
+        )
+      case 'multiselect':
+        return (
+          <Select
+            mode="multiple"
+            placeholder={placeholder}
+            disabled={disabled}
+            options={options}
+            allowClear
             showSearch
             filterOption={(input, option) =>
               String(option?.label ?? '')

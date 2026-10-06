@@ -7,8 +7,10 @@ import { persist } from 'zustand/middleware'
 export interface ListFilters {
   search: string
   status: string | null
+  // Quick-filter bucket (e.g. 'pending'), narrowed further by `status`.
+  group: string | null
 }
-const DEFAULT_FILTERS: ListFilters = { search: '', status: null }
+const DEFAULT_FILTERS: ListFilters = { search: '', status: null, group: null }
 
 type FilterKey = 'requisition' | 'enquiry' | 'quotation' | 'order' | 'grn'
 
@@ -18,7 +20,7 @@ interface ProcurementFilterState {
   quotationFilters: ListFilters
   orderFilters: ListFilters
   grnFilters: ListFilters
-  setFilter: (list: FilterKey, key: 'search' | 'status', value: string | null) => void
+  setFilter: (list: FilterKey, key: keyof ListFilters, value: string | null) => void
   resetFilter: (list: FilterKey) => void
 }
 

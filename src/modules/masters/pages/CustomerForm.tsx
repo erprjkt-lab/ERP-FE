@@ -22,6 +22,7 @@ import { useCountries } from '../hooks/useCountries'
 import { useCreateCustomer, useCustomer, useUpdateCustomer } from '../hooks/useCustomers'
 import { useStates } from '../hooks/useStates'
 import type { CustomerInput } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 export const CustomerForm: FC = () => {
   const { id } = useParams()
@@ -122,7 +123,7 @@ export const CustomerForm: FC = () => {
       message.success(`Customer ${isEdit ? 'updated' : 'created'} successfully`)
       navigate('/masters/customers')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

@@ -1,6 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { cancelGrn, createGrn, getGrn, listGrns, saveGrnItemQc } from '@/api/purchaseGrns'
-import type { ApiGrn, ApiGrnItem, GrnPayload, QcResultPayload } from '@/types/api/procurement'
+import {
+  cancelGrn,
+  createGrn,
+  getGrn,
+  listGrns,
+  saveGrnItemQc,
+  updateGrn,
+} from '@/api/purchaseGrns'
+import type {
+  ApiGrn,
+  ApiGrnItem,
+  GrnPayload,
+  GrnUpdatePayload,
+  QcResultPayload,
+} from '@/types/api/procurement'
 import type { Grn, GrnItem, GrnLineStatus, GrnStatus } from '@/types/procurement'
 
 export interface GrnItemInput {
@@ -35,6 +48,7 @@ function toGrnItem(api: ApiGrnItem): GrnItem {
     itemId: String(api.item_id),
     itemName: api.item?.item_name,
     itemCode: api.item?.item_code,
+    itemType: api.item?.item_type,
     orderedQty: api.po_item ? Number(api.po_item.ordered_qty) : undefined,
     gradeId: api.grade_id ? String(api.grade_id) : null,
     receivedQty: Number(api.received_qty),
@@ -120,6 +134,34 @@ export function useCreateGrn() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grns'] })
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+    },
+  })
+}
+
+export interface GrnUpdateInput {
+  supplierId?: string
+  supplierDocNo?: string | null
+  supplierDocDate?: string | null
+  grnDate?: string
+  remarks?: string
+}
+
+export function useUpdateGrn() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: GrnUpdateInput }) => {
+      const body: GrnUpdatePayload = {
+        supplier_id: payload.supplierId ? Number(payload.supplierId) : undefined,
+        supplier_doc_no: payload.supplierDocNo ?? undefined,
+        supplier_doc_date: payload.supplierDocDate ?? undefined,
+        grn_date: payload.grnDate ?? undefined,
+        remark: payload.remarks ?? undefined,
+      }
+      return toGrn((await updateGrn(Number(id), body)).data)
+    },
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['grns'] })
+      queryClient.invalidateQueries({ queryKey: ['grns', variables.id] })
     },
   })
 }

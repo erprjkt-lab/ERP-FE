@@ -90,7 +90,7 @@ describe('DesignationList page', () => {
     await user.type(screen.getByLabelText('Designation Title'), 'Senior Engineer')
     await user.click(screen.getByLabelText('Department'))
     await user.click(await screen.findByText('Engineering'))
-    await user.click(buttonByText('OK'))
+    await user.click(buttonByText('Submit'))
 
     await waitFor(() => expect(createDesignation).toHaveBeenCalledWith({ name: 'Senior Engineer' }))
     expect(useHRLocalStore.getState().designationExtras['10']).toEqual({ departmentId: '1' })

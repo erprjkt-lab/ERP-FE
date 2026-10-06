@@ -19,6 +19,7 @@ import { useCountries } from '../hooks/useCountries'
 import { useCreateSupplier, useSupplier, useUpdateSupplier } from '../hooks/useSuppliers'
 import { useStates } from '../hooks/useStates'
 import type { SupplierInput } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 export const SupplierForm: FC = () => {
   const { id } = useParams()
@@ -105,7 +106,7 @@ export const SupplierForm: FC = () => {
       message.success(`Supplier ${isEdit ? 'updated' : 'created'} successfully`)
       navigate('/masters/suppliers')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

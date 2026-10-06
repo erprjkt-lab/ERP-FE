@@ -16,10 +16,12 @@ export function listMaterialIssues(jobCardId: number): Promise<ApiEnvelope<ApiMa
   return apiRequest(`/api/v1/job-cards/${jobCardId}/material-issues`)
 }
 
+// One call creates one MaterialIssue row per batch line, all in the same
+// transaction — the response is the array of rows it created, not a single one.
 export function createMaterialIssue(
   jobCardId: number,
   payload: CreateMaterialIssuePayload,
-): Promise<ApiEnvelope<ApiMaterialIssue>> {
+): Promise<ApiEnvelope<ApiMaterialIssue[]>> {
   return apiRequest(`/api/v1/job-cards/${jobCardId}/material-issues`, {
     method: 'POST',
     body: payload,

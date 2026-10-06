@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   approvePurchaseRequisition,
   createPurchaseRequisition,
@@ -21,6 +21,7 @@ import type {
   PurchaseRequisitionStatus,
   Priority,
 } from '@/types/procurement'
+import type { RequisitionDisplayStatus } from '../constants'
 
 export interface PurchaseRequisitionItemInput {
   itemId: string
@@ -117,6 +118,28 @@ function toUpdatePayload(
   }
 }
 
+/** An enquiry has been raised once every item's pending qty is used up.
+ * Only meaningful when items are loaded (detail endpoint, not the list). */
+export function hasEnquiryCreated(pr: PurchaseRequisition): boolean {
+  return pr.items.length > 0 && pr.items.every(item => item.pendingQty <= 0)
+}
+
+export function requisitionDisplayStatus(pr: PurchaseRequisition): RequisitionDisplayStatus {
+  return pr.status === 'APPROVED' && hasEnquiryCreated(pr) ? 'ENQUIRY_CREATED' : pr.status
+}
+
+const requisitionQuery = (id: string | undefined) => ({
+  queryKey: ['purchase-requisitions', id],
+  queryFn: async () => (await getPurchaseRequisition(Number(id))).data,
+})
+
+/** Loads one requisition on demand (with items), e.g. from a list row action. */
+export function useFetchPurchaseRequisition() {
+  const queryClient = useQueryClient()
+  return async (id: string) =>
+    toPurchaseRequisition(await queryClient.fetchQuery(requisitionQuery(id)))
+}
+
 export function usePurchaseRequisitions() {
   const query = useQuery({
     queryKey: ['purchase-requisitions'],
@@ -126,15 +149,18 @@ export function usePurchaseRequisitions() {
 }
 
 export function usePurchaseRequisition(id: string | undefined) {
-  const query = useQuery({
-    queryKey: ['purchase-requisitions', id],
-    queryFn: async () => (await getPurchaseRequisition(Number(id))).data,
-    enabled: !!id,
-  })
+  const query = useQuery({ ...requisitionQuery(id), enabled: !!id })
   return {
     data: query.data ? toPurchaseRequisition(query.data) : undefined,
     isLoading: query.isLoading,
   }
+}
+
+export function usePurchaseRequisitionsByIds(ids: string[]) {
+  return useQueries({
+    queries: ids.map(id => requisitionQuery(id)),
+    combine: results => results.flatMap(r => (r.data ? [toPurchaseRequisition(r.data)] : [])),
+  })
 }
 
 export function useCreatePurchaseRequisition() {

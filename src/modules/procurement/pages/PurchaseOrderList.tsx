@@ -1,22 +1,55 @@
-import { EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Input, Row, Select, Tooltip } from 'antd'
+import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
+import { Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseOrder } from '@/types/procurement'
+import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
 import { usePurchaseOrders } from '../hooks/usePurchaseOrders'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 
 const STATUS_OPTIONS = Object.entries(PO_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
-const getColumns = (onView: (record: PurchaseOrder) => void): TableColumnsType<PurchaseOrder> => [
-  { title: 'PO #', dataIndex: 'poNumber', key: 'poNumber', width: 130 },
-  { title: 'Date', dataIndex: 'poDate', key: 'poDate', width: 120 },
+const getColumns = (
+  onView: (record: PurchaseOrder) => void,
+  onEdit: (record: PurchaseOrder) => void,
+): TableColumnsType<PurchaseOrder> => [
+  {
+    title: 'P.O. No / Date',
+    key: 'poNumber',
+    width: 140,
+    render: (_, record) => (
+      <div>
+        <div style={{ fontWeight: 600 }}>{record.poNumber}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.poDate}</div>
+      </div>
+    ),
+  },
   { title: 'Supplier', dataIndex: 'supplierName', key: 'supplierName' },
+  {
+    title: 'Item Name',
+    key: 'itemName',
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      return record.items[0]?.itemName ?? record.items[0]?.itemId ?? '—'
+    },
+  },
+  {
+    title: 'Qty',
+    key: 'qty',
+    align: 'right' as const,
+    width: 80,
+    render: (_, record) => {
+      if (!record.items.length) return '—'
+      const totalQty = record.items.reduce((sum, item) => sum + item.orderedQty, 0)
+      return totalQty > 0 ? totalQty : '—'
+    },
+  },
   {
     title: 'Source',
     key: 'source',
@@ -42,31 +75,50 @@ const getColumns = (onView: (record: PurchaseOrder) => void): TableColumnsType<P
   {
     title: 'Actions',
     key: 'actions',
-    width: 60,
+    width: 80,
     render: (_, record) => (
-      <Tooltip title="View">
-        <Button
-          type="text"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={e => {
-            e.stopPropagation()
-            onView(record)
-          }}
-        />
-      </Tooltip>
+      <Space size="small" onClick={e => e.stopPropagation()}>
+        <Tooltip title="View">
+          <Button
+            type="text"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={e => {
+              e.stopPropagation()
+              onView(record)
+            }}
+          />
+        </Tooltip>
+        {record.status === 'DRAFT' && (
+          <Tooltip title="Edit">
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={e => {
+                e.stopPropagation()
+                onEdit(record)
+              }}
+            />
+          </Tooltip>
+        )}
+      </Space>
     ),
   },
 ]
 
 export const PurchaseOrderList: FC = () => {
   const navigate = useNavigate()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { data: orders, isLoading } = usePurchaseOrders()
   const filters = useProcurementFilters('order')
   const setFilter = useProcurementStore(s => s.setFilter)
   const resetFilters = useProcurementStore(s => s.resetFilter)
 
-  const columns = getColumns(record => navigate(`/purchase/orders/${record.id}`))
+  const columns = getColumns(
+    record => navigate(`/purchase/orders/${record.id}`),
+    record => setDrawerState({ mode: 'edit', id: record.id }),
+  )
 
   const filtered = orders.filter(po => {
     if (filters.search && !po.poNumber.toLowerCase().includes(filters.search.toLowerCase())) {
@@ -86,7 +138,7 @@ export const PurchaseOrderList: FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => navigate('/purchase/orders/new')}
+            onClick={() => setDrawerState({ mode: 'add' })}
           >
             New Purchase Order
           </Button>
@@ -136,6 +188,12 @@ export const PurchaseOrderList: FC = () => {
           })}
         />
       </Card>
+
+      <PurchaseOrderFormDrawer
+        open={!!drawerState}
+        orderId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
     </div>
   )
 }

@@ -11,6 +11,7 @@ import { useShifts } from '@/modules/hr/hooks/useShifts'
 import type { ProcessLog } from '@/types/production'
 import { useCreateProcessLog } from '../hooks/useProcessLogs'
 import type { StepProgress } from '../utils/jobCardProgress'
+import { getErrorMessage } from '@/api/client'
 
 export interface LogProductionModalProps {
   open: boolean
@@ -26,7 +27,7 @@ export interface LogProductionModalProps {
 interface LogFormValues {
   logDate: { format: (fmt: string) => string }
   productionQty: number
-  okQty: number
+  rejectedQty?: number
   bypassedQty?: number
   productionMinutes?: number
   downtimeMinutes?: number
@@ -54,13 +55,13 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
   const { mutateAsync: createLog, isPending } = useCreateProcessLog(jobCardId)
 
   const productionQty = Form.useWatch('productionQty', form) ?? 0
-  const okQty = Form.useWatch('okQty', form) ?? 0
+  const rejectedQty = Form.useWatch('rejectedQty', form) ?? 0
   const bypassedQty = Form.useWatch('bypassedQty', form) ?? 0
 
   const pendingQty = step?.pendingQty ?? 0
-  const rejectedQty = Math.max(productionQty - okQty - bypassedQty, 0)
+  const okQty = Math.max(productionQty - rejectedQty - bypassedQty, 0)
   const overPending = productionQty > pendingQty
-  const overSplit = okQty + bypassedQty > productionQty
+  const overSplit = rejectedQty + bypassedQty > productionQty
   const blockedOnMaterial = Boolean(step?.isFirst) && !hasMaterialIssued
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
     if (!step) return
 
     if (overSplit) {
-      message.error('OK + bypassed quantity cannot exceed the production quantity')
+      message.error('Rejected + bypassed quantity cannot exceed the production quantity')
       return
     }
     if (overPending) {
@@ -97,8 +98,8 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
         operator_id: Number(values.operatorId),
         shift_id: Number(values.shiftId),
         log_date: values.logDate.format('YYYY-MM-DD'),
-        ok_qty: values.okQty,
-        rejected_qty: rejectedQty,
+        ok_qty: okQty,
+        rejected_qty: values.rejectedQty ?? 0,
         bypassed_qty: values.bypassedQty ?? 0,
         production_seconds: values.productionMinutes ? values.productionMinutes * 60 : 0,
         downtime_seconds: values.downtimeMinutes ? values.downtimeMinutes * 60 : 0,
@@ -107,7 +108,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
       message.success(`Logged ${productionQty} at ${step.step.processName}`)
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -175,23 +176,19 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
             </Form.Item>
           </Col>
           <Col xs={12} sm={6}>
-            <Form.Item
-              label="OK Qty"
-              name="okQty"
-              rules={[{ required: true, message: 'OK qty is required' }]}
-            >
-              <InputNumber size="large" min={0} style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-          <Col xs={12} sm={6}>
-            <Form.Item label="Rejected Qty">
+            <Form.Item label="OK Qty">
               <InputNumber
                 size="large"
-                value={rejectedQty}
+                value={okQty}
                 readOnly
                 style={{ width: '100%' }}
                 variant="filled"
               />
+            </Form.Item>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Form.Item label="Rejected Qty" name="rejectedQty">
+              <InputNumber size="large" min={0} max={productionQty} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
         </Row>
@@ -201,7 +198,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
           style={{ marginBottom: 16 }}
           message={
             overSplit
-              ? 'OK + bypassed cannot be more than the production quantity'
+              ? 'Rejected + bypassed cannot be more than the production quantity'
               : overPending
                 ? `Only ${pendingQty} is pending at this process`
                 : `${productionQty} produced — ${okQty} OK, ${rejectedQty} rejected`

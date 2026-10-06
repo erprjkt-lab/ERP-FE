@@ -57,6 +57,21 @@ describe('FormField', () => {
     expect(container.querySelector('.ant-select')).toBeInTheDocument()
   })
 
+  it('renders a multi-select for fieldType="multiselect"', () => {
+    const { container } = renderInForm(
+      <FormField
+        label="Departments"
+        name="departments"
+        fieldType="multiselect"
+        options={[
+          { label: 'Engineering', value: 'engineering' },
+          { label: 'Finance', value: 'finance' },
+        ]}
+      />,
+    )
+    expect(container.querySelector('.ant-select-multiple')).toBeInTheDocument()
+  })
+
   it('renders a switch for fieldType="switch"', () => {
     renderInForm(<FormField label="Enabled" name="enabled" fieldType="switch" />)
     expect(screen.getByRole('switch')).toBeInTheDocument()

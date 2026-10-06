@@ -3,7 +3,6 @@ import {
   App,
   Button,
   Card,
-  Checkbox,
   Col,
   DatePicker,
   Form,
@@ -21,25 +20,17 @@ import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
-import type { FeasibleStatus } from '@/types/sales'
-import { FEASIBLE_STATUS_OPTIONS } from '../constants'
 import {
   useCreateSalesEnquiry,
   useSalesEnquiry,
   useUpdateSalesEnquiry,
 } from '../hooks/useSalesEnquiries'
 import type { SalesEnquiryItemInput } from '../hooks/useSalesEnquiries'
+import { getErrorMessage } from '@/api/client'
 
 interface ItemRowValues {
   itemId: string
   qty: number
-  annualVolume?: number
-  drawingNo?: string
-  processRoute?: string
-  fgWeight?: number
-  grossWeight?: number
-  drawingReceived?: boolean
-  feasibleStatus?: FeasibleStatus
   itemRemark?: string
 }
 
@@ -47,7 +38,6 @@ interface EnquiryFormValues {
   enquiryDate: dayjs.Dayjs
   partyId: string
   refBy?: string
-  refNo?: string
   remarks?: string
   items: ItemRowValues[]
 }
@@ -74,18 +64,10 @@ export const SalesEnquiryForm: FC = () => {
       enquiryDate: dayjs(existing.enquiryDate),
       partyId: String(existing.partyId),
       refBy: existing.refBy ?? undefined,
-      refNo: existing.refNo ?? undefined,
       remarks: existing.remarks ?? undefined,
       items: existing.items.map(item => ({
         itemId: String(item.itemId),
         qty: item.qty,
-        annualVolume: item.annualVolume ?? undefined,
-        drawingNo: item.drawingNo ?? undefined,
-        processRoute: item.processRoute ?? undefined,
-        fgWeight: item.fgWeight ?? undefined,
-        grossWeight: item.grossWeight ?? undefined,
-        drawingReceived: item.drawingReceived,
-        feasibleStatus: item.feasibleStatus,
         itemRemark: item.itemRemark ?? undefined,
       })),
     })
@@ -94,17 +76,19 @@ export const SalesEnquiryForm: FC = () => {
   const handleFinish = async (values: EnquiryFormValues) => {
     const itemRows: SalesEnquiryItemInput[] = values.items.map(row => {
       const item = items.find(i => i.id === row.itemId)
+      // Fields no longer on the form keep whatever was saved before, instead of being nulled.
+      const prev = existing?.items.find(i => String(i.itemId) === row.itemId)
       return {
         itemId: row.itemId,
         uomId: item?.uomId ?? null,
         qty: row.qty,
-        annualVolume: row.annualVolume ?? null,
-        drawingNo: row.drawingNo ?? null,
-        processRoute: row.processRoute ?? null,
-        fgWeight: row.fgWeight ?? null,
-        grossWeight: row.grossWeight ?? null,
-        drawingReceived: row.drawingReceived ?? false,
-        feasibleStatus: row.feasibleStatus ?? 'PENDING',
+        annualVolume: prev?.annualVolume ?? null,
+        drawingNo: prev?.drawingNo ?? null,
+        processRoute: prev?.processRoute ?? null,
+        fgWeight: prev?.fgWeight ?? null,
+        grossWeight: prev?.grossWeight ?? null,
+        drawingReceived: prev?.drawingReceived ?? false,
+        feasibleStatus: prev?.feasibleStatus ?? 'PENDING',
         itemRemark: row.itemRemark ?? null,
       }
     })
@@ -113,17 +97,19 @@ export const SalesEnquiryForm: FC = () => {
       enquiryDate: values.enquiryDate.format('YYYY-MM-DD'),
       partyId: values.partyId,
       refBy: values.refBy ?? null,
-      refNo: values.refNo ?? null,
+      // Not on the form anymore; keep any value saved earlier.
+      refNo: existing?.refNo ?? null,
       remarks: values.remarks ?? null,
       items: itemRows,
     }
 
     try {
-      const enquiry = isEdit ? await update({ id, input }) : await create(input)
+      if (isEdit) await update({ id, input })
+      else await create(input)
       message.success(isEdit ? 'Sales enquiry updated' : 'Sales enquiry created')
-      navigate(`/sales/enquiries/${enquiry.id}`)
+      navigate('/sales/enquiries')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -152,7 +138,7 @@ export const SalesEnquiryForm: FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleFinish}
-          initialValues={{ enquiryDate: dayjs(), items: [] }}
+          initialValues={{ enquiryDate: dayjs(), items: [{}] }}
         >
           <FormSection title="Enquiry Details">
             <Row gutter={24}>
@@ -183,14 +169,9 @@ export const SalesEnquiryForm: FC = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} sm={12} md={4}>
+              <Col xs={24} sm={12} md={8}>
                 <Form.Item label="Ref By" name="refBy">
                   <Input placeholder="Enquired by" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12} md={4}>
-                <Form.Item label="Ref No" name="refNo">
-                  <Input placeholder="Customer ref" />
                 </Form.Item>
               </Col>
             </Row>
@@ -220,7 +201,7 @@ export const SalesEnquiryForm: FC = () => {
                       styles={{ body: { paddingBottom: 0 } }}
                     >
                       <Row gutter={12}>
-                        <Col xs={24} md={8}>
+                        <Col xs={24} md={11}>
                           <Form.Item
                             label="Item"
                             name={[field.name, 'itemId']}
@@ -238,7 +219,7 @@ export const SalesEnquiryForm: FC = () => {
                             />
                           </Form.Item>
                         </Col>
-                        <Col xs={12} md={3}>
+                        <Col xs={8} md={4}>
                           <Form.Item
                             label="Qty"
                             name={[field.name, 'qty']}
@@ -247,24 +228,14 @@ export const SalesEnquiryForm: FC = () => {
                             <InputNumber min={0.0001} style={{ width: '100%' }} />
                           </Form.Item>
                         </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Annual Volume" name={[field.name, 'annualVolume']}>
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Drawing No" name={[field.name, 'drawingNo']}>
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={4}>
-                          <Form.Item label="Process Route" name={[field.name, 'processRoute']}>
+                        <Col xs={14} md={8}>
+                          <Form.Item label="Remark" name={[field.name, 'itemRemark']}>
                             <Input />
                           </Form.Item>
                         </Col>
                         <Col
-                          xs={24}
-                          md={3}
+                          xs={2}
+                          md={1}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'end' }}
                         >
                           <Button
@@ -274,35 +245,6 @@ export const SalesEnquiryForm: FC = () => {
                             onClick={() => remove(field.name)}
                           />
                         </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="FG Weight" name={[field.name, 'fgWeight']}>
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={3}>
-                          <Form.Item label="Gross Weight" name={[field.name, 'grossWeight']}>
-                            <InputNumber min={0} style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={4}>
-                          <Form.Item label="Feasibility" name={[field.name, 'feasibleStatus']}>
-                            <Select options={FEASIBLE_STATUS_OPTIONS} />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={12} md={4}>
-                          <Form.Item
-                            label=" "
-                            name={[field.name, 'drawingReceived']}
-                            valuePropName="checked"
-                          >
-                            <Checkbox>Drawing received</Checkbox>
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} md={10}>
-                          <Form.Item label="Item Remark" name={[field.name, 'itemRemark']}>
-                            <Input />
-                          </Form.Item>
-                        </Col>
                       </Row>
                     </Card>
                   ))}
@@ -310,7 +252,7 @@ export const SalesEnquiryForm: FC = () => {
                   <Button
                     type="dashed"
                     icon={<PlusOutlined />}
-                    onClick={() => add({ feasibleStatus: 'PENDING', drawingReceived: false })}
+                    onClick={() => add()}
                     style={{ width: '100%', marginTop: 8 }}
                   >
                     Add Item

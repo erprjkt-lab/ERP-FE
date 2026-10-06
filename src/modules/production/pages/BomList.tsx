@@ -2,12 +2,15 @@ import { ApartmentOutlined, ExperimentOutlined, UnorderedListOutlined } from '@a
 import { Button, Card, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useFinishedGoods } from '@/modules/masters/hooks/useFinishedGoods'
 import type { FinishedGood } from '@/types/masters'
+import { InspectionParametersDrawer } from '../components/InspectionParametersDrawer'
+import { ItemBomDrawer } from '../components/ItemBomDrawer'
+import { ItemProcessRouteDrawer } from '../components/ItemProcessRouteDrawer'
 
 const getColumns = (
   onProcessRoute: (record: FinishedGood) => void,
@@ -28,27 +31,32 @@ const getColumns = (
   {
     title: 'Actions',
     key: 'actions',
-    width: 360,
+    width: 160,
     render: (_, record) => (
-      <Space size="small">
+      <Space size="small" onClick={e => e.stopPropagation()}>
         <Tooltip title="Define the ordered shop-floor operations for this item">
-          <Button size="small" icon={<ApartmentOutlined />} onClick={() => onProcessRoute(record)}>
-            Process Route
-          </Button>
+          <Button
+            type="text"
+            size="small"
+            icon={<ApartmentOutlined />}
+            onClick={() => onProcessRoute(record)}
+          />
         </Tooltip>
         <Tooltip title="Define the materials consumed per unit of this item">
-          <Button size="small" icon={<UnorderedListOutlined />} onClick={() => onBom(record)}>
-            Item BOM
-          </Button>
+          <Button
+            type="text"
+            size="small"
+            icon={<UnorderedListOutlined />}
+            onClick={() => onBom(record)}
+          />
         </Tooltip>
         <Tooltip title="Define the quality control-plan characteristics to check for this item">
           <Button
+            type="text"
             size="small"
             icon={<ExperimentOutlined />}
             onClick={() => onInspectionParameters(record)}
-          >
-            Inspection Parameters
-          </Button>
+          />
         </Tooltip>
       </Space>
     ),
@@ -56,13 +64,15 @@ const getColumns = (
 ]
 
 export const BomList: FC = () => {
-  const navigate = useNavigate()
   const { data: finishedGoods = [], isLoading } = useFinishedGoods()
+  const [inspectionItemId, setInspectionItemId] = useState<string>()
+  const [processRouteItemId, setProcessRouteItemId] = useState<string>()
+  const [bomItemId, setBomItemId] = useState<string>()
 
   const columns = getColumns(
-    record => navigate(`/production/bom/${record.id}/process-route`),
-    record => navigate(`/production/bom/${record.id}/item-bom`),
-    record => navigate(`/production/bom/${record.id}/inspection-parameters`),
+    record => setProcessRouteItemId(record.id),
+    record => setBomItemId(record.id),
+    record => setInspectionItemId(record.id),
   )
 
   return (
@@ -88,6 +98,24 @@ export const BomList: FC = () => {
           fillHeight
         />
       </Card>
+
+      <InspectionParametersDrawer
+        open={!!inspectionItemId}
+        itemId={inspectionItemId}
+        onClose={() => setInspectionItemId(undefined)}
+      />
+
+      <ItemProcessRouteDrawer
+        open={!!processRouteItemId}
+        itemId={processRouteItemId}
+        onClose={() => setProcessRouteItemId(undefined)}
+      />
+
+      <ItemBomDrawer
+        open={!!bomItemId}
+        itemId={bomItemId}
+        onClose={() => setBomItemId(undefined)}
+      />
     </div>
   )
 }

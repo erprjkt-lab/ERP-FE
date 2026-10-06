@@ -7,29 +7,36 @@ import {
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseRequisitionItem } from '@/types/procurement'
+import { PurchaseEnquiryFormDrawer } from '../components/PurchaseEnquiryFormDrawer'
+import { PurchaseRequisitionFormDrawer } from '../components/PurchaseRequisitionFormDrawer'
 import { REQUISITION_STATUS_BADGE, REQUISITION_STATUS_LABELS } from '../constants'
 import {
   useApproveRequisition,
   usePurchaseRequisition,
+  requisitionDisplayStatus,
   useRejectRequisition,
   useSubmitRequisitionForApproval,
 } from '../hooks/usePurchaseRequisitions'
+import { getErrorMessage } from '@/api/client'
 
 export const PurchaseRequisitionDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const [editOpen, setEditOpen] = useState(false)
+  const [createEnquiryOpen, setCreateEnquiryOpen] = useState(false)
   const { data: requisition, isLoading } = usePurchaseRequisition(id)
   const { mutateAsync: submitForApproval, isPending: submitting } =
     useSubmitRequisitionForApproval()
   const { mutateAsync: approve, isPending: approving } = useApproveRequisition()
   const { mutateAsync: reject, isPending: rejecting } = useRejectRequisition()
-
   if (!requisition) {
     return (
       <div>
@@ -41,12 +48,14 @@ export const PurchaseRequisitionDetail: FC = () => {
     )
   }
 
+  const displayStatus = requisitionDisplayStatus(requisition)
+
   const handleSubmit = async () => {
     try {
       await submitForApproval(requisition.id)
       message.success('Requisition submitted for approval')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -55,7 +64,7 @@ export const PurchaseRequisitionDetail: FC = () => {
       await approve(requisition.id)
       message.success('Requisition approved')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -79,12 +88,11 @@ export const PurchaseRequisitionDetail: FC = () => {
           await reject({ id: requisition.id, reason })
           message.success('Requisition rejected')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
   }
-
   const columns = [
     {
       title: 'Item',
@@ -114,7 +122,7 @@ export const PurchaseRequisitionDetail: FC = () => {
     <div>
       <PageHeader
         title={requisition.requisitionNumber}
-        subtitle={REQUISITION_STATUS_LABELS[requisition.status]}
+        subtitle={REQUISITION_STATUS_LABELS[displayStatus]}
         breadcrumbs={[
           { label: 'Purchase', href: '/purchase' },
           { label: 'Requisitions', href: '/purchase/requisitions' },
@@ -127,10 +135,7 @@ export const PurchaseRequisitionDetail: FC = () => {
             </Button>
             {requisition.status === 'DRAFT' && (
               <>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`/purchase/requisitions/${requisition.id}/edit`)}
-                >
+                <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
                   Edit
                 </Button>
                 <Button
@@ -158,11 +163,8 @@ export const PurchaseRequisitionDetail: FC = () => {
                 </Button>
               </>
             )}
-            {requisition.status === 'APPROVED' && (
-              <Button
-                type="primary"
-                onClick={() => navigate(`/purchase/enquiries/new?fromPr=${requisition.id}`)}
-              >
+            {displayStatus === 'APPROVED' && (
+              <Button type="primary" onClick={() => setCreateEnquiryOpen(true)}>
                 Create Enquiry
               </Button>
             )}
@@ -170,14 +172,14 @@ export const PurchaseRequisitionDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
-                  status={REQUISITION_STATUS_BADGE[requisition.status]}
-                  label={REQUISITION_STATUS_LABELS[requisition.status]}
+                  status={REQUISITION_STATUS_BADGE[displayStatus]}
+                  label={REQUISITION_STATUS_LABELS[displayStatus]}
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Requisition Date">
@@ -191,7 +193,7 @@ export const PurchaseRequisitionDetail: FC = () => {
               <Descriptions.Item label="Approved By">
                 {requisition.approvedBy ?? '—'}
               </Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {requisition.remarks ?? '—'}
               </Descriptions.Item>
             </Descriptions>
@@ -215,6 +217,18 @@ export const PurchaseRequisitionDetail: FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <PurchaseRequisitionFormDrawer
+        open={editOpen}
+        requisitionId={requisition.id}
+        onClose={() => setEditOpen(false)}
+      />
+
+      <PurchaseEnquiryFormDrawer
+        open={createEnquiryOpen}
+        fromRequisitionId={requisition.id}
+        onClose={() => setCreateEnquiryOpen(false)}
+      />
     </div>
   )
 }

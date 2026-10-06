@@ -1,10 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createPurchaseOrderFromEnquiry, selectSupplierForEnquiry } from '@/api/purchaseEnquiries'
-import { createPurchaseOrder, getPurchaseOrder, listPurchaseOrders } from '@/api/purchaseOrders'
+import {
+  createPurchaseOrder,
+  getPurchaseOrder,
+  listPurchaseOrders,
+  updatePurchaseOrder,
+} from '@/api/purchaseOrders'
 import type {
   ApiPurchaseOrder,
   ApiPurchaseOrderItem,
   PurchaseOrderPayload,
+  PurchaseOrderUpdatePayload,
 } from '@/types/api/procurement'
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '@/types/procurement'
 
@@ -142,6 +148,19 @@ export function useCreatePurchaseOrderFromEnquiry() {
   })
 }
 
+function toItemPayload(item: PurchaseOrderItemInput) {
+  return {
+    item_id: Number(item.itemId),
+    ordered_qty: item.orderedQty,
+    uom_id: item.uomId ? Number(item.uomId) : 0,
+    rate: item.rate,
+    discount_percent: item.discountPercent,
+    tax_percent: item.taxPercent,
+    delivery_date: item.deliveryDate ?? null,
+    remarks: item.remarks ?? null,
+  }
+}
+
 export function useCreatePurchaseOrderDirect() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -154,19 +173,39 @@ export function useCreatePurchaseOrderDirect() {
         freight_amount: input.freightAmount,
         other_charges: input.otherCharges,
         remarks: input.remarks ?? null,
-        items: input.items.map(item => ({
-          item_id: Number(item.itemId),
-          ordered_qty: item.orderedQty,
-          uom_id: item.uomId ? Number(item.uomId) : 0,
-          rate: item.rate,
-          discount_percent: item.discountPercent,
-          tax_percent: item.taxPercent,
-          delivery_date: item.deliveryDate ?? null,
-          remarks: item.remarks ?? null,
-        })),
+        items: input.items.map(toItemPayload),
       }
       return toPurchaseOrder((await createPurchaseOrder(payload)).data)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }),
+  })
+}
+
+export function useUpdatePurchaseOrder() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Partial<PurchaseOrderDirectInput>
+    }) => {
+      const body: PurchaseOrderUpdatePayload = {
+        po_date: payload.poDate,
+        supplier_id: payload.supplierId !== undefined ? Number(payload.supplierId) : undefined,
+        payment_terms: payload.paymentTerms ?? null,
+        delivery_terms: payload.deliveryTerms ?? null,
+        freight_amount: payload.freightAmount,
+        other_charges: payload.otherCharges,
+        remarks: payload.remarks ?? null,
+        items: payload.items?.map(toItemPayload),
+      }
+      return toPurchaseOrder((await updatePurchaseOrder(Number(id), body)).data)
+    },
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', variables.id] })
+    },
   })
 }

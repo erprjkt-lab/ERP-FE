@@ -4,10 +4,9 @@ import type { FC } from 'react'
 import { useEffect } from 'react'
 import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
-import { useEmployees } from '@/modules/hr/hooks/useEmployees'
-import { useShifts } from '@/modules/hr/hooks/useShifts'
 import type { Challan, ChallanItem } from '@/types/production'
 import { useCreateProcessLog } from '../hooks/useProcessLogs'
+import { getErrorMessage } from '@/api/client'
 
 export interface AcceptChallanItemModalProps {
   open: boolean
@@ -21,8 +20,6 @@ interface AcceptFormValues {
   logDate: { format: (fmt: string) => string }
   okQty: number
   rejectedQty?: number
-  operatorId: string
-  shiftId: string
   remark?: string
 }
 
@@ -35,8 +32,6 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
 }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm<AcceptFormValues>()
-  const { data: employees = [] } = useEmployees()
-  const { data: shifts = [] } = useShifts()
   const { mutateAsync: createLog, isPending } = useCreateProcessLog(item?.jobCardId)
 
   const outstandingQty = item?.outstandingQty ?? 0
@@ -52,8 +47,6 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item?.id])
 
-  const employeeOptions = employees.map(emp => ({ label: emp.fullName, value: emp.id }))
-
   const handleOk = async () => {
     let values: AcceptFormValues
     try {
@@ -68,8 +61,6 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
         process_id: Number(item.processId),
         performed_by_type: 2,
         processor_party_id: Number(challan.destinationPartyId),
-        operator_id: Number(values.operatorId),
-        shift_id: Number(values.shiftId),
         log_date: values.logDate.format('YYYY-MM-DD'),
         ok_qty: values.okQty,
         rejected_qty: values.rejectedQty ?? 0,
@@ -79,7 +70,7 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
       message.success(`Accepted ${values.okQty} back from ${challan.destinationPartyName}`)
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
@@ -96,7 +87,13 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
       onOk={handleOk}
       okText="Accept"
       confirmLoading={isPending}
-      okButtonProps={{ disabled: outstandingQty <= 0 }}
+      okButtonProps={{
+        disabled:
+          outstandingQty <= 0 ||
+          (Number(item?.receivedQty) >= Number(item?.dispatchedQty) &&
+            Number(item?.dispatchedQty) > 0) ||
+          challan?.status === 'closed',
+      }}
       width={620}
     >
       <Descriptions size="small" column={2} bordered style={{ marginBottom: 16 }}>
@@ -137,26 +134,6 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
             <Form.Item label="Rejected Qty" name="rejectedQty">
               <InputNumber size="large" min={0} style={{ width: '100%' }} />
             </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={16}>
-          <Col xs={12} sm={12}>
-            <FormField
-              label="Operator"
-              name="operatorId"
-              fieldType="select"
-              options={employeeOptions}
-              rules={[{ required: true, message: 'Operator is required' }]}
-            />
-          </Col>
-          <Col xs={12} sm={12}>
-            <FormField
-              label="Shift"
-              name="shiftId"
-              fieldType="select"
-              options={shifts.map(shift => ({ label: shift.name, value: shift.id }))}
-              rules={[{ required: true, message: 'Shift is required' }]}
-            />
           </Col>
         </Row>
         <FormField label="Remark" name="remark" fieldType="textarea" />

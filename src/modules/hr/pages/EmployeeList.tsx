@@ -20,15 +20,18 @@ import {
 } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Employee } from '@/types/hr'
+import { EmployeeFormDrawer } from '../components/EmployeeFormDrawer'
 import { EMPLOYEE_STATUS_OPTIONS } from '../constants'
 import { useDeleteEmployee, useEmployees } from '../hooks/useEmployees'
 import { useHRStore } from '../store/hrStore'
 import { getDepartmentColor } from '../utils/departmentColor'
+import { getErrorMessage } from '@/api/client'
 
 const getColumns = (
   colorTextDescription: string,
@@ -101,6 +104,7 @@ export const EmployeeList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
   const { token } = antTheme.useToken()
+  const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { employeeListFilters, setFilter, resetFilters } = useHRStore()
   const { data: employees = [], isLoading } = useEmployees()
   const { mutateAsync: deleteEmployee } = useDeleteEmployee()
@@ -116,7 +120,7 @@ export const EmployeeList: FC = () => {
           await deleteEmployee(Number(record.id))
           message.success('Employee deleted successfully')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -125,7 +129,7 @@ export const EmployeeList: FC = () => {
   const columns = getColumns(
     token.colorTextDescription,
     record => navigate(`/hr/employees/${record.id}`),
-    record => navigate(`/hr/employees/${record.id}/edit`),
+    record => setDrawerState({ mode: 'edit', id: record.id }),
     handleDelete,
   )
 
@@ -155,7 +159,7 @@ export const EmployeeList: FC = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => navigate('/hr/employees/new')}
+              onClick={() => setDrawerState({ mode: 'add' })}
             >
               Add Employee
             </Button>
@@ -206,6 +210,12 @@ export const EmployeeList: FC = () => {
           })}
         />
       </Card>
+
+      <EmployeeFormDrawer
+        open={!!drawerState}
+        employeeId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
+        onClose={() => setDrawerState(undefined)}
+      />
     </div>
   )
 }

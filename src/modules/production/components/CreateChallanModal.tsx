@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { useVendors } from '@/modules/masters/hooks/useVendors'
 import type { ChallanRequest } from '@/types/production'
 import { useCreateChallan } from '../hooks/useJobCardChallans'
+import { getErrorMessage } from '@/api/client'
 
 export interface CreateChallanModalProps {
   open: boolean
@@ -87,7 +88,7 @@ export const CreateChallanModal: FC<CreateChallanModalProps> = ({
       message.success(`Challan ${result.data.challan_number} created`)
       onClose()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 

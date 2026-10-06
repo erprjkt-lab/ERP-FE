@@ -72,6 +72,19 @@ body {
   background: #f2f6fb;
 }
 
+/* Detail-page summary strip (SUMMARY_PROPS): muted small label, emphasised value. */
+.erp-summary .ant-descriptions-item-label {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  padding-bottom: 0 !important;
+}
+.erp-summary .ant-descriptions-item-content {
+  font-weight: 500;
+}
+.erp-summary .ant-descriptions-row:last-child > td {
+  padding-bottom: 0;
+}
+
 /* DataTable is always rendered inside a zero-padding Card body, so the
    pagination row (page-size dropdown included) needs its own horizontal
    inset to avoid sitting flush against the card edge. */

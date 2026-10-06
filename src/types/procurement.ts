@@ -178,6 +178,9 @@ export interface GrnItem {
   itemId: ID
   itemName?: string
   itemCode?: string
+  // ItemMaster::TYPE_* — 2 = Raw Material. RM lines require an approved IIR
+  // before QC can be saved (backend gate); other types are unaffected.
+  itemType?: number
   orderedQty?: number
   gradeId?: ID | null
   gradeName?: string

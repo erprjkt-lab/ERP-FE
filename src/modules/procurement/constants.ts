@@ -10,6 +10,10 @@ import type {
 } from '@/types/procurement'
 import type { StatusBadgeStatus } from '@/components/ui/StatusBadge'
 
+// ItemMaster::TYPE_RM on the backend — RM GRN lines require an approved IIR
+// before QC can be saved.
+export const ITEM_TYPE_RAW_MATERIAL = 2
+
 export const PRIORITY_OPTIONS: { label: string; value: Priority }[] = [
   { label: 'Low', value: 'LOW' },
   { label: 'Normal', value: 'NORMAL' },
@@ -17,19 +21,25 @@ export const PRIORITY_OPTIONS: { label: string; value: Priority }[] = [
   { label: 'Urgent', value: 'URGENT' },
 ]
 
-export const REQUISITION_STATUS_LABELS: Record<PurchaseRequisitionStatus, string> = {
+// ENQUIRY_CREATED is display-only: the backend keeps the PR at APPROVED and
+// zeroes every item's pending_qty once an enquiry is raised from it.
+export type RequisitionDisplayStatus = PurchaseRequisitionStatus | 'ENQUIRY_CREATED'
+
+export const REQUISITION_STATUS_LABELS: Record<RequisitionDisplayStatus, string> = {
   DRAFT: 'Draft',
   PENDING_APPROVAL: 'Pending Approval',
   APPROVED: 'Approved',
+  ENQUIRY_CREATED: 'Enquiry Created',
   REJECTED: 'Rejected',
   CLOSED: 'Closed',
   CANCELLED: 'Cancelled',
 }
 
-export const REQUISITION_STATUS_BADGE: Record<PurchaseRequisitionStatus, StatusBadgeStatus> = {
+export const REQUISITION_STATUS_BADGE: Record<RequisitionDisplayStatus, StatusBadgeStatus> = {
   DRAFT: 'draft',
   PENDING_APPROVAL: 'pending',
   APPROVED: 'approved',
+  ENQUIRY_CREATED: 'completed',
   REJECTED: 'rejected',
   CLOSED: 'archived',
   CANCELLED: 'cancelled',
@@ -58,6 +68,29 @@ export const ENQUIRY_STATUS_BADGE: Record<PurchaseEnquiryStatus, StatusBadgeStat
   CLOSED: 'archived',
   CANCELLED: 'cancelled',
 }
+
+// Quick-filter buckets on the enquiry list: "Pending" = still needs someone to
+// act (send, chase quotes, compare, raise PO); "Completed" = PO raised or closed.
+export const ENQUIRY_STATUS_GROUPS: {
+  value: string
+  label: string
+  statuses: PurchaseEnquiryStatus[]
+}[] = [
+  {
+    value: 'pending',
+    label: 'Pending',
+    statuses: [
+      'DRAFT',
+      'SENT',
+      'PARTIALLY_RESPONDED',
+      'RESPONDED',
+      'COMPARISON_PENDING',
+      'SUPPLIER_SELECTED',
+    ],
+  },
+  { value: 'completed', label: 'Completed', statuses: ['PO_CREATED', 'CLOSED'] },
+  { value: 'cancelled', label: 'Cancelled', statuses: ['CANCELLED'] },
+]
 
 export const SUPPLIER_STATUS_LABELS: Record<PurchaseEnquirySupplierStatus, string> = {
   PENDING: 'Pending',

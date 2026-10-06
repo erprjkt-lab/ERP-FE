@@ -16,6 +16,7 @@ import type {
   PurchaseEnquiryFromRequisitionsPayload,
   PurchaseEnquiryItemPayload,
   PurchaseEnquiryManualPayload,
+  PurchaseEnquiryUpdatePayload,
 } from '@/types/api/procurement'
 import type {
   PurchaseEnquiry,
@@ -129,6 +130,17 @@ function toItemPayload(item: PurchaseEnquiryItemInput): PurchaseEnquiryItemPaylo
   }
 }
 
+function toUpdatePayload(input: Partial<PurchaseEnquiryManualInput>): PurchaseEnquiryUpdatePayload {
+  return {
+    enquiry_date: input.enquiryDate,
+    enquiry_due_date: input.enquiryDueDate,
+    priority: input.priority,
+    remarks: input.remarks,
+    supplier_ids: input.suppliers?.map(s => Number(s.supplierId)),
+    items: input.items?.map(toItemPayload),
+  }
+}
+
 export function usePurchaseEnquiries() {
   const query = useQuery({
     queryKey: ['purchase-enquiries'],
@@ -184,6 +196,26 @@ export function useCreatePurchaseEnquiryFromRequisitions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-enquiries'] })
       queryClient.invalidateQueries({ queryKey: ['purchase-requisitions'] })
+    },
+  })
+}
+
+export function useUpdatePurchaseEnquiry() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Partial<PurchaseEnquiryManualInput>
+    }) => {
+      const result = await updatePurchaseEnquiry(Number(id), toUpdatePayload(payload))
+      return toPurchaseEnquiry(result.data)
+    },
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-enquiries'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-enquiries', variables.id] })
     },
   })
 }

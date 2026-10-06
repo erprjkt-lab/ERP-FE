@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined, StopOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, EditOutlined, StopOutlined } from '@ant-design/icons'
 import {
   App,
   Button,
@@ -18,15 +18,21 @@ import {
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getErrorMessage } from '@/api/client'
 import { Modal } from '@/components/ui/Modal'
+import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { IncomingInspectionDrawer } from '@/modules/quality/components/IncomingInspectionDrawer'
+import { useIncomingInspectionReportsForGrnItem } from '@/modules/quality/hooks/useInspectionReports'
 import type { GrnItem } from '@/types/procurement'
+import { GrnFormDrawer } from '../components/GrnFormDrawer'
 import {
   GRN_LINE_STATUS_BADGE,
   GRN_LINE_STATUS_LABELS,
   GRN_STATUS_BADGE,
   GRN_STATUS_LABELS,
+  ITEM_TYPE_RAW_MATERIAL,
 } from '../constants'
 import { useCancelGrn, useGrn, useSaveGrnItemQc } from '../hooks/usePurchaseGrns'
 
@@ -39,6 +45,8 @@ export const PurchaseGrnDetail: FC = () => {
   const { data: grn, isLoading } = useGrn(id)
   const { mutateAsync: cancelGrnMutation, isPending: cancelling } = useCancelGrn()
   const [qcItem, setQcItem] = useState<GrnItem | null>(null)
+  const [iirItem, setIirItem] = useState<GrnItem | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   if (!grn) {
     return (
@@ -63,7 +71,7 @@ export const PurchaseGrnDetail: FC = () => {
           await cancelGrnMutation(grn.id)
           message.success('GRN cancelled')
         } catch (error) {
-          message.error(error instanceof Error ? error.message : 'Something went wrong')
+          message.error(getErrorMessage(error))
         }
       },
     })
@@ -137,15 +145,7 @@ export const PurchaseGrnDetail: FC = () => {
       title: 'Actions',
       key: 'actions',
       render: (_: unknown, r: GrnItem) => (
-        <Tooltip title={QC_LOCKED_STATUSES.has(r.lineStatus) ? 'QC already recorded' : 'Run QC'}>
-          <Button
-            size="small"
-            disabled={QC_LOCKED_STATUSES.has(r.lineStatus)}
-            onClick={() => setQcItem(r)}
-          >
-            QC
-          </Button>
-        </Tooltip>
+        <GrnLineActions record={r} onQc={() => setQcItem(r)} onIir={() => setIirItem(r)} />
       ),
     },
   ]
@@ -165,6 +165,9 @@ export const PurchaseGrnDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/grn')}>
               Back
             </Button>
+            <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+              Edit
+            </Button>
             {grn.status !== 4 && (
               <Button danger icon={<StopOutlined />} loading={cancelling} onClick={handleCancel}>
                 Cancel GRN
@@ -174,10 +177,10 @@ export const PurchaseGrnDetail: FC = () => {
         }
       />
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col span={24}>
           <Card>
-            <Descriptions column={3} size="small" bordered>
+            <Descriptions {...SUMMARY_PROPS}>
               <Descriptions.Item label="Status">
                 <StatusBadge
                   status={GRN_STATUS_BADGE[grn.status]}
@@ -195,7 +198,7 @@ export const PurchaseGrnDetail: FC = () => {
                 {grn.supplierDocDate ?? '—'}
               </Descriptions.Item>
               <Descriptions.Item label="Created By">{grn.createdBy}</Descriptions.Item>
-              <Descriptions.Item label="Remarks" span={3}>
+              <Descriptions.Item label="Remarks" span="filled">
                 {grn.remarks ?? '—'}
               </Descriptions.Item>
             </Descriptions>
@@ -222,7 +225,57 @@ export const PurchaseGrnDetail: FC = () => {
       </Row>
 
       {qcItem && <QcModal item={qcItem} grnId={grn.id} onClose={() => setQcItem(null)} />}
+      <IncomingInspectionDrawer
+        open={!!iirItem}
+        grnItemId={iirItem?.id}
+        itemId={iirItem?.itemId}
+        itemName={iirItem?.itemName ?? iirItem?.itemId}
+        grnNo={grn.grnNo}
+        onClose={() => setIirItem(null)}
+      />
+      <GrnFormDrawer open={editOpen} grnId={grn.id} onClose={() => setEditOpen(false)} />
     </div>
+  )
+}
+
+interface GrnLineActionsProps {
+  record: GrnItem
+  onQc: () => void
+  onIir: () => void
+}
+
+const GrnLineActions: FC<GrnLineActionsProps> = ({ record, onQc, onIir }) => {
+  const isRawMaterial = record.itemType === ITEM_TYPE_RAW_MATERIAL
+  const { hasApprovedIir, isLoading } = useIncomingInspectionReportsForGrnItem(
+    isRawMaterial ? record.id : undefined,
+  )
+  const qcLocked = QC_LOCKED_STATUSES.has(record.lineStatus)
+  // Fail-safe: block QC on an RM line until the IIR check has actually
+  // resolved and confirmed an approval — don't let the button flash enabled
+  // during the initial fetch just because isLoading hasn't settled yet.
+  const qcBlockedByIir = isRawMaterial && (isLoading || !hasApprovedIir)
+
+  const qcTooltip = qcLocked
+    ? 'QC already recorded'
+    : qcBlockedByIir
+      ? 'An approved Incoming Inspection Report (IIR) is required first'
+      : 'Run QC'
+
+  return (
+    <Space size="small">
+      {isRawMaterial && (
+        <Tooltip title="Manage Incoming Inspection Reports for this line">
+          <Button size="small" onClick={onIir}>
+            IIR{hasApprovedIir ? ' ✓' : ''}
+          </Button>
+        </Tooltip>
+      )}
+      <Tooltip title={qcTooltip}>
+        <Button size="small" disabled={qcLocked || qcBlockedByIir} onClick={onQc}>
+          QC
+        </Button>
+      </Tooltip>
+    </Space>
   )
 }
 
@@ -269,7 +322,7 @@ const QcModal: FC<QcModalProps> = ({ item, grnId, onClose }) => {
       message.success('QC result saved')
       onClose()
     } catch (error) {
-      if (error instanceof Error) message.error(error.message)
+      if (error instanceof Error) message.error(getErrorMessage(error))
     }
   }
 

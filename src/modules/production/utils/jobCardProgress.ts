@@ -76,6 +76,7 @@ export function computeStepProgress(
     const totals = logTotals[step.processId] ?? { ok: 0, rejected: 0, bypassed: 0 }
     const loggedQty = totals.ok + totals.rejected + totals.bypassed
     const isFirst = index === 0
+    const isLast = index === sorted.length - 1
     const acceptedQty = acceptedOnly[step.processId] ?? 0
     const availableQty = isFirst ? orderedQty : acceptedQty
 
@@ -89,18 +90,23 @@ export function computeStepProgress(
       loggedQty,
       availableQty,
       pendingQty: Math.max(availableQty - loggedQty, 0),
-      readyToMoveQty: Math.max(totals.ok - (movedOut[step.processId] ?? 0), 0),
+      // The last step's OK qty goes straight to stock as a production receipt
+      // the moment it's logged — there's no next process for it to move to,
+      // so it's never "ready to move" regardless of how much is OK here.
+      readyToMoveQty: isLast ? 0 : Math.max(totals.ok - (movedOut[step.processId] ?? 0), 0),
       isFirst,
-      isLast: index === sorted.length - 1,
+      isLast,
       isCurrent: false,
     }
   })
 
   // Whichever step has something to do next: material waiting to be accepted,
-  // or quantity still to be produced.
+  // or quantity still to be produced. If nothing qualifies, the job card has
+  // nothing left to do anywhere — leave every row non-current rather than
+  // defaulting to the last step, which would otherwise look like it's still
+  // "in progress" there even once fully produced.
   const actionableIndex = rows.findIndex(row => row.unacceptedQty > 0 || row.pendingQty > 0)
-  const activeIndex = actionableIndex === -1 ? rows.length - 1 : actionableIndex
-  if (rows[activeIndex]) rows[activeIndex].isCurrent = true
+  if (rows[actionableIndex]) rows[actionableIndex].isCurrent = true
 
   return rows
 }

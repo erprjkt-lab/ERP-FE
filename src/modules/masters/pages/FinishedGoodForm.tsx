@@ -17,6 +17,7 @@ import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
 import { useUoms } from '../hooks/useUoms'
 import type { FinishedGoodInput } from '../store/mastersStore'
+import { getErrorMessage } from '@/api/client'
 
 export const FinishedGoodForm: FC = () => {
   const { id } = useParams()
@@ -107,7 +108,7 @@ export const FinishedGoodForm: FC = () => {
       message.success(`Finished good ${isEdit ? 'updated' : 'created'} successfully`)
       navigate('/masters/finished-goods')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Something went wrong')
+      message.error(getErrorMessage(error))
     }
   }
 
