@@ -1,8 +1,13 @@
 import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
-import type { ApiMenu, CreateMenuPayload, UpdateMenuPayload } from '@/types/api/rbac'
+import type {
+  ApiMenu,
+  ApiSidebarNode,
+  CreateMenuPayload,
+  UpdateMenuPayload,
+} from '@/types/api/rbac'
 
-export function getSidebarMenu(): Promise<ApiEnvelope<ApiMenu[]>> {
+export function getSidebarMenu(): Promise<ApiEnvelope<ApiSidebarNode[]>> {
   return apiRequest('/api/v1/menus/sidebar')
 }
 

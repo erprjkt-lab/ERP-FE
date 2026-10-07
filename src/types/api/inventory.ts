@@ -209,3 +209,97 @@ export interface StockLedgerFilters {
   per_page?: number
   page?: number
 }
+
+// ---------- Opening Stock (initial/ad-hoc stock load; posts straight to the ledger) ----------
+
+export interface ApiOpeningStockItem {
+  id: number
+  opening_stock_id: number
+  item_id: number
+  item?: ApiItemMaster
+  location_id: number
+  location?: ApiLocation
+  batch_no: string | null
+  heat_no: string | null
+  serial_no: string | null
+  qty: number | string
+  rate: number | string | null
+  remarks: string | null
+  stock_movement_id: number | null
+}
+
+export interface ApiOpeningStock {
+  id: number
+  entry_number: string
+  entry_date: string
+  remarks: string | null
+  items?: ApiOpeningStockItem[]
+  created_at: string | null
+  created_by: number | null
+  updated_by: number | null
+}
+
+export interface OpeningStockItemPayload {
+  item_id: number
+  location_id: number
+  batch_no?: string | null
+  heat_no?: string | null
+  serial_no?: string | null
+  qty: number
+  rate?: number | null
+  remarks?: string | null
+}
+
+export interface CreateOpeningStockPayload {
+  entry_date: string
+  remarks?: string | null
+  items: OpeningStockItemPayload[]
+}
+
+// ---------- Stock Transfer (one-step move between two of our own locations) ----------
+
+export interface ApiStockTransferItem {
+  id: number
+  stock_transfer_id: number
+  item_id: number
+  item?: ApiItemMaster
+  batch_no: string | null
+  heat_no: string | null
+  serial_no: string | null
+  qty: number | string
+  remarks: string | null
+  stock_movement_out_id: number | null
+  stock_movement_in_id: number | null
+}
+
+export interface ApiStockTransfer {
+  id: number
+  transfer_number: string
+  transfer_date: string
+  from_location_id: number
+  from_location?: ApiLocation
+  to_location_id: number
+  to_location?: ApiLocation
+  remarks: string | null
+  items?: ApiStockTransferItem[]
+  created_at: string | null
+  created_by: number | null
+  updated_by: number | null
+}
+
+export interface StockTransferItemPayload {
+  item_id: number
+  batch_no?: string | null
+  heat_no?: string | null
+  serial_no?: string | null
+  qty: number
+  remarks?: string | null
+}
+
+export interface CreateStockTransferPayload {
+  transfer_date: string
+  from_location_id: number
+  to_location_id: number
+  remarks?: string | null
+  items: StockTransferItemPayload[]
+}

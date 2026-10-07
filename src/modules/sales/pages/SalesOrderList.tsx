@@ -16,11 +16,15 @@ import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { SalesOrder } from '@/types/sales'
+import type { SalesOrderItemRow, SalesOrderStatus } from '@/types/sales'
 import { DeliveryChallanFormDrawer } from '../components/DeliveryChallanFormDrawer'
 import { SalesOrderFormDrawer } from '../components/SalesOrderFormDrawer'
 import { ORDER_STATUS_BADGE, ORDER_STATUS_LABELS } from '../constants'
-import { useDeleteSalesOrder, useSalesOrderAction, useSalesOrders } from '../hooks/useSalesOrders'
+import {
+  useDeleteSalesOrder,
+  useSalesOrderAction,
+  useSalesOrderItems,
+} from '../hooks/useSalesOrders'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
 
 const STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({
@@ -29,12 +33,12 @@ const STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS).map(([value, label]) 
 }))
 
 interface RowActions {
-  onView: (record: SalesOrder) => void
-  onEdit: (record: SalesOrder) => void
-  onApprove: (record: SalesOrder) => void
-  onCancel: (record: SalesOrder) => void
-  onCreateChallan: (record: SalesOrder) => void
-  onDelete: (record: SalesOrder) => void
+  onView: (record: SalesOrderItemRow) => void
+  onEdit: (record: SalesOrderItemRow) => void
+  onApprove: (record: SalesOrderItemRow) => void
+  onCancel: (record: SalesOrderItemRow) => void
+  onCreateChallan: (record: SalesOrderItemRow) => void
+  onDelete: (record: SalesOrderItemRow) => void
 }
 
 const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
@@ -43,28 +47,35 @@ const action = (title: string, icon: ReactNode, onClick: () => void, danger = fa
   </Tooltip>
 )
 
-const getColumns = (a: RowActions): TableColumnsType<SalesOrder> => [
+const getColumns = (a: RowActions): TableColumnsType<SalesOrderItemRow> => [
   { title: 'Order #', dataIndex: 'orderNumber', key: 'orderNumber', width: 150 },
   { title: 'Date', dataIndex: 'orderDate', key: 'orderDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
+  { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
+  { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
+  { title: 'Qty', dataIndex: 'qty', key: 'qty', width: 90, align: 'right' },
+  { title: 'UOM', dataIndex: 'uomName', key: 'uomName', width: 80, render: v => v ?? '—' },
   {
-    title: 'Customer PO',
-    dataIndex: 'customerPoNo',
-    key: 'customerPoNo',
-    width: 140,
-    render: v => v || '—',
+    title: 'Rate',
+    dataIndex: 'rate',
+    key: 'rate',
+    width: 110,
+    align: 'right',
+    render: v => v.toFixed(2),
+  },
+  {
+    title: 'Line Total',
+    dataIndex: 'lineTotal',
+    key: 'lineTotal',
+    width: 120,
+    align: 'right',
+    render: v => v.toFixed(2),
   },
   {
     title: 'Source',
     key: 'source',
     width: 130,
-    render: (_, r) => (r.salesQuotationId ? 'From Quotation' : 'Direct'),
-  },
-  {
-    title: 'Net Amount',
-    key: 'netAmount',
-    width: 130,
-    render: (_, r) => r.netAmount.toFixed(2),
+    render: (_, r) => (r.fromQuotation ? 'From Quotation' : 'Direct'),
   },
   {
     title: 'Status',
@@ -73,8 +84,8 @@ const getColumns = (a: RowActions): TableColumnsType<SalesOrder> => [
     width: 120,
     render: status => (
       <StatusBadge
-        status={ORDER_STATUS_BADGE[status as SalesOrder['status']]}
-        label={ORDER_STATUS_LABELS[status as SalesOrder['status']]}
+        status={ORDER_STATUS_BADGE[status as SalesOrderStatus]}
+        label={ORDER_STATUS_LABELS[status as SalesOrderStatus]}
       />
     ),
   },
@@ -112,11 +123,11 @@ export const SalesOrderList: FC = () => {
   const [challanOrderId, setChallanOrderId] = useState<string>()
 
   const {
-    data: orders,
+    data: orderItems,
     meta,
     isLoading,
     isFetching,
-  } = useSalesOrders({ page, perPage: pageSize, status })
+  } = useSalesOrderItems({ page, perPage: pageSize, status })
   const { mutateAsync: runAction } = useSalesOrderAction()
   const { mutateAsync: removeOrder } = useDeleteSalesOrder()
 
@@ -128,14 +139,14 @@ export const SalesOrderList: FC = () => {
     setPage(1)
   }
 
-  const handleApprove = (record: SalesOrder) => {
+  const handleApprove = (record: SalesOrderItemRow) => {
     modal.confirm({
       title: 'Approve this sales order?',
       content: 'Once confirmed, the order can no longer be edited.',
       okText: 'Approve',
       onOk: async () => {
         try {
-          await runAction({ id: record.id, action: 'approve' })
+          await runAction({ id: record.salesOrderId, action: 'approve' })
           message.success('Sales order approved')
         } catch (error) {
           message.error(getErrorMessage(error))
@@ -144,7 +155,7 @@ export const SalesOrderList: FC = () => {
     })
   }
 
-  const handleCancel = (record: SalesOrder) => {
+  const handleCancel = (record: SalesOrderItemRow) => {
     // Plain object, not a ref — this closure is handed to getColumns during
     // render, and the react-hooks/refs rule flags a ref read reachable from there.
     const reason = { value: '' }
@@ -164,7 +175,7 @@ export const SalesOrderList: FC = () => {
       onOk: async () => {
         try {
           await runAction({
-            id: record.id,
+            id: record.salesOrderId,
             action: 'cancel',
             reason: reason.value || null,
           })
@@ -176,7 +187,7 @@ export const SalesOrderList: FC = () => {
     })
   }
 
-  const handleDelete = (record: SalesOrder) => {
+  const handleDelete = (record: SalesOrderItemRow) => {
     modal.confirm({
       title: `Delete ${record.orderNumber}?`,
       content: 'This permanently removes the sales order and its items.',
@@ -184,7 +195,7 @@ export const SalesOrderList: FC = () => {
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          await removeOrder(record.id)
+          await removeOrder(record.salesOrderId)
           message.success('Sales order deleted')
         } catch (error) {
           message.error(getErrorMessage(error))
@@ -194,11 +205,11 @@ export const SalesOrderList: FC = () => {
   }
 
   const columns = getColumns({
-    onView: record => navigate(`/sales/orders/${record.id}`),
-    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+    onView: record => navigate(`/sales/orders/${record.salesOrderId}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.salesOrderId }),
     onApprove: handleApprove,
     onCancel: handleCancel,
-    onCreateChallan: record => setChallanOrderId(record.id),
+    onCreateChallan: record => setChallanOrderId(record.salesOrderId),
     onDelete: handleDelete,
   })
 
@@ -206,7 +217,7 @@ export const SalesOrderList: FC = () => {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Sales Orders"
-        subtitle={`${meta?.total ?? 0} sales orders`}
+        subtitle={`${meta?.total ?? 0} sales order items`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Order' }]}
         actions={
           <Button
@@ -243,9 +254,9 @@ export const SalesOrderList: FC = () => {
           body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
         }}
       >
-        <DataTable<SalesOrder>
+        <DataTable<SalesOrderItemRow>
           columns={columns}
-          dataSource={orders}
+          dataSource={orderItems}
           rowKey="id"
           loading={isLoading || isFetching}
           pagination={{
@@ -257,10 +268,10 @@ export const SalesOrderList: FC = () => {
               setPageSize(nextPageSize)
             },
           }}
-          totalLabel="sales orders"
+          totalLabel="sales order items"
           fillHeight
           onRow={record => ({
-            onClick: () => navigate(`/sales/orders/${record.id}`),
+            onClick: () => navigate(`/sales/orders/${record.salesOrderId}`),
             style: { cursor: 'pointer' },
           })}
         />

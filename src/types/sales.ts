@@ -6,8 +6,7 @@ export type SalesEnquiryItemStatus = 'OPEN' | 'QUOTED' | 'CLOSED'
 
 export type FeasibleStatus = 'PENDING' | 'FEASIBLE' | 'NOT_FEASIBLE'
 
-export type SalesQuotationStatus =
-  'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'REVISED'
+export type SalesQuotationStatus = 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'REVISED'
 
 export type SalesOrderStatus = 'DRAFT' | 'CONFIRMED' | 'CLOSED' | 'CANCELLED'
 
@@ -178,4 +177,60 @@ export interface DeliveryChallan extends BaseEntity {
   /** Summed from line totals — the API exposes no header-level total. */
   netAmount: number
   createdBy: string
+}
+
+// Flat item-wise rows for the list pages (GET /sales-enquiry-items, /sales-order-items,
+// /delivery-challan-items). Header ids are kept so row actions can target the document.
+
+export interface SalesEnquiryItemRow {
+  id: ID
+  salesEnquiryId: ID
+  enquiryNumber: string
+  enquiryDate: string
+  status: SalesEnquiryStatus
+  partyId: ID
+  partyName?: string
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  uomName?: string
+  qty: number
+  feasibleStatus: FeasibleStatus
+}
+
+export interface SalesOrderItemRow {
+  id: ID
+  salesOrderId: ID
+  orderNumber: string
+  orderDate: string
+  status: SalesOrderStatus
+  partyId: ID
+  partyName?: string
+  fromQuotation: boolean
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  uomName?: string
+  qty: number
+  rate: number
+  lineTotal: number
+  committedDate?: string
+}
+
+export interface DeliveryChallanItemRow {
+  id: ID
+  deliveryChallanId: ID
+  challanNumber: string
+  challanDate: string
+  status: DeliveryChallanStatus
+  partyId: ID
+  partyName?: string
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  uomName?: string
+  dispatchQty: number
+  rate: number
+  lineTotal: number
+  billedQty: number
 }

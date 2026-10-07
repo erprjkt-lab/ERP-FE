@@ -21,6 +21,7 @@ function log(processId: string, ok: number, rejected: number, bypassed = 0): Pro
     okQty: ok,
     rejectedQty: rejected,
     bypassedQty: bypassed,
+    isRework: false,
   }
 }
 

@@ -1,18 +1,27 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createPurchaseOrderFromEnquiry, selectSupplierForEnquiry } from '@/api/purchaseEnquiries'
 import {
   createPurchaseOrder,
+  approvePurchaseOrder,
   getPurchaseOrder,
+  listPurchaseOrderItems,
   listPurchaseOrders,
   updatePurchaseOrder,
 } from '@/api/purchaseOrders'
+import type { ItemListParams } from '@/types/api'
 import type {
   ApiPurchaseOrder,
   ApiPurchaseOrderItem,
+  ApiPurchaseOrderItemRow,
   PurchaseOrderPayload,
   PurchaseOrderUpdatePayload,
 } from '@/types/api/procurement'
-import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '@/types/procurement'
+import type {
+  PurchaseOrder,
+  PurchaseOrderItem,
+  PurchaseOrderItemRow,
+  PurchaseOrderStatus,
+} from '@/types/procurement'
 
 export interface PurchaseOrderItemInput {
   itemId: string
@@ -206,6 +215,56 @@ export function useUpdatePurchaseOrder() {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
       queryClient.invalidateQueries({ queryKey: ['purchase-orders', variables.id] })
+    },
+  })
+}
+
+function toPurchaseOrderItemRow(api: ApiPurchaseOrderItemRow): PurchaseOrderItemRow {
+  return {
+    id: String(api.id),
+    purchaseOrderId: String(api.purchase_order_id),
+    poNumber: api.po_number,
+    poDate: api.po_date,
+    status: api.po_status as PurchaseOrderStatus,
+    supplierId: String(api.supplier_id),
+    supplierName: api.supplier_name ?? undefined,
+    fromEnquiry: api.purchase_enquiry_item_id != null,
+    itemId: String(api.item_id),
+    itemCode: api.item_code ?? undefined,
+    itemName: api.item_name ?? undefined,
+    orderedQty: Number(api.ordered_qty),
+    receivedQty: Number(api.received_qty),
+    pendingQty: Number(api.pending_qty),
+    uomName: api.uom_name ?? undefined,
+    rate: Number(api.rate),
+    lineTotal: Number(api.line_total),
+    deliveryDate: api.delivery_date ?? undefined,
+  }
+}
+
+// Item-wise (one row per PO line) listing — server-side paginated.
+export function usePurchaseOrderItems(params: ItemListParams = {}) {
+  const query = useQuery({
+    queryKey: ['purchase-orders', 'items', params],
+    queryFn: () => listPurchaseOrderItems(params),
+    placeholderData: keepPreviousData,
+  })
+  return {
+    data: (query.data?.data ?? []).map(toPurchaseOrderItemRow),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+  }
+}
+
+export function useApprovePurchaseOrder() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) =>
+      toPurchaseOrder((await approvePurchaseOrder(Number(id))).data),
+    onSuccess: (_result, id) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', id] })
     },
   })
 }

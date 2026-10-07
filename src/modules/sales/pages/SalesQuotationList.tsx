@@ -7,7 +7,6 @@ import {
   EyeOutlined,
   FileDoneOutlined,
   PlusOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Input, Row, Select, Space, Tag, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
@@ -41,7 +40,6 @@ const LOCKED_STATUSES: SalesQuotation['status'][] = ['ACCEPTED', 'REJECTED', 'RE
 interface RowActions {
   onView: (record: SalesQuotation) => void
   onEdit: (record: SalesQuotation) => void
-  onSend: (record: SalesQuotation) => void
   onAccept: (record: SalesQuotation) => void
   onReject: (record: SalesQuotation) => void
   onRevise: (record: SalesQuotation) => void
@@ -102,7 +100,6 @@ const getColumns = (a: RowActions): TableColumnsType<SalesQuotation> => [
     key: 'actions',
     width: 260,
     render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
       const isSent = record.status === 'SENT'
       const isAccepted = record.status === 'ACCEPTED'
       return (
@@ -110,7 +107,6 @@ const getColumns = (a: RowActions): TableColumnsType<SalesQuotation> => [
           {action('View', <EyeOutlined />, () => a.onView(record))}
           {!LOCKED_STATUSES.includes(record.status) &&
             action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Send', <SendOutlined />, () => a.onSend(record))}
           {isSent && action('Accept', <CheckOutlined />, () => a.onAccept(record))}
           {isSent && action('Reject', <CloseOutlined />, () => a.onReject(record), true)}
           {!isAccepted &&
@@ -118,7 +114,7 @@ const getColumns = (a: RowActions): TableColumnsType<SalesQuotation> => [
             action('Revise', <DiffOutlined />, () => a.onRevise(record))}
           {isAccepted &&
             action('Create Sales Order', <FileDoneOutlined />, () => a.onCreateOrder(record))}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
+          {isSent && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
         </Space>
       )
     },
@@ -154,13 +150,13 @@ export const SalesQuotationList: FC = () => {
 
   const handleAction = async (
     record: SalesQuotation,
-    actionName: 'send' | 'accept' | 'revise',
+    actionName: 'accept' | 'revise',
     successMessage: string,
   ) => {
     try {
       const result = await runAction({ id: record.id, action: actionName })
       message.success(successMessage)
-      // A revision is a brand-new draft row — follow the user to it.
+      // A revision is a brand-new quotation row — follow the user to it.
       if (actionName === 'revise' && result) navigate(`/sales/quotations/${result.id}`)
     } catch (error) {
       message.error(getErrorMessage(error))
@@ -224,7 +220,6 @@ export const SalesQuotationList: FC = () => {
   const columns = getColumns({
     onView: record => navigate(`/sales/quotations/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
-    onSend: record => handleAction(record, 'send', 'Quotation sent'),
     onAccept: record => handleAction(record, 'accept', 'Quotation accepted'),
     onReject: handleReject,
     onRevise: record => handleAction(record, 'revise', 'Revision created'),

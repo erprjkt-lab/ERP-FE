@@ -1,4 +1,4 @@
-import { CheckOutlined, DownloadOutlined, PlusOutlined, SendOutlined } from '@ant-design/icons'
+import { CheckOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, Descriptions, Form, Space } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -19,7 +19,6 @@ import {
   useAddInspectionReading,
   useApproveInspectionReport,
   useInspectionReport,
-  useSubmitInspectionReport,
 } from '../hooks/useInspectionReports'
 import { ReportReadingsFields, toReadingsPayload } from './ReportReadingsFields'
 
@@ -44,7 +43,6 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
   const { data: report, isLoading } = useInspectionReport(reportId)
   const { data: itemParameters } = useInspectionParameters(itemId)
   const { mutateAsync: addReading, isPending: addingReading } = useAddInspectionReading(reportId)
-  const { mutateAsync: submit, isPending: submitting } = useSubmitInspectionReport()
   const { mutateAsync: approve, isPending: approving } = useApproveInspectionReport()
 
   // IPR/FIR are scoped to the report's own process; IIR has no process at
@@ -70,15 +68,6 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
       )
       form.resetFields()
       message.success(readings.length > 1 ? 'Readings recorded' : 'Reading recorded')
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
-  }
-
-  const handleSubmit = async () => {
-    try {
-      await submit(reportId)
-      message.success('Report submitted for approval')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -179,7 +168,7 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
             loading={isLoading}
           />
 
-          {report.status === 'DRAFT' && unreadParameters.length > 0 && (
+          {report.status === 'SUBMITTED' && unreadParameters.length > 0 && (
             <Form
               form={form}
               layout="vertical"
@@ -194,17 +183,6 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
           )}
 
           <Space style={{ marginTop: 16 }}>
-            {report.status === 'DRAFT' && (
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                loading={submitting}
-                disabled={report.readings.length === 0}
-                onClick={handleSubmit}
-              >
-                Submit for Approval
-              </Button>
-            )}
             {report.status === 'SUBMITTED' && (
               <Button
                 type="primary"

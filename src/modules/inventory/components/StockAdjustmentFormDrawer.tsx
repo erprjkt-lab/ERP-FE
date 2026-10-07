@@ -70,8 +70,8 @@ export const StockAdjustmentFormDrawer: FC<StockAdjustmentFormDrawerProps> = ({
   const { mutateAsync: createAdjustment, isPending: creating } = useCreateStockAdjustment()
   const { mutateAsync: updateAdjustment, isPending: updating } = useUpdateStockAdjustment()
 
-  // Only DRAFT adjustments can be edited
-  const isLocked = isEdit && !!existing && existing.status !== 'DRAFT'
+  // Only pending-approval adjustments can be edited — approving posts the variance.
+  const isLocked = isEdit && !!existing && existing.status !== 'PENDING_APPROVAL'
 
   const locationId = Form.useWatch('locationId', form) as string | undefined
   const locationOptions = locations.map(l => ({ label: l.name, value: l.id }))
@@ -157,7 +157,7 @@ export const StockAdjustmentFormDrawer: FC<StockAdjustmentFormDrawerProps> = ({
     >
       {isLocked ? (
         <Typography.Text type="secondary">
-          Only DRAFT adjustments can be edited. This adjustment is currently{' '}
+          Only adjustments pending approval can be edited. This adjustment is currently{' '}
           <strong>{existing?.status}</strong>.
         </Typography.Text>
       ) : (

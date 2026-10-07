@@ -116,3 +116,17 @@ body {
   max-height: none !important;
   overflow: auto !important;
 }
+
+/* Permissions matrix: folder rows read as section headers, and the "All" column is
+   fenced off from the per-action ones so the grid doesn't read as one wall of boxes. */
+.erp-permission-table .erp-permission-group-row > td {
+  background: #fafafa;
+  font-weight: 600;
+}
+.erp-permission-table .erp-permission-divider-cell {
+  border-left: 1px solid #f0f0f0;
+}
+.erp-permission-table .ant-table-tbody > tr > td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}

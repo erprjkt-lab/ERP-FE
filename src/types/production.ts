@@ -82,6 +82,9 @@ export interface ProcessLog {
   rejectedQty: number
   bypassedQty: number
   inboundChallanItemId?: string
+  /** The approved Rework review this log re-processes qty for, if any. */
+  inboundReworkReviewId?: string
+  isRework: boolean
   remark?: string
 }
 

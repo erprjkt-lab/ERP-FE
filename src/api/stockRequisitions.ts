@@ -31,10 +31,6 @@ export function deleteStockRequisition(id: number): Promise<void> {
   return apiRequest(`/api/v1/stock-requisitions/${id}`, { method: 'DELETE' })
 }
 
-export function submitStockRequisition(id: number): Promise<ApiEnvelope<ApiStockRequisition>> {
-  return apiRequest(`/api/v1/stock-requisitions/${id}/submit`, { method: 'POST' })
-}
-
 export function approveStockRequisition(id: number): Promise<ApiEnvelope<ApiStockRequisition>> {
   return apiRequest(`/api/v1/stock-requisitions/${id}/approve`, { method: 'POST' })
 }

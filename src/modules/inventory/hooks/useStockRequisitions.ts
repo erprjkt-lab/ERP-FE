@@ -8,7 +8,6 @@ import {
   getStockRequisition,
   listStockRequisitions,
   rejectStockRequisition,
-  submitStockRequisition,
   updateStockRequisition,
 } from '@/api/stockRequisitions'
 import type {
@@ -176,15 +175,6 @@ export function useUpdateStockRequisition() {
 function invalidateOne(queryClient: ReturnType<typeof useQueryClient>, id: string) {
   queryClient.invalidateQueries({ queryKey: ['stock-requisitions'] })
   queryClient.invalidateQueries({ queryKey: ['stock-requisitions', id] })
-}
-
-export function useSubmitStockRequisition() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string) =>
-      toStockRequisition((await submitStockRequisition(Number(id))).data),
-    onSuccess: (_result, id) => invalidateOne(queryClient, id),
-  })
 }
 
 export function useApproveStockRequisition() {

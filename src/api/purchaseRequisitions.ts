@@ -31,12 +31,6 @@ export function deletePurchaseRequisition(id: number): Promise<void> {
   return apiRequest(`/api/v1/purchase-requisitions/${id}`, { method: 'DELETE' })
 }
 
-export function submitPurchaseRequisition(
-  id: number,
-): Promise<ApiEnvelope<ApiPurchaseRequisition>> {
-  return apiRequest(`/api/v1/purchase-requisitions/${id}/submit`, { method: 'POST' })
-}
-
 export function approvePurchaseRequisition(
   id: number,
 ): Promise<ApiEnvelope<ApiPurchaseRequisition>> {

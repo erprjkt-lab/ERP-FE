@@ -11,6 +11,7 @@ import {
   Card,
   Col,
   Divider,
+  Empty,
   Progress,
   Row,
   Space,
@@ -39,8 +40,10 @@ import { useJobCard } from '../hooks/useJobCards'
 import { useBomRequirements, useMaterialIssues } from '../hooks/useJobCardMaterials'
 import { useJobCardMovements } from '../hooks/useJobCardMovements'
 import { useProcessLogs } from '../hooks/useProcessLogs'
+import { useReworkReviewsForJobCard } from '../hooks/useRejections'
 import { computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
+import { computeReworkBatches } from '../utils/reworkProgress'
 
 interface MaterialRow {
   key: string
@@ -55,6 +58,8 @@ export const JobCardDetail: FC = () => {
   const navigate = useNavigate()
 
   const [activeStepId, setActiveStepId] = useState<string>()
+  // Set while the open modal belongs to a rework batch rather than the first pass.
+  const [activeReworkReviewId, setActiveReworkReviewId] = useState<string>()
   const [drawer, setDrawer] = useState<'accept' | 'log' | 'move' | 'outsource'>()
 
   const { data: jobCard, isLoading } = useJobCard(id)
@@ -63,11 +68,21 @@ export const JobCardDetail: FC = () => {
   const { data: requirements = [] } = useBomRequirements(id)
   const { data: issues = [], isLoading: issuesLoading } = useMaterialIssues(id)
   const { data: bomLines = [] } = useItemBom(jobCard?.itemId)
+  const { data: reworkReviews, isLoading: reworkLoading } = useReworkReviewsForJobCard(id)
 
   const orderedQty = jobCard?.orderedQty ?? 0
-  const progress = computeStepProgress(jobCard?.routes ?? [], logs, movements, orderedQty)
+  // The first pass and the redo are two separate runs through the same route, so each
+  // tab counts only its own logs. A rework log re-processes qty the first pass already
+  // counted, and mixing them would double-count every step.
+  const firstPassLogs = logs.filter(log => !log.isRework)
+  const progress = computeStepProgress(jobCard?.routes ?? [], firstPassLogs, movements, orderedQty)
+  const reworkBatches = computeReworkBatches(jobCard?.routes ?? [], reworkReviews, logs)
+  const activeBatch = reworkBatches.find(batch => batch.review.id === activeReworkReviewId)
+  const activeRows = activeBatch?.steps ?? progress
   const currentStep = progress.find(row => row.isCurrent)
-  const activeStep = progress.find(row => row.step.processId === activeStepId) ?? currentStep
+  const activeStep =
+    activeRows.find(row => row.step.processId === activeStepId) ??
+    (activeBatch ? undefined : currentStep)
   const activeIndex = progress.findIndex(row => row.step.processId === activeStep?.step.processId)
   const nextStep = activeIndex >= 0 ? progress[activeIndex + 1] : undefined
 
@@ -85,9 +100,19 @@ export const JobCardDetail: FC = () => {
     finalOk + totalRejected >= orderedQty &&
     progress.every(row => row.pendingQty === 0 && row.unacceptedQty === 0)
 
-  const openDrawer = (step: StepProgress, which: 'accept' | 'log' | 'move' | 'outsource') => {
+  const openDrawer = (
+    step: StepProgress,
+    which: 'accept' | 'log' | 'move' | 'outsource',
+    reworkReviewId?: string,
+  ) => {
     setActiveStepId(step.step.processId)
+    setActiveReworkReviewId(reworkReviewId)
     setDrawer(which)
+  }
+
+  const closeDrawer = () => {
+    setDrawer(undefined)
+    setActiveReworkReviewId(undefined)
   }
 
   const materialRows: MaterialRow[] = bomLines.map(line => {
@@ -103,7 +128,7 @@ export const JobCardDetail: FC = () => {
     }
   })
 
-  const processColumns: TableColumnsType<StepProgress> = [
+  const makeProcessColumns = (reworkReviewId?: string): TableColumnsType<StepProgress> => [
     {
       title: '#',
       key: 'seq',
@@ -174,7 +199,7 @@ export const JobCardDetail: FC = () => {
                 type={action.key === primary ? 'primary' : 'default'}
                 icon={action.icon}
                 disabled={!action.enabled || isClosed}
-                onClick={() => openDrawer(record, action.key)}
+                onClick={() => openDrawer(record, action.key, reworkReviewId)}
                 style={{ fontSize: 12, paddingInline: 6 }}
               >
                 {action.label}
@@ -313,16 +338,69 @@ export const JobCardDetail: FC = () => {
         />
       )}
 
-      <Card title="Process Detail" style={{ marginBottom: 16 }} styles={{ body: { padding: 0 } }}>
-        <Table<StepProgress>
-          columns={processColumns}
-          dataSource={progress}
-          rowKey={record => record.step.id}
-          loading={isLoading}
-          pagination={false}
-          size="middle"
-          scroll={{ x: 'max-content' }}
-          rowClassName={record => (record.isCurrent ? 'erp-current-process-row' : '')}
+      <Card style={{ marginBottom: 16 }} styles={{ body: { paddingTop: 8 } }}>
+        <Tabs
+          items={[
+            {
+              key: 'process',
+              label: 'Process Detail',
+              children: (
+                <Table<StepProgress>
+                  columns={makeProcessColumns()}
+                  dataSource={progress}
+                  rowKey={record => record.step.id}
+                  loading={isLoading}
+                  pagination={false}
+                  size="middle"
+                  scroll={{ x: 'max-content' }}
+                  rowClassName={record => (record.isCurrent ? 'erp-current-process-row' : '')}
+                />
+              ),
+            },
+            {
+              key: 'rework',
+              label: `Rejection / Rework (${reworkBatches.length})`,
+              children:
+                reworkBatches.length === 0 ? (
+                  <Empty
+                    description="No rework batches yet. Rejected qty appears here once Rejection Review approves a Rework decision for it."
+                    style={{ padding: '32px 0' }}
+                  />
+                ) : (
+                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    {reworkBatches.map(batch => (
+                      <div key={batch.review.id}>
+                        <Space wrap style={{ marginBottom: 8 }}>
+                          <Typography.Text strong>
+                            {batch.review.reviewedQty} back to{' '}
+                            {batch.review.reworkProcessName ?? '—'}
+                          </Typography.Text>
+                          {batch.review.reasonName && <Tag>{batch.review.reasonName}</Tag>}
+                          <Tag color={batch.outstandingQty > 0 ? 'orange' : 'default'}>
+                            {batch.outstandingQty} to redo
+                          </Tag>
+                          <Tag color={batch.finishedQty > 0 ? 'green' : 'default'}>
+                            {batch.finishedQty} finished
+                          </Tag>
+                        </Space>
+                        <Table<StepProgress>
+                          columns={makeProcessColumns(batch.review.id)}
+                          dataSource={batch.steps}
+                          rowKey={record => record.step.id}
+                          loading={reworkLoading}
+                          pagination={false}
+                          size="middle"
+                          scroll={{ x: 'max-content' }}
+                          rowClassName={record =>
+                            record.isCurrent ? 'erp-current-process-row' : ''
+                          }
+                        />
+                      </div>
+                    ))}
+                  </Space>
+                ),
+            },
+          ]}
         />
       </Card>
 
@@ -429,7 +507,7 @@ export const JobCardDetail: FC = () => {
         <>
           <AcceptProductionModal
             open={drawer === 'accept'}
-            onClose={() => setDrawer(undefined)}
+            onClose={closeDrawer}
             jobCardId={jobCard.id}
             step={activeStep}
             movements={movements.filter(
@@ -438,23 +516,24 @@ export const JobCardDetail: FC = () => {
           />
           <RequestOutsourceModal
             open={drawer === 'outsource'}
-            onClose={() => setDrawer(undefined)}
+            onClose={closeDrawer}
             jobCardId={jobCard.id}
             step={activeStep}
           />
           <LogProductionModal
             open={drawer === 'log'}
-            onClose={() => setDrawer(undefined)}
+            onClose={closeDrawer}
             jobCardId={jobCard.id}
             step={activeStep}
-            logs={logs}
+            logs={activeBatch ? logs.filter(log => log.isRework) : firstPassLogs}
             nextProcessName={nextStep?.step.processName}
             outputLocationName={jobCard.outputLocationName}
             hasMaterialIssued={hasMaterial}
+            reworkReviewId={activeReworkReviewId}
           />
           <MoveForwardModal
             open={drawer === 'move'}
-            onClose={() => setDrawer(undefined)}
+            onClose={closeDrawer}
             jobCardId={jobCard.id}
             step={activeStep}
             nextStep={nextStep}

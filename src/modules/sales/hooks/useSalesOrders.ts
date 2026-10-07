@@ -6,17 +6,20 @@ import {
   createSalesOrderFromQuotation,
   deleteSalesOrder,
   getSalesOrder,
+  listSalesOrderItems,
   listSalesOrders,
   updateSalesOrder,
 } from '@/api/salesOrders'
 import type { SalesListParams } from '@/api/salesEnquiries'
+import type { ItemListParams } from '@/types/api'
 import type {
   ApiSalesOrder,
   ApiSalesOrderItem,
+  ApiSalesOrderItemRow,
   SalesOrderFromQuotationPayload,
   SalesOrderPayload,
 } from '@/types/api/sales'
-import type { SalesOrder, SalesOrderItem, SalesOrderStatus } from '@/types/sales'
+import type { SalesOrder, SalesOrderItem, SalesOrderItemRow, SalesOrderStatus } from '@/types/sales'
 
 export interface SalesOrderItemInput {
   itemId: string
@@ -206,4 +209,40 @@ export function useSalesOrderAction() {
       queryClient.invalidateQueries({ queryKey: ['sales-orders', variables.id] })
     },
   })
+}
+
+function toSalesOrderItemRow(api: ApiSalesOrderItemRow): SalesOrderItemRow {
+  return {
+    id: String(api.id),
+    salesOrderId: String(api.sales_order_id),
+    orderNumber: api.order_number,
+    orderDate: api.order_date,
+    status: api.order_status as SalesOrderStatus,
+    partyId: String(api.party_id),
+    partyName: api.party_name ?? undefined,
+    fromQuotation: api.sales_quotation_item_id != null,
+    itemId: String(api.item_id),
+    itemCode: api.item_code ?? undefined,
+    itemName: api.item_name ?? undefined,
+    uomName: api.uom_name ?? undefined,
+    qty: Number(api.qty),
+    rate: Number(api.rate),
+    lineTotal: Number(api.line_total),
+    committedDate: api.committed_date ?? undefined,
+  }
+}
+
+// Item-wise (one row per line) listing — server-side paginated.
+export function useSalesOrderItems(params: ItemListParams = {}) {
+  const query = useQuery({
+    queryKey: ['sales-orders', 'items', params],
+    queryFn: () => listSalesOrderItems(params),
+    placeholderData: keepPreviousData,
+  })
+  return {
+    data: (query.data?.data ?? []).map(toSalesOrderItemRow),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+  }
 }

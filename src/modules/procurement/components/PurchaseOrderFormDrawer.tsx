@@ -51,9 +51,9 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
   const supplierOptions = suppliers.map(s => ({ label: `${s.code} — ${s.name}`, value: s.id }))
   const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
 
-  // Only DRAFT purchase orders can be edited — enforced by ERP-BE's
+  // Only pending-approval purchase orders can be edited — enforced by ERP-BE's
   // PurchaseOrderService::updateOrder.
-  const isLocked = isEdit && order && order.status !== 'DRAFT'
+  const isLocked = isEdit && order && order.status !== 'PENDING_APPROVAL'
 
   useEffect(() => {
     if (!open) return

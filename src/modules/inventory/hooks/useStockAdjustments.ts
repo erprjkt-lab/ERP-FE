@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   approveStockAdjustment,
-  cancelStockAdjustment,
   createStockAdjustment,
   deleteStockAdjustment,
   getStockAdjustment,
@@ -162,15 +161,6 @@ export function useApproveStockAdjustment() {
     mutationFn: async (id: string) =>
       toStockAdjustment((await approveStockAdjustment(Number(id))).data),
     onSuccess: (_result, id) => invalidateOne(queryClient, id),
-  })
-}
-
-export function useCancelStockAdjustment() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, remarks }: { id: string; remarks?: string }) =>
-      toStockAdjustment((await cancelStockAdjustment(Number(id), remarks)).data),
-    onSuccess: (_result, variables) => invalidateOne(queryClient, variables.id),
   })
 }
 

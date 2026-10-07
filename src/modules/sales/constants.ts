@@ -49,7 +49,6 @@ export const FEASIBLE_STATUS_OPTIONS = (
 ).map(value => ({ value, label: FEASIBLE_STATUS_LABELS[value] }))
 
 export const QUOTATION_STATUS_LABELS: Record<SalesQuotationStatus, string> = {
-  DRAFT: 'Draft',
   SENT: 'Sent',
   ACCEPTED: 'Accepted',
   REJECTED: 'Rejected',
@@ -58,7 +57,6 @@ export const QUOTATION_STATUS_LABELS: Record<SalesQuotationStatus, string> = {
 }
 
 export const QUOTATION_STATUS_BADGE: Record<SalesQuotationStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
   SENT: 'pending',
   ACCEPTED: 'approved',
   REJECTED: 'rejected',

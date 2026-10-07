@@ -105,9 +105,9 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
 
   // Fully blocked — LOCKED_STATUSES on ERP-BE rejects update entirely.
   const isLocked = isEdit && !!enquiry && LOCKED_STATUSES.includes(enquiry.status)
-  // Once sent, items/supplier_ids can no longer be included in the update payload at all,
+  // Items/supplier_ids can only be changed while the enquiry is still SENT; past that
   // only header fields (date/due-date/priority/remarks) stay editable.
-  const itemsEditable = !isEdit || enquiry?.status === 'DRAFT'
+  const itemsEditable = !isEdit || enquiry?.status === 'SENT'
 
   const buildSuppliers = (supplierIds: string[]): PurchaseEnquirySupplierInput[] =>
     supplierIds.map(id => {

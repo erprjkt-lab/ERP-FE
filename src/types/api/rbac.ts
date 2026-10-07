@@ -12,6 +12,39 @@ export interface ApiMenu {
   updated_by?: number | null
 }
 
+// One node of GET /menus/sidebar: the logged-in user's permission-filtered menu tree.
+// Folder nodes have no module_key; module nodes only appear when can.read is true
+// (or when a descendant is visible).
+export interface ApiSidebarNode {
+  id: number
+  name: string
+  icon: string | null
+  route: string | null
+  module_key: string | null
+  sequence: number
+  can: { read: boolean; write: boolean; modify: boolean; delete: boolean; approve: boolean }
+  children: ApiSidebarNode[]
+}
+
+// One node of GET /employees/{employee}/menus: the whole menu tree (nothing hidden),
+// each module node annotated with what that employee currently holds.
+export interface ApiEmployeeMenuNode {
+  id: number
+  name: string
+  icon: string | null
+  route: string | null
+  module_key: string | null
+  available_actions: string[]
+  granted_actions: string[]
+  sequence: number
+  is_active: boolean
+  children: ApiEmployeeMenuNode[]
+}
+
+export interface GrantMenuPermissionsBulkPayload {
+  menus: { menu_id: number; actions: string[] }[]
+}
+
 export interface CreateMenuPayload {
   parent_id?: number | null
   name: string

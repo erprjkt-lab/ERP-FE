@@ -6,7 +6,6 @@ import {
   EyeOutlined,
   FileSearchOutlined,
   PlusOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Input, Row, Space, Tabs, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
@@ -29,7 +28,6 @@ import {
   useFetchPurchaseRequisition,
   usePurchaseRequisitions,
   useRejectRequisition,
-  useSubmitRequisitionForApproval,
 } from '../hooks/usePurchaseRequisitions'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 import { getErrorMessage } from '@/api/client'
@@ -40,7 +38,6 @@ interface RowActions {
   onView: (record: PurchaseRequisition) => void
   onEdit: (record: PurchaseRequisition) => void
   onDelete: (record: PurchaseRequisition) => void
-  onSubmit: (record: PurchaseRequisition) => void
   onApprove: (record: PurchaseRequisition) => void
   onReject: (record: PurchaseRequisition) => void
   onCreateEnquiry: (record: PurchaseRequisition) => void
@@ -122,14 +119,11 @@ const getColumns = (a: RowActions): TableColumnsType<PurchaseRequisition> => [
       return (
         <Space size="small" onClick={e => e.stopPropagation()}>
           {action('View', <EyeOutlined />, () => a.onView(record))}
-          {status === 'DRAFT' && [
-            action('Edit', <EditOutlined />, () => a.onEdit(record)),
-            action('Submit for Approval', <SendOutlined />, () => a.onSubmit(record)),
-            action('Delete', <DeleteOutlined />, () => a.onDelete(record), true),
-          ]}
           {status === 'PENDING_APPROVAL' && [
+            action('Edit', <EditOutlined />, () => a.onEdit(record)),
             action('Approve', <CheckOutlined />, () => a.onApprove(record)),
             action('Reject', <CloseOutlined />, () => a.onReject(record), true),
+            action('Delete', <DeleteOutlined />, () => a.onDelete(record), true),
           ]}
           {status === 'APPROVED' &&
             action('Create Enquiry', <FileSearchOutlined />, () => a.onCreateEnquiry(record))}
@@ -146,7 +140,6 @@ export const PurchaseRequisitionList: FC = () => {
   const [createEnquiryFromPrId, setCreateEnquiryFromPrId] = useState<string>()
   const { data: requisitions, isLoading } = usePurchaseRequisitions()
   const { mutateAsync: deleteRequisition } = useDeletePurchaseRequisition()
-  const { mutateAsync: submitForApproval } = useSubmitRequisitionForApproval()
   const { mutateAsync: approve } = useApproveRequisition()
   const { mutateAsync: reject } = useRejectRequisition()
   const fetchRequisition = useFetchPurchaseRequisition()
@@ -172,13 +165,6 @@ export const PurchaseRequisitionList: FC = () => {
         okText: 'Delete',
         okButtonProps: { danger: true },
         onOk: () => run(() => deleteRequisition(record.id), 'Purchase requisition deleted'),
-      }),
-    onSubmit: record =>
-      modal.confirm({
-        title: `Submit ${record.requisitionNumber} for approval?`,
-        content: 'It can no longer be edited once submitted.',
-        okText: 'Submit',
-        onOk: () => run(() => submitForApproval(record.id), 'Requisition submitted for approval'),
       }),
     onApprove: record =>
       modal.confirm({

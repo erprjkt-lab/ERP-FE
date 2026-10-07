@@ -4,7 +4,6 @@ import {
   CloseOutlined,
   DeleteOutlined,
   EditOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
@@ -22,7 +21,6 @@ import {
   useCloseStockRequisition,
   useRejectStockRequisition,
   useStockRequisition,
-  useSubmitStockRequisition,
 } from '../hooks/useStockRequisitions'
 import { getErrorMessage } from '@/api/client'
 
@@ -32,7 +30,6 @@ export const StockRequisitionDetail: FC = () => {
   const { message, modal } = App.useApp()
   const { data: requisition, isLoading } = useStockRequisition(id)
   const { data: issues } = useStockIssuesForRequisition(id)
-  const { mutateAsync: submitForApproval, isPending: submitting } = useSubmitStockRequisition()
   const { mutateAsync: approve, isPending: approving } = useApproveStockRequisition()
   const { mutateAsync: reject, isPending: rejecting } = useRejectStockRequisition()
   const { mutateAsync: close, isPending: closing } = useCloseStockRequisition()
@@ -47,15 +44,6 @@ export const StockRequisitionDetail: FC = () => {
         <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Requisition not found.'}</p>
       </div>
     )
-  }
-
-  const handleSubmit = async () => {
-    try {
-      await submitForApproval(requisition.id)
-      message.success('Requisition submitted for approval')
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
   }
 
   const handleApprove = async () => {
@@ -187,32 +175,6 @@ export const StockRequisitionDetail: FC = () => {
             >
               Back
             </Button>
-            {requisition.status === 'DRAFT' && (
-              <>
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  loading={cancelling}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`/inventory/requisitions/${requisition.id}/edit`)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  loading={submitting}
-                  onClick={handleSubmit}
-                >
-                  Submit for Approval
-                </Button>
-              </>
-            )}
             {requisition.status === 'PENDING_APPROVAL' && (
               <>
                 <Button

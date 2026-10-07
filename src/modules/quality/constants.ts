@@ -8,13 +8,11 @@ export const REPORT_TYPE_LABELS: Record<InspectionReportType, string> = {
 }
 
 export const REPORT_STATUS_LABELS: Record<InspectionReportStatus, string> = {
-  DRAFT: 'Draft',
   SUBMITTED: 'Submitted',
   APPROVED: 'Approved',
 }
 
 export const REPORT_STATUS_BADGE: Record<InspectionReportStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
   SUBMITTED: 'pending',
   APPROVED: 'approved',
 }

@@ -26,7 +26,6 @@ export const PRIORITY_OPTIONS: { label: string; value: Priority }[] = [
 export type RequisitionDisplayStatus = PurchaseRequisitionStatus | 'ENQUIRY_CREATED'
 
 export const REQUISITION_STATUS_LABELS: Record<RequisitionDisplayStatus, string> = {
-  DRAFT: 'Draft',
   PENDING_APPROVAL: 'Pending Approval',
   APPROVED: 'Approved',
   ENQUIRY_CREATED: 'Enquiry Created',
@@ -36,7 +35,6 @@ export const REQUISITION_STATUS_LABELS: Record<RequisitionDisplayStatus, string>
 }
 
 export const REQUISITION_STATUS_BADGE: Record<RequisitionDisplayStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
   PENDING_APPROVAL: 'pending',
   APPROVED: 'approved',
   ENQUIRY_CREATED: 'completed',
@@ -46,7 +44,6 @@ export const REQUISITION_STATUS_BADGE: Record<RequisitionDisplayStatus, StatusBa
 }
 
 export const ENQUIRY_STATUS_LABELS: Record<PurchaseEnquiryStatus, string> = {
-  DRAFT: 'Draft',
   SENT: 'Sent',
   PARTIALLY_RESPONDED: 'Partially Responded',
   RESPONDED: 'Responded',
@@ -58,7 +55,6 @@ export const ENQUIRY_STATUS_LABELS: Record<PurchaseEnquiryStatus, string> = {
 }
 
 export const ENQUIRY_STATUS_BADGE: Record<PurchaseEnquiryStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
   SENT: 'pending',
   PARTIALLY_RESPONDED: 'pending',
   RESPONDED: 'active',
@@ -80,7 +76,6 @@ export const ENQUIRY_STATUS_GROUPS: {
     value: 'pending',
     label: 'Pending',
     statuses: [
-      'DRAFT',
       'SENT',
       'PARTIALLY_RESPONDED',
       'RESPONDED',
@@ -113,7 +108,7 @@ export const SUPPLIER_STATUS_BADGE: Record<PurchaseEnquirySupplierStatus, Status
 }
 
 export const PO_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
-  DRAFT: 'Draft',
+  PENDING_APPROVAL: 'Pending Approval',
   APPROVED: 'Approved',
   SENT: 'Sent',
   PARTIALLY_RECEIVED: 'Partially Received',
@@ -123,7 +118,7 @@ export const PO_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
 }
 
 export const PO_STATUS_BADGE: Record<PurchaseOrderStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
+  PENDING_APPROVAL: 'pending',
   APPROVED: 'approved',
   SENT: 'pending',
   PARTIALLY_RECEIVED: 'pending',

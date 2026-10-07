@@ -1,6 +1,5 @@
 import {
   CheckOutlined,
-  CloseOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
@@ -20,7 +19,6 @@ import { StockAdjustmentFormDrawer } from '../components/StockAdjustmentFormDraw
 import { STOCK_ADJUSTMENT_STATUS_BADGE, STOCK_ADJUSTMENT_STATUS_LABELS } from '../constants'
 import {
   useApproveStockAdjustment,
-  useCancelStockAdjustment,
   useDeleteStockAdjustment,
   useStockAdjustments,
 } from '../hooks/useStockAdjustments'
@@ -41,7 +39,6 @@ interface RowActions {
   onView: (record: StockAdjustment) => void
   onEdit: (record: StockAdjustment) => void
   onApprove: (record: StockAdjustment) => void
-  onCancel: (record: StockAdjustment) => void
   onDelete: (record: StockAdjustment) => void
 }
 
@@ -85,14 +82,13 @@ const getColumns = (a: RowActions): TableColumnsType<StockAdjustment> => [
     key: 'actions',
     width: 150,
     render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
+      const isPending = record.status === 'PENDING_APPROVAL'
       return (
         <Space size="small" onClick={e => e.stopPropagation()}>
           {action('View', <EyeOutlined />, () => a.onView(record))}
-          {isDraft && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Approve', <CheckOutlined />, () => a.onApprove(record))}
-          {isDraft && action('Cancel', <CloseOutlined />, () => a.onCancel(record), true)}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
+          {isPending && action('Edit', <EditOutlined />, () => a.onEdit(record))}
+          {isPending && action('Approve', <CheckOutlined />, () => a.onApprove(record))}
+          {isPending && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
         </Space>
       )
     },
@@ -105,7 +101,6 @@ export const StockAdjustmentList: FC = () => {
   const { data: adjustments, isLoading } = useStockAdjustments()
   const { mutateAsync: deleteAdjustment } = useDeleteStockAdjustment()
   const { mutateAsync: approve } = useApproveStockAdjustment()
-  const { mutateAsync: cancel } = useCancelStockAdjustment()
   const filters = useInventoryFilters('adjustment')
   const setFilter = useInventoryStore(s => s.setFilter)
   const resetFilters = useInventoryStore(s => s.resetFilter)
@@ -122,32 +117,6 @@ export const StockAdjustmentList: FC = () => {
         try {
           await approve(record.id)
           message.success('Stock adjustment approved and posted to the ledger')
-        } catch (error) {
-          message.error(getErrorMessage(error))
-        }
-      },
-    })
-  }
-
-  const handleCancel = (record: StockAdjustment) => {
-    const reason = { value: '' }
-    modal.confirm({
-      title: 'Cancel this adjustment?',
-      content: (
-        <Input.TextArea
-          placeholder="Reason (optional)"
-          rows={3}
-          onChange={e => {
-            reason.value = e.target.value
-          }}
-        />
-      ),
-      okText: 'Cancel Adjustment',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await cancel({ id: record.id, remarks: reason.value || undefined })
-          message.success('Stock adjustment cancelled')
         } catch (error) {
           message.error(getErrorMessage(error))
         }
@@ -176,7 +145,6 @@ export const StockAdjustmentList: FC = () => {
     onView: record => navigate(`/inventory/adjustments/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onApprove: handleApprove,
-    onCancel: handleCancel,
     onDelete: handleDelete,
   })
 

@@ -1,8 +1,9 @@
 import { apiRequest } from '@/api/client'
-import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
+import type { ApiEnvelope, ItemListParams, PaginatedEnvelope } from '@/types/api'
 import type {
   ApiGrn,
   ApiGrnItem,
+  ApiGrnItemRow,
   GrnPayload,
   GrnUpdatePayload,
   QcResultPayload,
@@ -40,4 +41,17 @@ export function saveGrnItemQc(
   payload: QcResultPayload,
 ): Promise<ApiEnvelope<ApiGrnItem>> {
   return apiRequest(`/api/v1/grn-items/${grnItemId}/qc`, { method: 'PATCH', body: payload })
+}
+
+// Flat one-row-per-GRN-line listing (joined with GRN, supplier, PO, item and location).
+export function listGrnItems(
+  params: ItemListParams = {},
+): Promise<PaginatedEnvelope<ApiGrnItemRow>> {
+  return apiRequest('/api/v1/grn-items', {
+    query: {
+      page: params.page ?? 1,
+      per_page: params.perPage ?? 20,
+      ...(params.status ? { line_status: params.status } : {}),
+    },
+  })
 }

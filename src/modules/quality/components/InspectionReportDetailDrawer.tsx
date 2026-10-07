@@ -1,4 +1,4 @@
-import { CheckOutlined, DownloadOutlined, PlusOutlined, SendOutlined } from '@ant-design/icons'
+import { CheckOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, Card, Descriptions, Drawer, Form, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -18,7 +18,6 @@ import {
   useAddInspectionReading,
   useApproveInspectionReport,
   useInspectionReport,
-  useSubmitInspectionReport,
 } from '../hooks/useInspectionReports'
 import { ReportReadingsFields, toReadingsPayload } from './ReportReadingsFields'
 
@@ -47,7 +46,6 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
   const { mutateAsync: addReading, isPending: addingReading } = useAddInspectionReading(
     reportId ?? '',
   )
-  const { mutateAsync: submit, isPending: submitting } = useSubmitInspectionReport()
   const { mutateAsync: approve, isPending: approving } = useApproveInspectionReport()
 
   const parameters = report?.processId
@@ -69,16 +67,6 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
       )
       form.resetFields()
       message.success(readings.length > 1 ? 'Readings recorded' : 'Reading recorded')
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
-  }
-
-  const handleSubmit = async () => {
-    if (!reportId) return
-    try {
-      await submit(reportId)
-      message.success('Report submitted for approval')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -178,16 +166,6 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
           >
             Download PDF
           </Button>
-          {report?.status === 'DRAFT' && (
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              loading={submitting}
-              onClick={handleSubmit}
-            >
-              Submit for Approval
-            </Button>
-          )}
           {report?.status === 'SUBMITTED' && (
             <Button
               type="primary"
@@ -239,7 +217,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
             />
           </Card>
 
-          {report.status === 'DRAFT' && unreadParameters.length > 0 && (
+          {report.status === 'SUBMITTED' && unreadParameters.length > 0 && (
             <Card
               size="small"
               title={

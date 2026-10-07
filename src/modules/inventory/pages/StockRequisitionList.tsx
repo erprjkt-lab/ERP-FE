@@ -7,7 +7,6 @@ import {
   EyeOutlined,
   LockOutlined,
   PlusOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
@@ -28,7 +27,6 @@ import {
   useDeleteStockRequisition,
   useRejectStockRequisition,
   useStockRequisitions,
-  useSubmitStockRequisition,
 } from '../hooks/useStockRequisitions'
 import { useInventoryFilters, useInventoryStore } from '../store/inventoryStore'
 
@@ -46,7 +44,6 @@ const action = (title: string, icon: ReactNode, onClick: () => void, danger = fa
 interface RowActions {
   onView: (record: StockRequisition) => void
   onEdit: (record: StockRequisition) => void
-  onSubmit: (record: StockRequisition) => void
   onApprove: (record: StockRequisition) => void
   onReject: (record: StockRequisition) => void
   onClose: (record: StockRequisition) => void
@@ -100,7 +97,6 @@ const getColumns = (a: RowActions): TableColumnsType<StockRequisition> => [
     key: 'actions',
     width: 200,
     render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
       const isPending = record.status === 'PENDING_APPROVAL'
       const isApproved = record.status === 'APPROVED'
       const isFinished =
@@ -109,15 +105,14 @@ const getColumns = (a: RowActions): TableColumnsType<StockRequisition> => [
       return (
         <Space size="small" onClick={e => e.stopPropagation()}>
           {action('View', <EyeOutlined />, () => a.onView(record))}
-          {(isDraft || isPending) && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Submit for Approval', <SendOutlined />, () => a.onSubmit(record))}
+          {isPending && action('Edit', <EditOutlined />, () => a.onEdit(record))}
           {isPending && action('Approve', <CheckOutlined />, () => a.onApprove(record))}
           {/* Reject = thumbs-down (workflow decision); Cancel = stop sign (abort the document) */}
           {isPending && action('Reject', <DislikeOutlined />, () => a.onReject(record), true)}
           {/* Lock = close/seal the requisition; CloseCircle = abort/cancel it */}
           {isApproved && action('Close Requisition', <LockOutlined />, () => a.onClose(record))}
           {!isFinished && action('Cancel', <CloseCircleOutlined />, () => a.onCancel(record), true)}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
+          {isPending && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
         </Space>
       )
     },
@@ -129,7 +124,6 @@ export const StockRequisitionList: FC = () => {
   const { modal, message } = App.useApp()
   const { data: requisitions, isLoading } = useStockRequisitions()
   const { mutateAsync: deleteRequisition } = useDeleteStockRequisition()
-  const { mutateAsync: submitForApproval } = useSubmitStockRequisition()
   const { mutateAsync: approve } = useApproveStockRequisition()
   const { mutateAsync: reject } = useRejectStockRequisition()
   const { mutateAsync: close } = useCloseStockRequisition()
@@ -139,22 +133,6 @@ export const StockRequisitionList: FC = () => {
   const resetFilters = useInventoryStore(s => s.resetFilter)
 
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-
-  const handleSubmit = (record: StockRequisition) => {
-    modal.confirm({
-      title: 'Submit for approval?',
-      content: 'The requisition will be sent for approval and can no longer be edited.',
-      okText: 'Submit',
-      onOk: async () => {
-        try {
-          await submitForApproval(record.id)
-          message.success('Requisition submitted for approval')
-        } catch (error) {
-          message.error(getErrorMessage(error))
-        }
-      },
-    })
-  }
 
   const handleApprove = (record: StockRequisition) => {
     modal.confirm({
@@ -259,7 +237,6 @@ export const StockRequisitionList: FC = () => {
   const columns = getColumns({
     onView: record => navigate(`/inventory/requisitions/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
-    onSubmit: handleSubmit,
     onApprove: handleApprove,
     onReject: handleReject,
     onClose: handleClose,
