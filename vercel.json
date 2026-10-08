@@ -17,6 +17,6 @@
     { "source": "/industries", "destination": "/industries/index.html" },
     { "source": "/products", "destination": "/products/index.html" },
     { "source": "/contact", "destination": "/contact/index.html" },
-    { "source": "/:path*", "destination": "/404.html", "missing": true }
+    { "source": "/:path*", "destination": "/404.html" }
   ]
 }
