@@ -214,7 +214,14 @@ const buildDate = new Date().toISOString().slice(0, 10)
 
 function priorityFor(routePath) {
   if (routePath === '/') return '1.0'
-  return routePath.split('/').filter(Boolean).length > 1 ? '0.6' : '0.8'
+  if (routePath === '/services/erp-solutions' || routePath === '/services/web-development') return '0.9'
+  if (routePath === '/contact') return '0.9'
+  return routePath.split('/').filter(Boolean).length > 1 ? '0.7' : '0.8'
+}
+
+function changefreqFor(routePath) {
+  if (routePath === '/' || routePath === '/contact' || routePath.startsWith('/services/')) return 'weekly'
+  return 'monthly'
 }
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -225,7 +232,7 @@ ${routes
       '  <url>',
       `    <loc>${SITE_URL}${route.path}</loc>`,
       `    <lastmod>${buildDate}</lastmod>`,
-      '    <changefreq>monthly</changefreq>',
+      `    <changefreq>${changefreqFor(route.path)}</changefreq>`,
       `    <priority>${priorityFor(route.path)}</priority>`,
       '  </url>',
     ].join('\n'),

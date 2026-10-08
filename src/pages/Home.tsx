@@ -123,7 +123,7 @@ function HeroVisual() {
         <div className="h-full w-full animate-drift-a rounded-full bg-brand-200/40 blur-3xl" />
       </motion.div>
       <motion.div style={{ transform: blob2 }} className="absolute -right-16 top-64 h-80 w-80" aria-hidden>
-        <div className="h-full w-full animate-drift-b rounded-full bg-violet-200/40 blur-3xl" />
+        <div className="h-full w-full animate-drift-b rounded-full bg-teal-200/40 blur-3xl" />
       </motion.div>
 
       {/* Purely ambient — always drifting, independent of the cursor. The
@@ -136,7 +136,7 @@ function HeroVisual() {
       </Parallax>
       <Parallax speed={-0.25} className="absolute -bottom-16 right-1/4">
         <div
-          className="h-64 w-64 animate-drift-a animate-blob-morph bg-violet-300/25 blur-3xl [animation-delay:-6s]"
+          className="h-64 w-64 animate-drift-a animate-blob-morph bg-teal-300/25 blur-3xl [animation-delay:-6s]"
           aria-hidden
         />
       </Parallax>
@@ -227,7 +227,7 @@ function HeroVisual() {
             transition={{ delay: 1.2, duration: 0.5 }}
             className="absolute -bottom-6 -left-6 hidden animate-float-delay items-center gap-2 rounded-2xl border border-ink-100 bg-white px-4 py-3 shadow-card sm:flex"
           >
-            <TrendingUp className="h-4 w-4 text-violet-600" />
+            <TrendingUp className="h-4 w-4 text-teal-600" />
             <span className="text-xs font-semibold text-ink-800">Live dashboards</span>
           </motion.div>
         </div>
@@ -350,7 +350,7 @@ export function Home() {
               return (
                 <Reveal key={module.key} delay={i * 0.06} zoom>
                   <SpotlightCard
-                    glow="rgba(78, 157, 255, 0.22)"
+                    glow="rgba(0, 160, 227, 0.22)"
                     className="card-hover h-full rounded-2xl border border-white/10 bg-white/5"
                   >
                     <div className="p-6">

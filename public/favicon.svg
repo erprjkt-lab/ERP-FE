@@ -1,7 +1,14 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="16" fill="#1677ff"/>
-  <path d="M18 40C18 31.1634 25.1634 24 34 24H46" stroke="white" stroke-width="4.6" stroke-linecap="round"/>
-  <path d="M46 24L39.5 17.5" stroke="white" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M46 24L39.5 30.5" stroke="white" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="18" cy="40" r="4.2" fill="white"/>
+  <rect width="64" height="64" rx="14" fill="#ffffff"/>
+  <g transform="translate(6.26, 10.17) scale(0.11)">
+    <defs>
+      <linearGradient id="fav_grad" gradientUnits="userSpaceOnUse" x1="329.245" y1="356.134" x2="108.975" y2="36.7396">
+        <stop offset="0" stop-color="#0289C3"/>
+        <stop offset="0.301961" stop-color="#02809E"/>
+        <stop offset="1" stop-color="#017678"/>
+      </linearGradient>
+    </defs>
+    <path fill="#00A0E3" d="M275 231l74 2c0,0 38,1 65,-83l-172 0c0,0 -43,2 -55,38l-39 108 22 92c0,0 18,25 32,-6 12,-33 37,-152 73,-151z"/>
+    <path fill="url(#fav_grad)" d="M124 295c0,0 -79,-65 -23,-147 58,-85 210,-60 306,-61 0,0 47,-10 61,-86l-280 2c0,0 -147,14 -183,165 -36,151 109,220 109,220l15 6 -6 -98z"/>
+  </g>
 </svg>

@@ -4,7 +4,7 @@ export const COMPANY = {
   address: 'Suvarnabhoomi, near Speed Well Party Plot, Ambika Township, Rajkot 360004',
   phone: '+91 97730 84699',
   // .in, matching the real domain — .com belongs to an unrelated company.
-  email: 'hello@coreflowtech.in',
+  email: 'info@coreflowtech.in',
 }
 
 // Same number as COMPANY.phone — wa.me needs it digits-only with country code.

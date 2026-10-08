@@ -15,7 +15,7 @@ const OFFSCREEN = -9999
 export const SpotlightCard: FC<SpotlightCardProps> = ({
   children,
   className = '',
-  glow = 'rgba(22, 119, 255, 0.18)',
+  glow = 'rgba(0, 160, 227, 0.18)',
 }) => {
   const mx = useMotionValue(OFFSCREEN)
   const my = useMotionValue(OFFSCREEN)

@@ -1,5 +1,14 @@
 {
   "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" },
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/about", "destination": "/about/index.html" },
     { "source": "/services", "destination": "/services/index.html" },
@@ -7,6 +16,7 @@
     { "source": "/services/web-development", "destination": "/services/web-development/index.html" },
     { "source": "/industries", "destination": "/industries/index.html" },
     { "source": "/products", "destination": "/products/index.html" },
-    { "source": "/contact", "destination": "/contact/index.html" }
+    { "source": "/contact", "destination": "/contact/index.html" },
+    { "source": "/:path*", "destination": "/404.html", "missing": true }
   ]
 }

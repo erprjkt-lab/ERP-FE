@@ -58,11 +58,11 @@ body {
 .bg-aurora {
   background: conic-gradient(
     from 0deg,
-    rgba(22, 119, 255, 0.16),
-    rgba(102, 32, 245, 0.14),
-    rgba(22, 119, 255, 0.05),
-    rgba(102, 32, 245, 0.14),
-    rgba(22, 119, 255, 0.16)
+    rgba(0, 160, 227, 0.16),
+    rgba(1, 118, 120, 0.15),
+    rgba(0, 160, 227, 0.06),
+    rgba(1, 118, 120, 0.15),
+    rgba(0, 160, 227, 0.16)
   );
   @apply animate-spin-slow;
 }
@@ -122,7 +122,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(22, 119, 255, 0.6), rgba(102, 32, 245, 0.6));
+  background: linear-gradient(135deg, rgba(0, 160, 227, 0.6), rgba(1, 118, 120, 0.6));
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -151,7 +151,7 @@ body {
   width: 100%;
   transform: scaleX(0);
   transform-origin: right;
-  background: linear-gradient(90deg, #1677ff, #6620f5);
+  background: linear-gradient(90deg, #00a0e3, #017678);
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 

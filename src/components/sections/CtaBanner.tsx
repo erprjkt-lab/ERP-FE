@@ -38,7 +38,7 @@ export function CtaBanner({
         aria-hidden
         animate={{ x: [0, -32, 0], y: [0, 28, 0] }}
         transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-violet-300/15 blur-3xl"
+        className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-teal-300/15 blur-3xl"
       />
 
       <Container className="relative text-center">
