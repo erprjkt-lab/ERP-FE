@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
+import type { TableActionItem } from '@/components/ui'
 import type { StockTransfer, StockTransferItem } from '@/types/inventory'
 import { StockTransferFormDrawer } from '../components/StockTransferFormDrawer'
 import { useDeleteStockTransfer, useStockTransfers } from '../hooks/useStockTransfers'
@@ -20,6 +21,20 @@ const ITEM_COLUMNS: TableColumnsType<StockTransferItem> = [
   { title: 'Heat No', dataIndex: 'heatNo', key: 'heatNo', render: v => v || '—' },
   { title: 'Qty', dataIndex: 'qty', key: 'qty', align: 'right', width: 110 },
   { title: 'Remarks', dataIndex: 'remarks', key: 'remarks', render: v => v || '—' },
+]
+
+const getStockTransferActions = (
+  record: StockTransfer,
+  onDelete: (record: StockTransfer) => void,
+): TableActionItem[] => [
+  {
+    key: 'delete',
+    label: 'Delete & reverse transfer',
+    icon: <DeleteOutlined />,
+    variant: 'danger',
+    danger: true,
+    onClick: () => onDelete(record),
+  },
 ]
 
 export const StockTransferList: FC = () => {
@@ -85,25 +100,6 @@ export const StockTransferList: FC = () => {
       align: 'right',
       render: (_, record) => record.items.reduce((sum, item) => sum + item.qty, 0),
     },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 80,
-      render: (_, record) => (
-        <Tooltip title="Delete & reverse transfer">
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={e => {
-              e.stopPropagation()
-              handleDelete(record)
-            }}
-          />
-        </Tooltip>
-      ),
-    },
   ]
 
   return (
@@ -132,6 +128,7 @@ export const StockTransferList: FC = () => {
           loading={isLoading}
           totalLabel="transfers"
           fillHeight
+          rowActions={record => getStockTransferActions(record, handleDelete)}
           expandable={{
             expandedRowRender: record => (
               <Table<StockTransferItem>

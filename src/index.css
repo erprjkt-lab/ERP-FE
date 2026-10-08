@@ -130,3 +130,16 @@ body {
   padding-top: 7px;
   padding-bottom: 7px;
 }
+
+/* Table row relative positioning and clean actions display */
+.ant-table-tbody > tr.ant-table-row {
+  position: relative;
+}
+
+/* Ensure the fixed-right actions cell seamlessly matches row hover */
+.ant-table-cell.erp-table-actions-cell {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  padding-right: 12px !important;
+  text-align: right;
+}

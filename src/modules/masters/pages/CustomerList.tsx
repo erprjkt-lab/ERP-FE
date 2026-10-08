@@ -1,5 +1,5 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { Customer } from '@/types/masters'
 import { CustomerFormDrawer } from '../components/CustomerFormDrawer'
 import { CUSTOMER_TYPE_OPTIONS, MASTER_STATUS_OPTIONS } from '../constants'
@@ -14,11 +15,7 @@ import { useDeleteCustomer, useCustomers } from '../hooks/useCustomers'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-const getColumns = (
-  onView: (record: Customer) => void,
-  onEdit: (record: Customer) => void,
-  onDelete: (record: Customer) => void,
-): TableColumnsType<Customer> => [
+const getColumns = (): TableColumnsType<Customer> => [
   {
     title: 'Code',
     dataIndex: 'code',
@@ -43,29 +40,36 @@ const getColumns = (
     key: 'status',
     render: status => <StatusBadge status={status} />,
   },
+]
+
+interface CustomerRowActions {
+  onView: (record: Customer) => void
+  onEdit: (record: Customer) => void
+  onDelete: (record: Customer) => void
+}
+
+const getCustomerActions = (record: Customer, a: CustomerRowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 120,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
-        </Tooltip>
-        <Tooltip title="Edit">
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-        </Tooltip>
-        <Tooltip title="Delete">
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => onDelete(record)}
-          />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'view',
+    label: 'View',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'edit',
+    label: 'Edit',
+    icon: <EditOutlined />,
+    variant: 'primary',
+    onClick: () => a.onEdit(record),
+  },
+  {
+    key: 'delete',
+    label: 'Delete',
+    icon: <DeleteOutlined />,
+    variant: 'danger',
+    danger: true,
+    onClick: () => a.onDelete(record),
   },
 ]
 
@@ -96,11 +100,13 @@ export const CustomerList: FC = () => {
     })
   }
 
-  const columns = getColumns(
-    record => navigate(`/masters/customers/${record.id}`),
-    record => setDrawerState({ mode: 'edit', id: record.id }),
-    handleDelete,
-  )
+  const columns = getColumns()
+
+  const rowActions: CustomerRowActions = {
+    onView: record => navigate(`/masters/customers/${record.id}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+    onDelete: handleDelete,
+  }
 
   const filtered = customers.filter(c => {
     if (filters.search && !c.name.toLowerCase().includes(filters.search.toLowerCase())) {
@@ -175,6 +181,7 @@ export const CustomerList: FC = () => {
           loading={isLoading}
           totalLabel="customers"
           fillHeight
+          rowActions={record => getCustomerActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/masters/customers/${record.id}`),
             style: { cursor: 'pointer' },

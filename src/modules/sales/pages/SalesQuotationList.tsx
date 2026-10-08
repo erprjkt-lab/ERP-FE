@@ -8,15 +8,16 @@ import {
   FileDoneOutlined,
   PlusOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tag, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { SalesQuotation } from '@/types/sales'
 import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
 import { QUOTATION_STATUS_BADGE, QUOTATION_STATUS_LABELS } from '../constants'
@@ -47,23 +48,17 @@ interface RowActions {
   onCreateOrder: (record: SalesQuotation) => void
 }
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
-const getColumns = (a: RowActions): TableColumnsType<SalesQuotation> => [
-  { title: 'Quotation #', dataIndex: 'quotationNumber', key: 'quotationNumber', width: 160 },
-  {
-    title: 'Rev',
-    dataIndex: 'revisionNo',
-    key: 'revisionNo',
-    width: 70,
-    render: (value: number) => (value > 0 ? <Tag color="blue">R{value}</Tag> : '—'),
-  },
+const getColumns = (): TableColumnsType<SalesQuotation> => [
+  { title: 'Quotation #', dataIndex: 'quotationNumber', key: 'quotationNumber', width: 140 },
   { title: 'Date', dataIndex: 'quotationDate', key: 'quotationDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
+  {
+    title: 'Items',
+    key: 'items',
+    width: 250,
+    render: (_, r) =>
+      r.items.length > 0 ? r.items.map(i => i.itemName || i.itemId).join(', ') : '—',
+  },
   {
     title: 'Source',
     key: 'source',
@@ -95,31 +90,84 @@ const getColumns = (a: RowActions): TableColumnsType<SalesQuotation> => [
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 260,
-    render: (_, record) => {
-      const isSent = record.status === 'SENT'
-      const isAccepted = record.status === 'ACCEPTED'
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {!LOCKED_STATUSES.includes(record.status) &&
-            action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isSent && action('Accept', <CheckOutlined />, () => a.onAccept(record))}
-          {isSent && action('Reject', <CloseOutlined />, () => a.onReject(record), true)}
-          {!isAccepted &&
-            record.status !== 'REVISED' &&
-            action('Revise', <DiffOutlined />, () => a.onRevise(record))}
-          {isAccepted &&
-            action('Create Sales Order', <FileDoneOutlined />, () => a.onCreateOrder(record))}
-          {isSent && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getQuotationActions = (record: SalesQuotation, a: RowActions): TableActionItem[] => {
+  const isSent = record.status === 'SENT'
+  const isAccepted = record.status === 'ACCEPTED'
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (!LOCKED_STATUSES.includes(record.status)) {
+    actions.push({
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditOutlined />,
+      variant: 'primary',
+      onClick: () => a.onEdit(record),
+    })
+  }
+
+  if (isSent) {
+    actions.push(
+      {
+        key: 'accept',
+        label: 'Accept',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        onClick: () => a.onAccept(record),
+      },
+      {
+        key: 'reject',
+        label: 'Reject',
+        icon: <CloseOutlined />,
+        variant: 'danger',
+        danger: true,
+        onClick: () => a.onReject(record),
+      },
+    )
+  }
+
+  if (!isAccepted && record.status !== 'REVISED') {
+    actions.push({
+      key: 'revise',
+      label: 'Revise',
+      icon: <DiffOutlined />,
+      variant: 'accent',
+      onClick: () => a.onRevise(record),
+    })
+  }
+
+  if (isAccepted) {
+    actions.push({
+      key: 'create-order',
+      label: 'Create Sales Order',
+      icon: <FileDoneOutlined />,
+      variant: 'success',
+      onClick: () => a.onCreateOrder(record),
+    })
+  }
+
+  if (isSent) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      onClick: () => a.onDelete(record),
+    })
+  }
+
+  return actions
+}
 
 export const SalesQuotationList: FC = () => {
   const navigate = useNavigate()
@@ -217,7 +265,9 @@ export const SalesQuotationList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/sales/quotations/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onAccept: record => handleAction(record, 'accept', 'Quotation accepted'),
@@ -225,7 +275,7 @@ export const SalesQuotationList: FC = () => {
     onRevise: record => handleAction(record, 'revise', 'Revision created'),
     onDelete: handleDelete,
     onCreateOrder: handleCreateOrder,
-  })
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -284,6 +334,7 @@ export const SalesQuotationList: FC = () => {
           }}
           totalLabel="quotations"
           fillHeight
+          rowActions={record => getQuotationActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/sales/quotations/${record.id}`),
             style: { cursor: 'pointer' },

@@ -7,14 +7,15 @@ import {
   PlusOutlined,
   ShoppingCartOutlined,
 } from '@ant-design/icons'
-import { App, Badge, Button, Card, Input, Segmented, Select, Space, Tooltip } from 'antd'
+import { App, Badge, Button, Card, Input, Segmented, Select, Space } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui/TableActionBar'
 import type {
   PurchaseEnquiryItemRow,
   PurchaseEnquiryStatus,
@@ -57,16 +58,79 @@ interface RowActions {
   onRecordQuotation: (record: PurchaseEnquiryItemRow) => void
 }
 
-const action = (title: string, icon: ReactNode, onClick: () => void) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
-const getColumns = (
+const getEnquiryActions = (
+  record: PurchaseEnquiryItemRow,
   a: RowActions,
   purchaseOrders: PurchaseOrder[],
-): TableColumnsType<PurchaseEnquiryItemRow> => [
+): TableActionItem[] => {
+  const linkedOrder = purchaseOrders.find(po => po.purchaseEnquiryId === record.purchaseEnquiryId)
+  const canCompare = record.status !== 'SENT'
+  const canRecordQuotation = !LOCKED_STATUSES.includes(record.status)
+
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (!LOCKED_STATUSES.includes(record.status)) {
+    actions.push({
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditOutlined />,
+      variant: 'primary',
+      onClick: () => a.onEdit(record),
+    })
+  }
+
+  if (canRecordQuotation) {
+    actions.push({
+      key: 'supplier-quotation',
+      label: 'Supplier Quotation',
+      icon: <FileTextOutlined />,
+      variant: 'primary',
+      onClick: () => a.onRecordQuotation(record),
+    })
+  }
+
+  if (canCompare) {
+    actions.push({
+      key: 'compare',
+      label: 'Compare Quotations',
+      icon: <DiffOutlined />,
+      variant: 'accent',
+      onClick: () => a.onCompare(record),
+    })
+  }
+
+  if (record.status === 'SUPPLIER_SELECTED') {
+    actions.push({
+      key: 'create-po',
+      label: 'Create Purchase Order',
+      icon: <ShoppingCartOutlined />,
+      variant: 'success',
+      onClick: () => a.onCreatePO(record),
+    })
+  }
+
+  if (linkedOrder) {
+    actions.push({
+      key: 'view-po',
+      label: 'View Purchase Order',
+      icon: <LinkOutlined />,
+      variant: 'accent',
+      onClick: () => a.onViewPO(linkedOrder),
+    })
+  }
+
+  return actions
+}
+
+const getColumns = (): TableColumnsType<PurchaseEnquiryItemRow> => [
   {
     title: 'P.E. No / Date',
     key: 'peNumber',
@@ -100,35 +164,6 @@ const getColumns = (
         label={ENQUIRY_STATUS_LABELS[status as PurchaseEnquiryStatus]}
       />
     ),
-  },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 260,
-    render: (_, record) => {
-      const linkedOrder = purchaseOrders.find(
-        po => po.purchaseEnquiryId === record.purchaseEnquiryId,
-      )
-      const canCompare = record.status !== 'SENT'
-      // Mirrors the Detail page's per-supplier "Record Quotation" action — only
-      // makes sense once sent, and ERP-BE's SupplierQuotationService::update
-      // rejects edits once a supplier's been selected (LOCKED_STATUSES).
-      const canRecordQuotation = !LOCKED_STATUSES.includes(record.status)
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {!LOCKED_STATUSES.includes(record.status) &&
-            action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {canRecordQuotation &&
-            action('Record Quotation', <FileTextOutlined />, () => a.onRecordQuotation(record))}
-          {canCompare && action('Compare Quotations', <DiffOutlined />, () => a.onCompare(record))}
-          {record.status === 'SUPPLIER_SELECTED' &&
-            action('Create Purchase Order', <ShoppingCartOutlined />, () => a.onCreatePO(record))}
-          {linkedOrder &&
-            action('View Purchase Order', <LinkOutlined />, () => a.onViewPO(linkedOrder))}
-        </Space>
-      )
-    },
   },
 ]
 
@@ -164,17 +199,16 @@ export const PurchaseEnquiryList: FC = () => {
     }
   }
 
-  const columns = getColumns(
-    {
-      onView: record => navigate(`/purchase/enquiries/${record.purchaseEnquiryId}`),
-      onEdit: record => setDrawerState({ mode: 'edit', id: record.purchaseEnquiryId }),
-      onCompare: record => setCompareEnquiryId(record.purchaseEnquiryId),
-      onCreatePO: handleCreatePO,
-      onViewPO: order => navigate(`/purchase/orders/${order.id}`),
-      onRecordQuotation: record => setQuotationEnquiryId(record.purchaseEnquiryId),
-    },
-    purchaseOrders,
-  )
+  const rowActions: RowActions = {
+    onView: record => navigate(`/purchase/enquiries/${record.purchaseEnquiryId}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.purchaseEnquiryId }),
+    onCompare: record => setCompareEnquiryId(record.purchaseEnquiryId),
+    onCreatePO: handleCreatePO,
+    onViewPO: order => navigate(`/purchase/orders/${order.id}`),
+    onRecordQuotation: record => setQuotationEnquiryId(record.purchaseEnquiryId),
+  }
+
+  const columns = getColumns()
 
   // TODO(BE): the BE filters by a single status, so the quick-filter groups (several
   // statuses each) and their counts apply to the rows of the loaded page. Once it accepts
@@ -291,6 +325,7 @@ export const PurchaseEnquiryList: FC = () => {
           }}
           totalLabel="enquiry items"
           fillHeight
+          rowActions={record => getEnquiryActions(record, rowActions, purchaseOrders)}
           onRow={record => ({
             onClick: () => navigate(`/purchase/enquiries/${record.purchaseEnquiryId}`),
             style: { cursor: 'pointer' },

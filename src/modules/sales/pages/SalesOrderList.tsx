@@ -7,15 +7,16 @@ import {
   PlusOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { SalesOrderItemRow, SalesOrderStatus } from '@/types/sales'
 import { DeliveryChallanFormDrawer } from '../components/DeliveryChallanFormDrawer'
 import { SalesOrderFormDrawer } from '../components/SalesOrderFormDrawer'
@@ -41,13 +42,7 @@ interface RowActions {
   onDelete: (record: SalesOrderItemRow) => void
 }
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
-const getColumns = (a: RowActions): TableColumnsType<SalesOrderItemRow> => [
+const getColumns = (): TableColumnsType<SalesOrderItemRow> => [
   { title: 'Order #', dataIndex: 'orderNumber', key: 'orderNumber', width: 150 },
   { title: 'Date', dataIndex: 'orderDate', key: 'orderDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
@@ -89,28 +84,74 @@ const getColumns = (a: RowActions): TableColumnsType<SalesOrderItemRow> => [
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 220,
-    render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
-      const isFinished = record.status === 'CLOSED' || record.status === 'CANCELLED'
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {/* Backend only permits edits/deletes while the order is still a draft. */}
-          {isDraft && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Approve', <CheckOutlined />, () => a.onApprove(record))}
-          {!isFinished && action('Cancel Order', <StopOutlined />, () => a.onCancel(record), true)}
-          {record.status === 'CONFIRMED' &&
-            action('Create Delivery Challan', <CarOutlined />, () => a.onCreateChallan(record))}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getOrderActions = (record: SalesOrderItemRow, a: RowActions): TableActionItem[] => {
+  const isDraft = record.status === 'DRAFT'
+  const isFinished = record.status === 'CLOSED' || record.status === 'CANCELLED'
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (isDraft) {
+    actions.push(
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        onClick: () => a.onEdit(record),
+      },
+      {
+        key: 'approve',
+        label: 'Approve',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        onClick: () => a.onApprove(record),
+      },
+    )
+  }
+
+  if (!isFinished) {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel Order',
+      icon: <StopOutlined />,
+      variant: 'danger',
+      danger: true,
+      onClick: () => a.onCancel(record),
+    })
+  }
+
+  if (record.status === 'CONFIRMED') {
+    actions.push({
+      key: 'create-challan',
+      label: 'Create Delivery Challan',
+      icon: <CarOutlined />,
+      variant: 'accent',
+      onClick: () => a.onCreateChallan(record),
+    })
+  }
+
+  if (isDraft) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      onClick: () => a.onDelete(record),
+    })
+  }
+
+  return actions
+}
 
 export const SalesOrderList: FC = () => {
   const navigate = useNavigate()
@@ -204,14 +245,16 @@ export const SalesOrderList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/sales/orders/${record.salesOrderId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.salesOrderId }),
     onApprove: handleApprove,
     onCancel: handleCancel,
     onCreateChallan: record => setChallanOrderId(record.salesOrderId),
     onDelete: handleDelete,
-  })
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -270,6 +313,7 @@ export const SalesOrderList: FC = () => {
           }}
           totalLabel="sales order items"
           fillHeight
+          rowActions={record => getOrderActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/sales/orders/${record.salesOrderId}`),
             style: { cursor: 'pointer' },

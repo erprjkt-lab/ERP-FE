@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { DataTable } from './DataTable'
 
@@ -61,5 +61,34 @@ describe('DataTable', () => {
     const wrapper = container.querySelector('.ant-table-wrapper') as HTMLElement
     expect(wrapper.className).toContain('erp-fill-height-table')
     expect(wrapper.className).toContain('my-table')
+  })
+
+  it('renders floating row action popover on row hover without adding any table columns', () => {
+    const { container } = render(
+      <DataTable<Row>
+        columns={columns}
+        dataSource={data.slice(0, 3)}
+        rowKey="id"
+        rowActions={record => [
+          { key: 'edit', label: `Edit ${record.name}`, icon: <span>EditIcon</span> },
+        ]}
+      />,
+    )
+
+    // Verify there are no extra columns in the table header
+    const headers = screen.getAllByRole('columnheader')
+    expect(headers).toHaveLength(1)
+    expect(headers[0]).toHaveTextContent('Name')
+
+    // Before hover, no floating popover
+    expect(container.querySelector('.erp-floating-row-action-popover')).not.toBeInTheDocument()
+
+    // Hover over the first data row
+    const firstRow = container.querySelector('.ant-table-row') as HTMLElement
+    fireEvent.mouseEnter(firstRow)
+
+    // Floating popover appears with the action button
+    expect(container.querySelector('.erp-floating-row-action-popover')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit Row 0' })).toBeInTheDocument()
   })
 })

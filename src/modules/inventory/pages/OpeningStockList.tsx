@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
+import type { TableActionItem } from '@/components/ui'
 import type { OpeningStock, OpeningStockItem } from '@/types/inventory'
 import { OpeningStockFormDrawer } from '../components/OpeningStockFormDrawer'
 import { useDeleteOpeningStock, useOpeningStocks } from '../hooks/useOpeningStocks'
@@ -27,6 +28,20 @@ const ITEM_COLUMNS: TableColumnsType<OpeningStockItem> = [
     align: 'right',
     width: 110,
     render: v => (v != null ? v.toFixed(2) : '—'),
+  },
+]
+
+const getOpeningStockActions = (
+  record: OpeningStock,
+  onDelete: (record: OpeningStock) => void,
+): TableActionItem[] => [
+  {
+    key: 'delete',
+    label: 'Delete & reverse stock',
+    icon: <DeleteOutlined />,
+    variant: 'danger',
+    danger: true,
+    onClick: () => onDelete(record),
   },
 ]
 
@@ -83,25 +98,6 @@ export const OpeningStockList: FC = () => {
       render: (_, record) => record.items.reduce((sum, item) => sum + item.qty, 0),
     },
     { title: 'Remarks', dataIndex: 'remarks', key: 'remarks', render: v => v || '—' },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 80,
-      render: (_, record) => (
-        <Tooltip title="Delete & reverse stock">
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={e => {
-              e.stopPropagation()
-              handleDelete(record)
-            }}
-          />
-        </Tooltip>
-      ),
-    },
   ]
 
   return (
@@ -130,6 +126,7 @@ export const OpeningStockList: FC = () => {
           loading={isLoading}
           totalLabel="entries"
           fillHeight
+          rowActions={record => getOpeningStockActions(record, handleDelete)}
           expandable={{
             expandedRowRender: record => (
               <Table<OpeningStockItem>

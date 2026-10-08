@@ -1,5 +1,5 @@
 import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { GrnItemRow, GrnLineStatus } from '@/types/procurement'
 import { GrnFormDrawer } from '../components/GrnFormDrawer'
 import { GRN_LINE_STATUS_BADGE, GRN_LINE_STATUS_LABELS } from '../constants'
@@ -23,7 +24,7 @@ interface RowActions {
   onEdit: (record: GrnItemRow) => void
 }
 
-const getColumns = ({ onView, onEdit }: RowActions): TableColumnsType<GrnItemRow> => [
+const getColumns = (): TableColumnsType<GrnItemRow> => [
   {
     title: 'GRN No / Date',
     key: 'grnNo',
@@ -74,20 +75,22 @@ const getColumns = ({ onView, onEdit }: RowActions): TableColumnsType<GrnItemRow
       />
     ),
   },
+]
+
+const getGrnActions = (record: GrnItemRow, a: RowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 110,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View GRN">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
-        </Tooltip>
-        <Tooltip title="Edit GRN">
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'view',
+    label: 'View GRN',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'edit',
+    label: 'Edit GRN',
+    icon: <EditOutlined />,
+    variant: 'primary',
+    onClick: () => a.onEdit(record),
   },
 ]
 
@@ -107,10 +110,12 @@ export const PurchaseGrnList: FC = () => {
     isFetching,
   } = useGrnItems({ page, perPage: pageSize, status: filters.status })
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/purchase/grn/${record.grnId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.grnId }),
-  })
+  }
 
   const filtered = items.filter(
     row => !filters.search || row.grnNo.toLowerCase().includes(filters.search.toLowerCase()),
@@ -189,6 +194,7 @@ export const PurchaseGrnList: FC = () => {
           }}
           totalLabel="GRN items"
           fillHeight
+          rowActions={record => getGrnActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/purchase/grn/${record.grnId}`),
             style: { cursor: 'pointer' },

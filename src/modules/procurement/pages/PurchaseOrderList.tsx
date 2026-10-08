@@ -1,5 +1,5 @@
 import { CheckOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { PurchaseOrderItemRow } from '@/types/procurement'
 import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
@@ -16,11 +17,7 @@ import { useProcurementFilters, useProcurementStore } from '../store/procurement
 
 const STATUS_OPTIONS = Object.entries(PO_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
-const getColumns = (
-  onView: (record: PurchaseOrderItemRow) => void,
-  onEdit: (record: PurchaseOrderItemRow) => void,
-  onApprove: (record: PurchaseOrderItemRow) => void,
-): TableColumnsType<PurchaseOrderItemRow> => [
+const getColumns = (): TableColumnsType<PurchaseOrderItemRow> => [
   {
     title: 'P.O. No / Date',
     key: 'poNumber',
@@ -81,53 +78,47 @@ const getColumns = (
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 80,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View PO">
-          <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={e => {
-              e.stopPropagation()
-              onView(record)
-            }}
-          />
-        </Tooltip>
-        {record.status === 'PENDING_APPROVAL' && (
-          <>
-            <Tooltip title="Edit PO">
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={e => {
-                  e.stopPropagation()
-                  onEdit(record)
-                }}
-              />
-            </Tooltip>
-            <Tooltip title="Approve PO">
-              <Button
-                type="text"
-                size="small"
-                icon={<CheckOutlined />}
-                onClick={e => {
-                  e.stopPropagation()
-                  onApprove(record)
-                }}
-              />
-            </Tooltip>
-          </>
-        )}
-      </Space>
-    ),
-  },
 ]
+
+const getOrderActions = (
+  record: PurchaseOrderItemRow,
+  a: {
+    onView: (record: PurchaseOrderItemRow) => void
+    onEdit: (record: PurchaseOrderItemRow) => void
+    onApprove: (record: PurchaseOrderItemRow) => void
+  },
+): TableActionItem[] => {
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View PO',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (record.status === 'PENDING_APPROVAL') {
+    actions.push(
+      {
+        key: 'edit',
+        label: 'Edit PO',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        onClick: () => a.onEdit(record),
+      },
+      {
+        key: 'approve',
+        label: 'Approve PO',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        onClick: () => a.onApprove(record),
+      },
+    )
+  }
+
+  return actions
+}
 
 export const PurchaseOrderList: FC = () => {
   const navigate = useNavigate()
@@ -156,15 +147,19 @@ export const PurchaseOrderList: FC = () => {
     }
   }
 
-  const columns = getColumns(
-    record => navigate(`/purchase/orders/${record.purchaseOrderId}`),
-    record => setDrawerState({ mode: 'edit', id: record.purchaseOrderId }),
-    handleApprove,
-  )
+  const columns = getColumns()
 
   const filtered = items.filter(
     row => !filters.search || row.poNumber.toLowerCase().includes(filters.search.toLowerCase()),
   )
+
+  const rowActions = {
+    onView: (record: PurchaseOrderItemRow) =>
+      navigate(`/purchase/orders/${record.purchaseOrderId}`),
+    onEdit: (record: PurchaseOrderItemRow) =>
+      setDrawerState({ mode: 'edit', id: record.purchaseOrderId }),
+    onApprove: handleApprove,
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -239,6 +234,7 @@ export const PurchaseOrderList: FC = () => {
           }}
           totalLabel="purchase order items"
           fillHeight
+          rowActions={record => getOrderActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/purchase/orders/${record.purchaseOrderId}`),
             style: { cursor: 'pointer' },

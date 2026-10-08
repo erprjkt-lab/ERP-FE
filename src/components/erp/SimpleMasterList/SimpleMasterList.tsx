@@ -1,11 +1,12 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Form, Space, Tooltip } from 'antd'
+import { App, Button, Card, Form } from 'antd'
 import type { FormInstance, TableColumnsType } from 'antd'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { PageHeader } from '@/components/ui/PageHeader'
+import type { TableActionItem } from '@/components/ui'
 import { getErrorMessage } from '@/api/client'
 
 export interface SimpleMasterListProps<T extends { id: string }> {
@@ -101,33 +102,21 @@ export function SimpleMasterList<T extends { id: string }>({
     })
   }
 
-  const columnsWithActions: TableColumnsType<T> = [
-    ...columns,
+  const getMasterActions = (record: T): TableActionItem[] => [
     {
-      title: 'Actions',
-      key: 'actions',
-      width: 100,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="Edit">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => openEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Delete">
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record)}
-            />
-          </Tooltip>
-        </Space>
-      ),
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditOutlined />,
+      variant: 'primary',
+      onClick: () => openEdit(record),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      onClick: () => handleDelete(record),
     },
   ]
 
@@ -161,11 +150,12 @@ export function SimpleMasterList<T extends { id: string }>({
         </div>
         <Card styles={{ body: { padding: 0 } }}>
           <DataTable<T>
-            columns={columnsWithActions}
+            columns={columns}
             dataSource={data}
             rowKey="id"
             loading={loading}
             totalLabel={totalLabel}
+            rowActions={getMasterActions}
           />
         </Card>
         {formDrawer}
@@ -193,12 +183,13 @@ export function SimpleMasterList<T extends { id: string }>({
         }}
       >
         <DataTable<T>
-          columns={columnsWithActions}
+          columns={columns}
           dataSource={data}
           rowKey="id"
           loading={loading}
           totalLabel={totalLabel}
           fillHeight
+          rowActions={getMasterActions}
         />
       </Card>
 

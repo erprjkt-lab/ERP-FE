@@ -6,15 +6,16 @@ import {
   PlusOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { SalesEnquiryItemRow, SalesEnquiryStatus } from '@/types/sales'
 import { SalesEnquiryFormDrawer } from '../components/SalesEnquiryFormDrawer'
 import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
@@ -44,13 +45,7 @@ interface RowActions {
   onDelete: (record: SalesEnquiryItemRow) => void
 }
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
-const getColumns = (a: RowActions): TableColumnsType<SalesEnquiryItemRow> => [
+const getColumns = (): TableColumnsType<SalesEnquiryItemRow> => [
   { title: 'Enquiry #', dataIndex: 'enquiryNumber', key: 'enquiryNumber', width: 150 },
   { title: 'Date', dataIndex: 'enquiryDate', key: 'enquiryDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
@@ -82,27 +77,64 @@ const getColumns = (a: RowActions): TableColumnsType<SalesEnquiryItemRow> => [
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 220,
-    render: (_, record) => {
-      const isOpen = record.status === 'OPEN'
-      const isClosed = record.status === 'CLOSED'
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {/* Backend only allows edits/deletes while the enquiry is still OPEN. */}
-          {isOpen && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {!isClosed &&
-            action('Create Quotation', <FileTextOutlined />, () => a.onCreateQuotation(record))}
-          {!isClosed && action('Close', <StopOutlined />, () => a.onClose(record), true)}
-          {isOpen && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getEnquiryActions = (record: SalesEnquiryItemRow, a: RowActions): TableActionItem[] => {
+  const isOpen = record.status === 'OPEN'
+  const isClosed = record.status === 'CLOSED'
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (isOpen) {
+    actions.push({
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditOutlined />,
+      variant: 'primary',
+      onClick: () => a.onEdit(record),
+    })
+  }
+
+  if (!isClosed) {
+    actions.push(
+      {
+        key: 'create-quote',
+        label: 'Create Quotation',
+        icon: <FileTextOutlined />,
+        variant: 'accent',
+        onClick: () => a.onCreateQuotation(record),
+      },
+      {
+        key: 'close',
+        label: 'Close',
+        icon: <StopOutlined />,
+        variant: 'danger',
+        danger: true,
+        onClick: () => a.onClose(record),
+      },
+    )
+  }
+
+  if (isOpen) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      onClick: () => a.onDelete(record),
+    })
+  }
+
+  return actions
+}
 
 export const SalesEnquiryList: FC = () => {
   const navigate = useNavigate()
@@ -184,13 +216,15 @@ export const SalesEnquiryList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/sales/enquiries/${record.salesEnquiryId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.salesEnquiryId }),
     onCreateQuotation: handleCreateQuotation,
     onClose: handleClose,
     onDelete: handleDelete,
-  })
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -249,6 +283,7 @@ export const SalesEnquiryList: FC = () => {
           }}
           totalLabel="enquiry items"
           fillHeight
+          rowActions={record => getEnquiryActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/sales/enquiries/${record.salesEnquiryId}`),
             style: { cursor: 'pointer' },

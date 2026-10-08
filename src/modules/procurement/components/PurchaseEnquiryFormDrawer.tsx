@@ -16,6 +16,7 @@ import {
   SUPPLIER_STATUS_BADGE,
   SUPPLIER_STATUS_LABELS,
 } from '../constants'
+import { useUoms } from '@/modules/masters/hooks/useUoms'
 import { useProcurementItems } from '../hooks/useProcurementItems'
 import {
   useCreatePurchaseEnquiryFromRequisitions,
@@ -48,6 +49,7 @@ interface ManualItemRowValues {
   itemId: string
   itemDescription?: string
   requiredQty: number
+  uomId?: string
   requiredDate?: dayjs.Dayjs
   preferredDeliveryDate?: dayjs.Dayjs
   remarks?: string
@@ -85,6 +87,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
   const { data: suppliers = [] } = useSuppliers()
   const { data: items } = useProcurementItems()
   const { data: requisitions } = usePurchaseRequisitions()
+  const { data: uoms = [] } = useUoms()
   const selectedReqIds = Form.useWatch('requisitionIds', form) as string[] | undefined
   const { mutateAsync: createManual, isPending: creatingManual } = useCreatePurchaseEnquiryManual()
   const { mutateAsync: createFromRequisitions, isPending: creatingFromPr } =
@@ -118,14 +121,15 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
   const buildItemRows = (rows: ManualItemRowValues[]): PurchaseEnquiryItemInput[] =>
     rows.map(row => {
       const item = items.find(i => i.id === row.itemId)
+      const uom = uoms.find(u => String(u.id) === String(row.uomId))
       return {
         itemId: row.itemId,
         itemCode: item?.code,
         itemName: item?.name,
         itemDescription: row.itemDescription,
         requiredQty: row.requiredQty,
-        uomId: item?.uomId ?? null,
-        uomName: item?.uomName,
+        uomId: row.uomId ?? item?.uomId ?? null,
+        uomName: uom?.name ?? item?.uomName,
         requiredDate: row.requiredDate ? row.requiredDate.format('YYYY-MM-DD') : null,
         preferredDeliveryDate: row.preferredDeliveryDate
           ? row.preferredDeliveryDate.format('YYYY-MM-DD')
@@ -146,6 +150,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
           itemId: item.itemId,
           itemDescription: item.itemDescription,
           requiredQty: item.requiredQty,
+          uomId: item.uomId ?? undefined,
           requiredDate: item.requiredDate ? dayjs(item.requiredDate) : undefined,
           preferredDeliveryDate: item.preferredDeliveryDate
             ? dayjs(item.preferredDeliveryDate)
@@ -292,7 +297,19 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
               <Form.Item
                 label="Suppliers"
                 name="supplierIds"
-                rules={[{ required: true, message: 'Add at least one supplier' }]}
+                rules={[
+                  { required: true, message: 'Add at least one supplier' },
+                  {
+                    validator: (_, value) => {
+                      if (!value || value.length === 0) return Promise.resolve()
+                      const unique = new Set(value)
+                      if (unique.size !== value.length) {
+                        return Promise.reject(new Error('Duplicate suppliers not allowed'))
+                      }
+                      return Promise.resolve()
+                    },
+                  },
+                ]}
               >
                 <Select
                   mode="multiple"
@@ -384,6 +401,13 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                     {
                       validator: async (_, v) => {
                         if (!v || v.length === 0) throw new Error('Add at least one item')
+                        const itemIds = v
+                          .map((row: ManualItemRowValues) => row.itemId)
+                          .filter(Boolean)
+                        const unique = new Set(itemIds)
+                        if (unique.size !== itemIds.length) {
+                          throw new Error('Duplicate items not allowed')
+                        }
                       },
                     },
                   ]}
@@ -395,7 +419,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                           key={field.key}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 1fr 100px 130px 130px 1fr 32px',
+                            gridTemplateColumns: '2fr 1fr 100px 90px 130px 130px 1fr 32px',
                             gap: '0 8px',
                             alignItems: 'start',
                           }}
@@ -423,6 +447,15 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                             rules={[{ required: true, message: 'Required' }]}
                           >
                             <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, 'uomId']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <Select
+                              placeholder="UOM"
+                              options={uoms.map(u => ({ label: u.name, value: u.id }))}
+                            />
                           </Form.Item>
                           <Form.Item name={[field.name, 'requiredDate']}>
                             <DatePicker placeholder="Required by" style={{ width: '100%' }} />

@@ -1,22 +1,19 @@
 import { ApartmentOutlined, ExperimentOutlined, UnorderedListOutlined } from '@ant-design/icons'
-import { Button, Card, Space, Tooltip } from 'antd'
+import { Card } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import { useFinishedGoods } from '@/modules/masters/hooks/useFinishedGoods'
 import type { FinishedGood } from '@/types/masters'
 import { InspectionParametersDrawer } from '../components/InspectionParametersDrawer'
 import { ItemBomDrawer } from '../components/ItemBomDrawer'
 import { ItemProcessRouteDrawer } from '../components/ItemProcessRouteDrawer'
 
-const getColumns = (
-  onProcessRoute: (record: FinishedGood) => void,
-  onBom: (record: FinishedGood) => void,
-  onInspectionParameters: (record: FinishedGood) => void,
-): TableColumnsType<FinishedGood> => [
+const getColumns = (): TableColumnsType<FinishedGood> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   { title: 'Name', dataIndex: 'name', key: 'name' },
   { title: 'Category', dataIndex: 'category', key: 'category', width: 160 },
@@ -28,38 +25,35 @@ const getColumns = (
     width: 100,
     render: status => <StatusBadge status={status} />,
   },
+]
+
+interface BomRowActions {
+  onProcessRoute: (record: FinishedGood) => void
+  onBom: (record: FinishedGood) => void
+  onInspectionParameters: (record: FinishedGood) => void
+}
+
+const getBomActions = (record: FinishedGood, a: BomRowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 160,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="Define the ordered shop-floor operations for this item">
-          <Button
-            type="text"
-            size="small"
-            icon={<ApartmentOutlined />}
-            onClick={() => onProcessRoute(record)}
-          />
-        </Tooltip>
-        <Tooltip title="Define the materials consumed per unit of this item">
-          <Button
-            type="text"
-            size="small"
-            icon={<UnorderedListOutlined />}
-            onClick={() => onBom(record)}
-          />
-        </Tooltip>
-        <Tooltip title="Define the quality control-plan characteristics to check for this item">
-          <Button
-            type="text"
-            size="small"
-            icon={<ExperimentOutlined />}
-            onClick={() => onInspectionParameters(record)}
-          />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'route',
+    label: 'Process Route',
+    icon: <ApartmentOutlined />,
+    variant: 'default',
+    onClick: () => a.onProcessRoute(record),
+  },
+  {
+    key: 'bom',
+    label: 'Bill of Materials',
+    icon: <UnorderedListOutlined />,
+    variant: 'primary',
+    onClick: () => a.onBom(record),
+  },
+  {
+    key: 'inspection',
+    label: 'Inspection Parameters',
+    icon: <ExperimentOutlined />,
+    variant: 'accent',
+    onClick: () => a.onInspectionParameters(record),
   },
 ]
 
@@ -69,11 +63,13 @@ export const BomList: FC = () => {
   const [processRouteItemId, setProcessRouteItemId] = useState<string>()
   const [bomItemId, setBomItemId] = useState<string>()
 
-  const columns = getColumns(
-    record => setProcessRouteItemId(record.id),
-    record => setBomItemId(record.id),
-    record => setInspectionItemId(record.id),
-  )
+  const columns = getColumns()
+
+  const rowActions: BomRowActions = {
+    onProcessRoute: record => setProcessRouteItemId(record.id),
+    onBom: record => setBomItemId(record.id),
+    onInspectionParameters: record => setInspectionItemId(record.id),
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -96,6 +92,7 @@ export const BomList: FC = () => {
           loading={isLoading}
           totalLabel="finished goods"
           fillHeight
+          rowActions={record => getBomActions(record, rowActions)}
         />
       </Card>
 

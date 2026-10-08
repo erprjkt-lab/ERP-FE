@@ -1,7 +1,7 @@
 import { DownloadOutlined, EyeOutlined, PlusOutlined, StopOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
@@ -9,6 +9,7 @@ import { downloadDeliveryChallanPdf } from '@/api/deliveryChallans'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { DeliveryChallanItemRow, DeliveryChallanStatus } from '@/types/sales'
 import { DeliveryChallanFormDrawer } from '../components/DeliveryChallanFormDrawer'
 import { CHALLAN_STATUS_BADGE, CHALLAN_STATUS_LABELS } from '../constants'
@@ -28,26 +29,7 @@ interface RowActions {
   cancellingId: string | undefined
 }
 
-const action = (
-  title: string,
-  icon: ReactNode,
-  onClick: () => void,
-  opts?: { danger?: boolean; disabled?: boolean; loading?: boolean },
-) => (
-  <Tooltip title={title} key={title}>
-    <Button
-      type="text"
-      size="small"
-      danger={opts?.danger}
-      disabled={opts?.disabled}
-      loading={opts?.loading}
-      icon={icon}
-      onClick={onClick}
-    />
-  </Tooltip>
-)
-
-const getColumns = (a: RowActions): TableColumnsType<DeliveryChallanItemRow> => [
+const getColumns = (): TableColumnsType<DeliveryChallanItemRow> => [
   { title: 'Challan #', dataIndex: 'challanNumber', key: 'challanNumber', width: 150 },
   { title: 'Date', dataIndex: 'challanDate', key: 'challanDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
@@ -82,23 +64,33 @@ const getColumns = (a: RowActions): TableColumnsType<DeliveryChallanItemRow> => 
       />
     ),
   },
+]
+
+const getChallanActions = (record: DeliveryChallanItemRow, a: RowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 120,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        {action('View', <EyeOutlined />, () => a.onView(record))}
-        {action('Download PDF', <DownloadOutlined />, () => a.onDownload(record), {
-          loading: a.downloadingId === record.deliveryChallanId,
-        })}
-        {action('Cancel Challan', <StopOutlined />, () => a.onCancel(record), {
-          danger: true,
-          disabled: record.status !== 'DISPATCHED',
-          loading: a.cancellingId === record.deliveryChallanId,
-        })}
-      </Space>
-    ),
+    key: 'view',
+    label: 'View',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'download',
+    label: 'Download PDF',
+    icon: <DownloadOutlined />,
+    variant: 'primary',
+    loading: a.downloadingId === record.deliveryChallanId,
+    onClick: () => a.onDownload(record),
+  },
+  {
+    key: 'cancel',
+    label: 'Cancel Challan',
+    icon: <StopOutlined />,
+    variant: 'danger',
+    danger: true,
+    disabled: record.status !== 'DISPATCHED',
+    loading: a.cancellingId === record.deliveryChallanId,
+    onClick: () => a.onCancel(record),
   },
 ]
 
@@ -158,13 +150,15 @@ export const DeliveryChallanList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/sales/delivery-challans/${record.deliveryChallanId}`),
     onDownload: handleDownload,
     onCancel: handleCancel,
     downloadingId,
     cancellingId,
-  })
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -219,6 +213,7 @@ export const DeliveryChallanList: FC = () => {
           }}
           totalLabel="delivery challan items"
           fillHeight
+          rowActions={record => getChallanActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/sales/delivery-challans/${record.deliveryChallanId}`),
             style: { cursor: 'pointer' },

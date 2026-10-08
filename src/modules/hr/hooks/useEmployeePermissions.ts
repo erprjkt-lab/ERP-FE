@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getEmployeeMenus, grantEmployeeMenuPermissions } from '@/api/employees'
+import { usePermissionStore } from '@/store/permissionStore'
 import type { GrantMenuPermissionsBulkPayload } from '@/types/api/rbac'
 import { toPermissionRows } from '../utils/menuPermissions'
 
@@ -23,10 +24,11 @@ export function useSaveEmployeeMenuPermissions(employeeId: string | undefined) {
   return useMutation({
     mutationFn: (payload: GrantMenuPermissionsBulkPayload) =>
       grantEmployeeMenuPermissions(Number(employeeId), payload),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['employees', employeeId, 'menus'] })
       // The saved employee may be the logged-in one, whose sidebar is permission-driven.
       queryClient.invalidateQueries({ queryKey: ['menus', 'sidebar'] })
+      await usePermissionStore.getState().refreshPermissions()
     },
   })
 }
