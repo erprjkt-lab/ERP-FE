@@ -52,9 +52,9 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
   const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
   const departmentOptions = (departments ?? []).map(d => ({ label: d.name, value: d.id }))
 
-  // Only DRAFT requisitions can be edited — enforced by ERP-BE's
+  // Only PENDING_APPROVAL requisitions can be edited — enforced by ERP-BE's
   // PurchaseRequisitionService::updateRequisition.
-  const isLocked = isEdit && requisition && requisition.status !== 'DRAFT'
+  const isLocked = isEdit && requisition && requisition.status !== 'PENDING_APPROVAL'
 
   useEffect(() => {
     if (!open) return
@@ -158,7 +158,8 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
     >
       {isLocked ? (
         <Typography.Text>
-          Only DRAFT requisitions can be edited. This requisition is {requisition?.status}.
+          Only requisitions pending approval can be edited. This requisition is{' '}
+          {requisition?.status}.
         </Typography.Text>
       ) : (
         <Form

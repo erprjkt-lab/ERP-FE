@@ -5,7 +5,6 @@ import {
   DeleteOutlined,
   EditOutlined,
   FileDoneOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
@@ -79,17 +78,16 @@ export const SalesQuotationDetail: FC = () => {
     )
   }
 
-  const isDraft = quotation.status === 'DRAFT'
   const isSent = quotation.status === 'SENT'
   const isAccepted = quotation.status === 'ACCEPTED'
   // Backend blocks edits once a quotation is accepted, rejected or revised.
   const isLocked = ['ACCEPTED', 'REJECTED', 'REVISED'].includes(quotation.status)
 
-  const handle = async (action: 'send' | 'accept' | 'revise', successMessage: string) => {
+  const handle = async (action: 'accept' | 'revise', successMessage: string) => {
     try {
       const result = await runAction({ id: quotation.id, action })
       message.success(successMessage)
-      // A revision is a brand-new draft row — follow the user to it.
+      // A revision is a brand-new quotation row — follow the user to it.
       if (action === 'revise' && result) navigate(`/sales/quotations/${result.id}`)
     } catch (error) {
       message.error(getErrorMessage(error))
@@ -173,15 +171,6 @@ export const SalesQuotationDetail: FC = () => {
               Edit
             </Button>
             <Button
-              icon={<SendOutlined />}
-              type={isDraft ? 'primary' : 'default'}
-              disabled={!isDraft}
-              loading={actionPending}
-              onClick={() => handle('send', 'Quotation sent')}
-            >
-              Send
-            </Button>
-            <Button
               icon={<CheckOutlined />}
               type={isSent ? 'primary' : 'default'}
               disabled={!isSent}
@@ -200,11 +189,11 @@ export const SalesQuotationDetail: FC = () => {
             >
               Revise
             </Button>
-            {/* Backend only permits deletion while still a draft. */}
+            {/* Backend only permits deletion while the quotation is still Sent. */}
             <Button
               danger
               icon={<DeleteOutlined />}
-              disabled={!isDraft}
+              disabled={!isSent}
               loading={deleting}
               onClick={handleDelete}
             >

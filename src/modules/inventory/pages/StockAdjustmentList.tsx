@@ -1,26 +1,25 @@
 import {
   CheckOutlined,
-  CloseOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
   PlusOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { StockAdjustment } from '@/types/inventory'
 import { StockAdjustmentFormDrawer } from '../components/StockAdjustmentFormDrawer'
 import { STOCK_ADJUSTMENT_STATUS_BADGE, STOCK_ADJUSTMENT_STATUS_LABELS } from '../constants'
 import {
   useApproveStockAdjustment,
-  useCancelStockAdjustment,
   useDeleteStockAdjustment,
   useStockAdjustments,
 } from '../hooks/useStockAdjustments'
@@ -31,21 +30,14 @@ const STATUS_OPTIONS = Object.entries(STOCK_ADJUSTMENT_STATUS_LABELS).map(([valu
   label,
 }))
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
 interface RowActions {
   onView: (record: StockAdjustment) => void
   onEdit: (record: StockAdjustment) => void
   onApprove: (record: StockAdjustment) => void
-  onCancel: (record: StockAdjustment) => void
   onDelete: (record: StockAdjustment) => void
 }
 
-const getColumns = (a: RowActions): TableColumnsType<StockAdjustment> => [
+const getColumns = (): TableColumnsType<StockAdjustment> => [
   { title: 'Adjustment #', dataIndex: 'adjustmentNumber', key: 'adjustmentNumber', width: 150 },
   { title: 'Date', dataIndex: 'adjustmentDate', key: 'adjustmentDate', width: 110 },
   { title: 'Location', dataIndex: 'locationName', key: 'locationName', render: v => v ?? '—' },
@@ -80,24 +72,49 @@ const getColumns = (a: RowActions): TableColumnsType<StockAdjustment> => [
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 150,
-    render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {isDraft && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Approve', <CheckOutlined />, () => a.onApprove(record))}
-          {isDraft && action('Cancel', <CloseOutlined />, () => a.onCancel(record), true)}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getAdjustmentActions = (record: StockAdjustment, a: RowActions): TableActionItem[] => {
+  const isPending = record.status === 'PENDING_APPROVAL'
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (isPending) {
+    actions.push(
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        onClick: () => a.onEdit(record),
+      },
+      {
+        key: 'approve',
+        label: 'Approve',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        onClick: () => a.onApprove(record),
+      },
+      {
+        key: 'delete',
+        label: 'Delete',
+        icon: <DeleteOutlined />,
+        variant: 'danger',
+        danger: true,
+        onClick: () => a.onDelete(record),
+      },
+    )
+  }
+
+  return actions
+}
 
 export const StockAdjustmentList: FC = () => {
   const navigate = useNavigate()
@@ -105,7 +122,6 @@ export const StockAdjustmentList: FC = () => {
   const { data: adjustments, isLoading } = useStockAdjustments()
   const { mutateAsync: deleteAdjustment } = useDeleteStockAdjustment()
   const { mutateAsync: approve } = useApproveStockAdjustment()
-  const { mutateAsync: cancel } = useCancelStockAdjustment()
   const filters = useInventoryFilters('adjustment')
   const setFilter = useInventoryStore(s => s.setFilter)
   const resetFilters = useInventoryStore(s => s.resetFilter)
@@ -122,32 +138,6 @@ export const StockAdjustmentList: FC = () => {
         try {
           await approve(record.id)
           message.success('Stock adjustment approved and posted to the ledger')
-        } catch (error) {
-          message.error(getErrorMessage(error))
-        }
-      },
-    })
-  }
-
-  const handleCancel = (record: StockAdjustment) => {
-    const reason = { value: '' }
-    modal.confirm({
-      title: 'Cancel this adjustment?',
-      content: (
-        <Input.TextArea
-          placeholder="Reason (optional)"
-          rows={3}
-          onChange={e => {
-            reason.value = e.target.value
-          }}
-        />
-      ),
-      okText: 'Cancel Adjustment',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await cancel({ id: record.id, remarks: reason.value || undefined })
-          message.success('Stock adjustment cancelled')
         } catch (error) {
           message.error(getErrorMessage(error))
         }
@@ -172,13 +162,14 @@ export const StockAdjustmentList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/inventory/adjustments/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onApprove: handleApprove,
-    onCancel: handleCancel,
     onDelete: handleDelete,
-  })
+  }
 
   const filtered = adjustments.filter(adj => {
     if (
@@ -245,6 +236,7 @@ export const StockAdjustmentList: FC = () => {
           loading={isLoading}
           totalLabel="adjustments"
           fillHeight
+          rowActions={record => getAdjustmentActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/inventory/adjustments/${record.id}`),
             style: { cursor: 'pointer' },

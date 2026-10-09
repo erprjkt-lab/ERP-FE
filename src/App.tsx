@@ -10,9 +10,11 @@ import {
   EmployeeForm,
   EmployeeList,
   ShiftList,
+  UserPermissionList,
 } from '@/modules/hr'
 import {
   IssueMaterialList,
+  OpeningStockList,
   StockAdjustmentDetail,
   StockAdjustmentForm,
   StockAdjustmentList,
@@ -22,6 +24,7 @@ import {
   StockRequisitionDetail,
   StockRequisitionForm,
   StockRequisitionList,
+  StockTransferList,
 } from '@/modules/inventory'
 import {
   ConsumableList,
@@ -95,6 +98,7 @@ import {
   SalesQuotationList,
 } from '@/modules/sales'
 import { ComingSoon } from '@/pages/ComingSoon'
+import { PendingModule } from '@/pages/PendingModule'
 import { Dashboard } from '@/pages/Dashboard'
 import { Login } from '@/pages/Login'
 import { ANTD_THEME } from '@/theme/antd-theme'
@@ -106,6 +110,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/hr/departments',
   '/hr/designations',
   '/hr/shifts',
+  '/hr/user-permissions',
   '/masters/customers',
   '/masters/suppliers',
   '/masters/vendors',
@@ -128,6 +133,8 @@ const IMPLEMENTED_PATHS = new Set([
   '/inventory/requisitions',
   '/inventory/adjustments',
   '/inventory/stock-issues',
+  '/inventory/transfers',
+  '/inventory/opening-stock',
   '/inventory/issue-material',
   '/production/process',
   '/production/bom',
@@ -159,6 +166,7 @@ function App() {
                 <Route path="/hr/departments" element={<DepartmentList />} />
                 <Route path="/hr/designations" element={<DesignationList />} />
                 <Route path="/hr/shifts" element={<ShiftList />} />
+                <Route path="/hr/user-permissions" element={<UserPermissionList />} />
 
                 <Route path="/masters/customers" element={<CustomerList />} />
                 <Route path="/masters/customers/new" element={<CustomerForm />} />
@@ -261,6 +269,8 @@ function App() {
                 <Route path="/inventory/adjustments/:id" element={<StockAdjustmentDetail />} />
 
                 <Route path="/inventory/stock-issues" element={<StockIssueList />} />
+                <Route path="/inventory/transfers" element={<StockTransferList />} />
+                <Route path="/inventory/opening-stock" element={<OpeningStockList />} />
                 <Route path="/inventory/issue-material" element={<IssueMaterialList />} />
 
                 <Route path="/production/process" element={<ProcessList />} />
@@ -298,6 +308,9 @@ function App() {
                     element={<ComingSoon title={leaf.label} />}
                   />
                 ))}
+                {/* BE menu modules this app has no screen for yet (see sidebarNav). */}
+                <Route path="/pending/:moduleKey" element={<PendingModule />} />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Route>

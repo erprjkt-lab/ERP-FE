@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createRole, deleteRole, listRoles, syncRolePermissions, updateRole } from '@/api/roles'
+import { usePermissionStore } from '@/store/permissionStore'
 import type {
   CreateRolePayload,
   SyncRolePermissionsPayload,
@@ -35,7 +36,11 @@ export function useSyncRolePermissions() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: SyncRolePermissionsPayload }) =>
       syncRolePermissions(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['menus', 'sidebar'] })
+      await usePermissionStore.getState().refreshPermissions()
+    },
   })
 }
 

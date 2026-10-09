@@ -4,15 +4,21 @@ import {
   createSalesEnquiry,
   deleteSalesEnquiry,
   getSalesEnquiry,
-  listSalesEnquiries,
+  listSalesEnquiryItems,
   updateSalesEnquiry,
 } from '@/api/salesEnquiries'
-import type { SalesListParams } from '@/api/salesEnquiries'
-import type { ApiSalesEnquiry, ApiSalesEnquiryItem, SalesEnquiryPayload } from '@/types/api/sales'
+import type { ItemListParams } from '@/types/api'
+import type {
+  ApiSalesEnquiry,
+  ApiSalesEnquiryItem,
+  ApiSalesEnquiryItemRow,
+  SalesEnquiryPayload,
+} from '@/types/api/sales'
 import type {
   FeasibleStatus,
   SalesEnquiry,
   SalesEnquiryItem,
+  SalesEnquiryItemRow,
   SalesEnquiryItemStatus,
   SalesEnquiryStatus,
 } from '@/types/sales'
@@ -102,23 +108,6 @@ function toPayload(input: SalesEnquiryInput): SalesEnquiryPayload {
   }
 }
 
-export function useSalesEnquiries(params: SalesListParams = {}) {
-  const query = useQuery({
-    queryKey: ['sales-enquiries', params],
-    queryFn: () => listSalesEnquiries(params),
-    // Keeps the previous page on screen while the next one loads, so paging
-    // doesn't blank the table on every click.
-    placeholderData: keepPreviousData,
-  })
-
-  return {
-    data: (query.data?.data ?? []).map(toSalesEnquiry),
-    meta: query.data?.meta,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-  }
-}
-
 export function useSalesEnquiry(id: string | undefined) {
   const query = useQuery({
     queryKey: ['sales-enquiries', id],
@@ -168,4 +157,37 @@ export function useCloseSalesEnquiry() {
       queryClient.invalidateQueries({ queryKey: ['sales-enquiries', id] })
     },
   })
+}
+
+function toSalesEnquiryItemRow(api: ApiSalesEnquiryItemRow): SalesEnquiryItemRow {
+  return {
+    id: String(api.id),
+    salesEnquiryId: String(api.sales_enquiry_id),
+    enquiryNumber: api.enquiry_number,
+    enquiryDate: api.enquiry_date,
+    status: api.enquiry_status as SalesEnquiryStatus,
+    partyId: String(api.party_id),
+    partyName: api.party_name ?? undefined,
+    itemId: String(api.item_id),
+    itemCode: api.item_code ?? undefined,
+    itemName: api.item_name ?? undefined,
+    uomName: api.uom_name ?? undefined,
+    qty: Number(api.qty),
+    feasibleStatus: api.feasible_status as FeasibleStatus,
+  }
+}
+
+// Item-wise (one row per line) listing — server-side paginated.
+export function useSalesEnquiryItems(params: ItemListParams = {}) {
+  const query = useQuery({
+    queryKey: ['sales-enquiries', 'items', params],
+    queryFn: () => listSalesEnquiryItems(params),
+    placeholderData: keepPreviousData,
+  })
+  return {
+    data: (query.data?.data ?? []).map(toSalesEnquiryItemRow),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+  }
 }

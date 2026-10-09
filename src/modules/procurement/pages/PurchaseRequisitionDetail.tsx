@@ -1,10 +1,4 @@
-import {
-  ArrowLeftOutlined,
-  CheckOutlined,
-  CloseOutlined,
-  EditOutlined,
-  SendOutlined,
-} from '@ant-design/icons'
+import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -22,7 +16,6 @@ import {
   usePurchaseRequisition,
   requisitionDisplayStatus,
   useRejectRequisition,
-  useSubmitRequisitionForApproval,
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
 
@@ -33,8 +26,6 @@ export const PurchaseRequisitionDetail: FC = () => {
   const [editOpen, setEditOpen] = useState(false)
   const [createEnquiryOpen, setCreateEnquiryOpen] = useState(false)
   const { data: requisition, isLoading } = usePurchaseRequisition(id)
-  const { mutateAsync: submitForApproval, isPending: submitting } =
-    useSubmitRequisitionForApproval()
   const { mutateAsync: approve, isPending: approving } = useApproveRequisition()
   const { mutateAsync: reject, isPending: rejecting } = useRejectRequisition()
   if (!requisition) {
@@ -49,15 +40,6 @@ export const PurchaseRequisitionDetail: FC = () => {
   }
 
   const displayStatus = requisitionDisplayStatus(requisition)
-
-  const handleSubmit = async () => {
-    try {
-      await submitForApproval(requisition.id)
-      message.success('Requisition submitted for approval')
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
-  }
 
   const handleApprove = async () => {
     try {
@@ -133,23 +115,11 @@ export const PurchaseRequisitionDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/requisitions')}>
               Back
             </Button>
-            {requisition.status === 'DRAFT' && (
+            {requisition.status === 'PENDING_APPROVAL' && (
               <>
                 <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
                   Edit
                 </Button>
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  loading={submitting}
-                  onClick={handleSubmit}
-                >
-                  Submit for Approval
-                </Button>
-              </>
-            )}
-            {requisition.status === 'PENDING_APPROVAL' && (
-              <>
                 <Button danger icon={<CloseOutlined />} loading={rejecting} onClick={handleReject}>
                   Reject
                 </Button>

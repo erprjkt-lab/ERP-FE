@@ -1,0 +1,561 @@
+/* ==========================================================================
+   CoreFlow Tech - Modern Dual-Part Enterprise Login
+   Design: Zero-Scroll Luxury Two-Part Console (100vh Fit)
+   ========================================================================== */
+
+:root {
+  --cf-cyan: #00a0e3;
+  --cf-cyan-rgb: 0, 160, 227;
+  --cf-teal: #0289c3;
+  --cf-teal-dark: #017678;
+  --cf-teal-mid: #02809e;
+  --cf-navy: #0b132b;
+  --cf-navy-deep: #080d1f;
+  --cf-slate-900: #0f172a;
+  --cf-slate-700: #334155;
+  --cf-slate-500: #64748b;
+  --cf-slate-400: #94a3b8;
+  --cf-slate-200: #e2e8f0;
+  --cf-slate-100: #f1f5f9;
+  --cf-slate-50: #f8fafc;
+}
+
+/* Page Canvas - Strict 100vh with Zero Scrolling */
+.cf-login-page {
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  max-height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0, 160, 227, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(2, 128, 158, 0.07) 0%, transparent 45%),
+    linear-gradient(180deg, #f8fafc 0%, #edf3f9 100%);
+  padding: 20px;
+  box-sizing: border-box;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+/* Ambient Radiant Glow Mesh */
+.cf-ambient-mesh {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cf-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(85px);
+  opacity: 0.55;
+  pointer-events: none;
+  animation: cfOrbBreathe 14s ease-in-out infinite alternate;
+}
+
+.cf-orb-1 {
+  width: 500px;
+  height: 500px;
+  top: -120px;
+  left: -80px;
+  background: radial-gradient(circle, rgba(0, 160, 227, 0.22) 0%, transparent 70%);
+}
+
+.cf-orb-2 {
+  width: 520px;
+  height: 520px;
+  bottom: -100px;
+  right: -60px;
+  background: radial-gradient(circle, rgba(2, 128, 158, 0.18) 0%, transparent 70%);
+  animation-duration: 18s;
+}
+
+@keyframes cfOrbBreathe {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(25px, -20px) scale(1.08);
+  }
+  100% {
+    transform: translate(-20px, 15px) scale(0.96);
+  }
+}
+
+/* Fine Technical Dot Grid */
+.cf-blueprint-grid {
+  position: absolute;
+  inset: 0;
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(0, 160, 227, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 160, 227, 0.035) 1px, transparent 1px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ==========================================================================
+   UNIFIED DUAL-PART CONSOLE (ZERO SCROLL FIT)
+   ========================================================================== */
+.cf-unified-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 920px;
+  height: 540px;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow:
+    0 25px 60px -15px rgba(2, 137, 195, 0.2),
+    0 10px 30px -5px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(226, 232, 240, 0.9);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.cf-unified-card:hover {
+  box-shadow:
+    0 32px 75px -15px rgba(2, 137, 195, 0.26),
+    0 12px 32px -5px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 160, 227, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   PART 1: LEFT BRAND & ENTERPRISE DECK
+   -------------------------------------------------------------------------- */
+.cf-part-brand {
+  flex: 0.95;
+  background: linear-gradient(150deg, #080d1f 0%, #0d1b38 50%, #0a2347 100%);
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+}
+
+/* Ambient glow accent inside left part */
+.cf-part-brand::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 160, 227, 0.35) 0%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.cf-part-brand::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(1, 118, 120, 0.25) 0%, transparent 70%);
+  filter: blur(35px);
+  pointer-events: none;
+}
+
+/* Left Brand Header */
+.cf-brand-top {
+  position: relative;
+  z-index: 1;
+}
+
+.cf-brand-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.cf-left-logo-img {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0, 160, 227, 0.4));
+}
+
+.cf-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  letter-spacing: 0.02em;
+}
+
+.cf-pulse-green {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  animation: cfLivePulse 2s infinite;
+}
+
+@keyframes cfLivePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.6;
+  }
+}
+
+/* Left Hero Typography */
+.cf-brand-headline {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.cf-headline-accent {
+  background: linear-gradient(135deg, #38bdf8 0%, #00a0e3 50%, #017678 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.cf-brand-description {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Enterprise Value Highlights (3 Compact rows) */
+.cf-brand-features {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.cf-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: all 0.25s ease;
+}
+
+.cf-feature-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 160, 227, 0.35);
+  transform: translateX(3px);
+}
+
+.cf-feature-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(0, 160, 227, 0.15);
+  border: 1px solid rgba(0, 160, 227, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.cf-feature-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.cf-feature-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.cf-feature-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+}
+
+/* Left Bottom Trust Footer */
+.cf-brand-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.cf-trust-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   PART 2: RIGHT AUTHENTICATION DECK
+   -------------------------------------------------------------------------- */
+.cf-part-auth {
+  flex: 1.05;
+  background: #ffffff;
+  padding: 36px 36px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+
+/* Top Glow Bar */
+.cf-auth-top-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00a0e3 0%, #0289c3 50%, #017678 100%);
+}
+
+/* Right Card Header */
+.cf-auth-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.cf-auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
+  font-family: 'Space Grotesk', sans-serif;
+  line-height: 1.2;
+}
+
+.cf-auth-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+.cf-auth-mark-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(0, 160, 227, 0.12);
+  flex-shrink: 0;
+}
+
+.cf-auth-mark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Form Styles */
+.cf-auth-form {
+  margin-top: 4px;
+}
+
+.cf-form-item {
+  margin-bottom: 16px !important;
+}
+
+.cf-field-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 5px;
+}
+
+.cf-custom-input {
+  height: 44px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  font-size: 13.5px !important;
+  padding-left: 12px !important;
+  transition: all 0.25s ease !important;
+}
+
+.cf-custom-input:hover {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+}
+
+.cf-custom-input:focus,
+.cf-custom-input.ant-input-affix-wrapper-focused {
+  border-color: #00a0e3 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(0, 160, 227, 0.16) !important;
+}
+
+.cf-custom-input input {
+  background: transparent !important;
+}
+
+.cf-input-icon {
+  font-size: 15px;
+  color: #00a0e3;
+  margin-right: 6px;
+}
+
+/* Options Row */
+.cf-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.cf-remember-check {
+  font-size: 12.5px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.cf-forgot-btn {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #00a0e3;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.cf-forgot-btn:hover {
+  color: #02809e;
+  text-decoration: underline;
+}
+
+/* Action Button */
+.cf-submit-btn {
+  height: 46px !important;
+  border-radius: 10px !important;
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  background: linear-gradient(135deg, #00a0e3 0%, #0289c3 50%, #017678 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px -5px rgba(0, 160, 227, 0.42) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  transition: all 0.25s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.cf-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -4px rgba(0, 160, 227, 0.52) !important;
+  filter: brightness(1.04);
+}
+
+.cf-submit-btn:active {
+  transform: translateY(0);
+}
+
+.cf-btn-arrow {
+  font-size: 14px;
+  transition: transform 0.25s ease;
+}
+
+.cf-submit-btn:hover .cf-btn-arrow {
+  transform: translateX(4px);
+}
+
+/* Right Footer */
+.cf-auth-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   RESPONSIVENESS (Preserves zero scrolling on all screens)
+   ========================================================================== */
+@media (max-width: 840px) {
+  .cf-unified-card {
+    height: auto;
+    max-height: calc(100vh - 30px);
+    flex-direction: column;
+    max-width: 440px;
+    overflow-y: auto;
+  }
+
+  .cf-part-brand {
+    display: none; /* Mobile/small tablet: show only clean auth card to prevent scrolling */
+  }
+
+  .cf-mobile-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+}
+
+@media (min-width: 841px) {
+  .cf-mobile-brand-row {
+    display: none;
+  }
+}

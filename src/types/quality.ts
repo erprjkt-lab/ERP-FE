@@ -1,7 +1,7 @@
 import type { ID } from './index'
 
 export type InspectionReportType = 'IPR' | 'FIR' | 'IIR'
-export type InspectionReportStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED'
+export type InspectionReportStatus = 'SUBMITTED' | 'APPROVED'
 export type InspectionResult = 'PASS' | 'FAIL'
 
 export interface InspectionReading {

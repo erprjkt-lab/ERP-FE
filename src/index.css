@@ -49,9 +49,8 @@ body {
   display: none;
 }
 
-/* Signature wayfinding cue: the active sidebar item gets a calibration-mark
-   tick on its leading edge instead of a full-bleed fill, echoing the
-   "instrument ledger" theme without spreading the accent color everywhere. */
+/* Signature wayfinding cue: the active sidebar item gets a luminous CoreFlow Cyan
+   indicator on its leading edge and active icon illumination. */
 .app-sidebar-menu .ant-menu-item-selected {
   position: relative;
 }
@@ -59,17 +58,21 @@ body {
   content: '';
   position: absolute;
   left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: #b9812f;
+  top: 6px;
+  bottom: 6px;
+  width: 3.5px;
+  border-radius: 0 3px 3px 0;
+  background: #00a0e3;
+  box-shadow: 0 0 10px rgba(0, 160, 227, 0.75);
+}
+.app-sidebar-menu .ant-menu-item-selected .anticon {
+  color: #00a0e3 !important;
 }
 
 /* The process step the shop floor should work on next — tinted so an operator
    can find their row at a glance from a distance. */
 .erp-current-process-row > td {
-  background: #f2f6fb;
+  background: #f0f9ff;
 }
 
 /* Detail-page summary strip (SUMMARY_PROPS): muted small label, emphasised value. */
@@ -115,4 +118,31 @@ body {
   min-height: 0;
   max-height: none !important;
   overflow: auto !important;
+}
+
+/* Permissions matrix: folder rows read as section headers, and the "All" column is
+   fenced off from the per-action ones so the grid doesn't read as one wall of boxes. */
+.erp-permission-table .erp-permission-group-row > td {
+  background: #fafafa;
+  font-weight: 600;
+}
+.erp-permission-table .erp-permission-divider-cell {
+  border-left: 1px solid #f0f0f0;
+}
+.erp-permission-table .ant-table-tbody > tr > td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+/* Table row relative positioning and clean actions display */
+.ant-table-tbody > tr.ant-table-row {
+  position: relative;
+}
+
+/* Ensure the fixed-right actions cell seamlessly matches row hover */
+.ant-table-cell.erp-table-actions-cell {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  padding-right: 12px !important;
+  text-align: right;
 }

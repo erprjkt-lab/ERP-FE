@@ -5,7 +5,6 @@ import {
   EditOutlined,
   FileTextOutlined,
   PlusOutlined,
-  SendOutlined,
   ShoppingCartOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Row, Select, Space, Typography } from 'antd'
@@ -38,7 +37,6 @@ import {
   usePurchaseEnquiry,
   useQuotationComparison,
   useRemoveSupplierFromEnquiry,
-  useSendPurchaseEnquiry,
 } from '../hooks/usePurchaseEnquiries'
 import {
   useCreatePurchaseOrderFromEnquiry,
@@ -65,7 +63,6 @@ export const PurchaseEnquiryDetail: FC = () => {
   const { data: enquiry, isLoading } = usePurchaseEnquiry(id)
   const { data: suppliers = [] } = useSuppliers()
   const { data: purchaseOrders } = usePurchaseOrders()
-  const { mutateAsync: sendEnquiry, isPending: sending } = useSendPurchaseEnquiry()
   const { mutateAsync: addSupplier, isPending: addingSupplier } = useAddSupplierToEnquiry()
   const { mutateAsync: removeSupplier } = useRemoveSupplierFromEnquiry()
   const { mutateAsync: createPO, isPending: creatingPO } = useCreatePurchaseOrderFromEnquiry()
@@ -89,15 +86,6 @@ export const PurchaseEnquiryDetail: FC = () => {
   }
 
   const linkedOrder = purchaseOrders.find(po => po.purchaseEnquiryId === enquiry.id)
-
-  const handleSend = async () => {
-    try {
-      await sendEnquiry(enquiry.id)
-      message.success('Purchase enquiry sent to suppliers')
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
-  }
 
   const handleAddSupplier = async () => {
     if (!selectedSupplierId) return
@@ -217,7 +205,7 @@ export const PurchaseEnquiryDetail: FC = () => {
       key: 'actions',
       render: (_: unknown, r: PurchaseEnquirySupplier) => (
         <Space size="small" wrap>
-          {enquiry.status !== 'DRAFT' && !LOCKED_STATUSES.includes(enquiry.status) && (
+          {!LOCKED_STATUSES.includes(enquiry.status) && (
             <Button
               type="link"
               size="small"
@@ -241,7 +229,7 @@ export const PurchaseEnquiryDetail: FC = () => {
               Accept
             </Button>
           )}
-          {enquiry.status === 'DRAFT' && (
+          {enquiry.status === 'SENT' && (
             <Button
               type="text"
               size="small"
@@ -255,7 +243,7 @@ export const PurchaseEnquiryDetail: FC = () => {
     },
   ]
 
-  const canCompare = enquiry.status !== 'DRAFT' && enquiry.status !== 'SENT'
+  const canCompare = enquiry.status !== 'SENT'
 
   return (
     <div>
@@ -275,11 +263,6 @@ export const PurchaseEnquiryDetail: FC = () => {
             {!LOCKED_STATUSES.includes(enquiry.status) && (
               <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
                 Edit
-              </Button>
-            )}
-            {enquiry.status === 'DRAFT' && (
-              <Button type="primary" icon={<SendOutlined />} loading={sending} onClick={handleSend}>
-                Send Enquiry
               </Button>
             )}
             {canCompare && (
@@ -351,7 +334,7 @@ export const PurchaseEnquiryDetail: FC = () => {
               </Typography.Title>
             }
             extra={
-              enquiry.status === 'DRAFT' && (
+              enquiry.status === 'SENT' && (
                 <Button
                   icon={<PlusOutlined />}
                   size="small"

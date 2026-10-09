@@ -24,16 +24,6 @@ export function approveStockAdjustment(id: number): Promise<ApiEnvelope<ApiStock
   return apiRequest(`/api/v1/stock-adjustments/${id}/approve`, { method: 'POST' })
 }
 
-export function cancelStockAdjustment(
-  id: number,
-  remarks?: string,
-): Promise<ApiEnvelope<ApiStockAdjustment>> {
-  return apiRequest(`/api/v1/stock-adjustments/${id}/cancel`, {
-    method: 'POST',
-    body: { remarks },
-  })
-}
-
 export function updateStockAdjustment(
   id: number,
   payload: Partial<CreateStockAdjustmentPayload>,

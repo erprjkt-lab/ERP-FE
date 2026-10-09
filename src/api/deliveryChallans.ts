@@ -1,33 +1,11 @@
 import { apiRequest } from '@/api/client'
 import { useAuthStore } from '@/store/authStore'
-import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
-import type { ApiDeliveryChallan, DeliveryChallanPayload } from '@/types/api/sales'
-
-export interface DeliveryChallanListParams {
-  page?: number
-  perPage?: number
-  status?: string | null
-  partyId?: number | null
-  salesOrderId?: number | null
-  fromDate?: string | null
-  toDate?: string | null
-}
-
-export function listDeliveryChallans(
-  params: DeliveryChallanListParams = {},
-): Promise<PaginatedEnvelope<ApiDeliveryChallan>> {
-  return apiRequest('/api/v1/delivery-challans', {
-    query: {
-      page: params.page ?? 1,
-      per_page: params.perPage ?? 20,
-      ...(params.status ? { status: params.status } : {}),
-      ...(params.partyId ? { party_id: params.partyId } : {}),
-      ...(params.salesOrderId ? { sales_order_id: params.salesOrderId } : {}),
-      ...(params.fromDate ? { from_date: params.fromDate } : {}),
-      ...(params.toDate ? { to_date: params.toDate } : {}),
-    },
-  })
-}
+import type { ApiEnvelope, ItemListParams, PaginatedEnvelope } from '@/types/api'
+import type {
+  ApiDeliveryChallan,
+  ApiDeliveryChallanItemRow,
+  DeliveryChallanPayload,
+} from '@/types/api/sales'
 
 export function getDeliveryChallan(id: number): Promise<ApiEnvelope<ApiDeliveryChallan>> {
   return apiRequest(`/api/v1/delivery-challans/${id}`)
@@ -67,4 +45,17 @@ export async function downloadDeliveryChallanPdf(id: number, fileName: string): 
   link.click()
   link.remove()
   URL.revokeObjectURL(url)
+}
+
+// Flat one-row-per-challan-line listing (joined with challan, customer, item and UOM).
+export function listDeliveryChallanItems(
+  params: ItemListParams = {},
+): Promise<PaginatedEnvelope<ApiDeliveryChallanItemRow>> {
+  return apiRequest('/api/v1/delivery-challan-items', {
+    query: {
+      page: params.page ?? 1,
+      per_page: params.perPage ?? 20,
+      ...(params.status ? { status: params.status } : {}),
+    },
+  })
 }

@@ -3,6 +3,7 @@ import {
   Alert,
   App,
   Button,
+  Card,
   Col,
   DatePicker,
   Form,
@@ -37,18 +38,9 @@ interface ItemRowValues {
   itemRemark?: string
 }
 
-const ROW_GRID = {
-  display: 'grid',
-  // minmax(0, …) stops a long item label from widening its own row's columns.
-  gridTemplateColumns:
-    'minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) 32px',
-  gap: '0 12px',
-  alignItems: 'start',
-}
-const HEADER_ROW = { padding: '10px 12px', background: '#fafafa', fontWeight: 500 }
-const SUMMARY_LINE = { display: 'flex', justifyContent: 'space-between', padding: '4px 0' }
-
 const money = (n: number) => n.toFixed(2)
+
+const SUMMARY_LINE = { display: 'flex', justifyContent: 'space-between', padding: '4px 0' }
 
 // Mirrors SalesQuotationService: amount is before tax, tax is on that amount.
 // ponytail: ignores per-line discount (not on this form); saved discounts still apply server-side.
@@ -298,101 +290,107 @@ export const SalesQuotationFormDrawer: FC<SalesQuotationFormDrawerProps> = ({
                 ]}
               >
                 {(fields, { add, remove }, { errors }) => (
-                  <div style={{ overflowX: 'auto' }}>
-                    <div style={{ minWidth: 820 }}>
-                      <div style={{ ...ROW_GRID, ...HEADER_ROW }}>
-                        <span>Item</span>
-                        <span>Qty</span>
-                        <span>Rate</span>
-                        <span>Tax %</span>
-                        <span style={{ textAlign: 'right' }}>Amount</span>
-                        <span>Remark</span>
-                        <span />
-                      </div>
-                      {fields.map(field => {
-                        const row = watchedItems?.[field.name]
-                        return (
-                          <div key={field.key} style={{ ...ROW_GRID, padding: '8px 12px 0' }}>
-                            <Form.Item name={[field.name, 'salesEnquiryItemId']} hidden>
-                              <Input />
-                            </Form.Item>
-                            <Form.Item
-                              name={[field.name, 'itemId']}
-                              rules={[{ required: true, message: 'Required' }]}
-                            >
-                              <Select
-                                placeholder="Select item"
-                                options={itemOptions}
-                                showSearch
-                                filterOption={(input, option) =>
-                                  String(option?.label ?? '')
-                                    .toLowerCase()
-                                    .includes(input.toLowerCase())
-                                }
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              name={[field.name, 'qty']}
-                              rules={[{ required: true, message: 'Required' }]}
-                            >
-                              <InputNumber min={0.0001} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item
-                              name={[field.name, 'rate']}
-                              rules={[{ required: true, message: 'Required' }]}
-                            >
-                              <InputNumber min={0} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <Form.Item name={[field.name, 'taxPercent']}>
-                              <InputNumber min={0} style={{ width: '100%' }} />
-                            </Form.Item>
-                            <div
-                              style={{
-                                textAlign: 'right',
-                                lineHeight: '32px',
-                                fontWeight: 500,
-                                background: '#fafafa',
-                                border: '1px solid #f0f0f0',
-                                borderRadius: 6,
-                                padding: '0 11px',
-                              }}
-                            >
-                              {money(lineAmount(row))}
-                            </div>
-                            <Form.Item name={[field.name, 'itemRemark']}>
-                              <Input />
-                            </Form.Item>
+                  <>
+                    {fields.map((field, index) => {
+                      const row = watchedItems?.[field.name]
+                      return (
+                        <Card
+                          key={field.key}
+                          style={{ marginBottom: 12 }}
+                          title={`Item ${index + 1}`}
+                          extra={
                             <Button
                               type="text"
                               danger
                               icon={<DeleteOutlined />}
                               onClick={() => remove(field.name)}
-                            />
-                          </div>
-                        )
-                      })}
-                      {fields.length > 0 && (
-                        <div style={{ ...ROW_GRID, ...HEADER_ROW, fontWeight: 600 }}>
-                          <span>Total</span>
-                          <span>{totals.qty}</span>
-                          <span />
-                          <span />
-                          <span style={{ textAlign: 'right' }}>{money(totals.amount)}</span>
-                          <span />
-                          <span />
-                        </div>
-                      )}
-                      <Form.ErrorList errors={errors} />
-                      <Button
-                        type="dashed"
-                        icon={<PlusOutlined />}
-                        onClick={() => add({ taxPercent: 0, rate: 0 })}
-                        style={{ width: '100%', marginTop: 8 }}
-                      >
-                        Add Item
-                      </Button>
-                    </div>
-                  </div>
+                              size="small"
+                            >
+                              Remove
+                            </Button>
+                          }
+                        >
+                          <Form.Item name={[field.name, 'salesEnquiryItemId']} hidden>
+                            <Input />
+                          </Form.Item>
+                          <Row gutter={16}>
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Item"
+                                name={[field.name, 'itemId']}
+                                rules={[{ required: true, message: 'Required' }]}
+                              >
+                                <Select
+                                  placeholder="Select item"
+                                  options={itemOptions}
+                                  showSearch
+                                  filterOption={(input, option) =>
+                                    String(option?.label ?? '')
+                                      .toLowerCase()
+                                      .includes(input.toLowerCase())
+                                  }
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Quantity"
+                                name={[field.name, 'qty']}
+                                rules={[{ required: true, message: 'Required' }]}
+                              >
+                                <InputNumber min={0.0001} style={{ width: '100%' }} />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} sm={12}>
+                              <Form.Item
+                                label="Rate"
+                                name={[field.name, 'rate']}
+                                rules={[{ required: true, message: 'Required' }]}
+                              >
+                                <InputNumber min={0} style={{ width: '100%' }} />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} sm={12}>
+                              <Form.Item label="Tax %" name={[field.name, 'taxPercent']}>
+                                <InputNumber min={0} style={{ width: '100%' }} />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} sm={12}>
+                              <Form.Item label="Amount">
+                                <div
+                                  style={{
+                                    padding: '4px 11px',
+                                    lineHeight: '32px',
+                                    fontWeight: 600,
+                                    background: '#fafafa',
+                                    border: '1px solid #f0f0f0',
+                                    borderRadius: 6,
+                                  }}
+                                >
+                                  {money(lineAmount(row))}
+                                </div>
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} sm={12}>
+                              <Form.Item label="Remark" name={[field.name, 'itemRemark']}>
+                                <Input placeholder="Item remark (optional)" />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        </Card>
+                      )
+                    })}
+                    <Form.ErrorList errors={errors} />
+                    <Button
+                      type="dashed"
+                      block
+                      icon={<PlusOutlined />}
+                      onClick={() => add({ taxPercent: 0, rate: 0 })}
+                      style={{ marginBottom: 16 }}
+                    >
+                      Add Item
+                    </Button>
+                  </>
                 )}
               </Form.List>
 

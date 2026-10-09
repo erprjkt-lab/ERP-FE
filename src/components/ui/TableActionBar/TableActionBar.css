@@ -1,0 +1,191 @@
+/* ==========================================================================
+   Table Action Bar — Modern Hover Row Actions
+   ========================================================================== */
+
+:root {
+  --erp-table-action-size: 32px;
+  --erp-table-action-icon-size: 16px;
+  --erp-table-action-radius: 6px;
+  --erp-table-action-gap: 4px;
+  --erp-table-action-color: #595959;
+  --erp-table-action-hover-bg: rgba(0, 0, 0, 0.05);
+  --erp-table-action-hover-color: #262626;
+  --erp-table-hover-bg: #fafafa;
+}
+
+/* Base Action Bar Container */
+.erp-table-action-bar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--erp-table-action-gap);
+  user-select: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(4px);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+
+/* Reveal when parent row is hovered or focused */
+.ant-table-row:hover .erp-table-action-bar,
+.ant-table-row:focus-within .erp-table-action-bar,
+.erp-table-action-bar:hover,
+.erp-table-action-bar:focus-within,
+.erp-table-action-bar.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+/* Floating Popover Container (pops over at the end of the hovered row) */
+.erp-floating-row-action-popover {
+  position: absolute;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  z-index: 25;
+  pointer-events: auto;
+  user-select: none;
+  animation: erp-popover-in 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: right center;
+}
+
+@keyframes erp-popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateX(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+/* Floating Overlay Mode (pins to right edge of hovered row) */
+.erp-table-action-bar--floating {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Inline Mode (inside a dedicated sticky column or cell) */
+.erp-table-action-bar--inline {
+  width: 100%;
+}
+
+/* Action Button */
+.erp-table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--erp-table-action-size);
+  height: var(--erp-table-action-size);
+  min-width: var(--erp-table-action-size);
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--erp-table-action-radius);
+  color: var(--erp-table-action-color);
+  font-size: var(--erp-table-action-icon-size);
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.12s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.erp-table-action-btn:hover {
+  background: var(--erp-table-action-hover-bg);
+  color: var(--erp-table-action-hover-color);
+  transform: scale(1.05);
+}
+
+.erp-table-action-btn:active {
+  transform: scale(0.92);
+}
+
+.erp-table-action-btn:focus-visible {
+  outline: 2px solid #00a0e3;
+  outline-offset: 1px;
+}
+
+/* Variant Styles */
+.erp-table-action-btn--primary:hover {
+  background: rgba(0, 160, 227, 0.1);
+  color: #0289c3;
+}
+
+.erp-table-action-btn--danger:hover {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.erp-table-action-btn--success:hover {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.erp-table-action-btn--warning:hover {
+  background: #fffbe6;
+  color: #faad14;
+}
+
+.erp-table-action-btn--accent:hover {
+  background: #f9f0ff;
+  color: #722ed1;
+}
+
+/* Disabled State */
+.erp-table-action-btn:disabled,
+.erp-table-action-btn.is-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* Size Modifiers */
+.erp-table-action-bar--small .erp-table-action-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.erp-table-action-bar--middle .erp-table-action-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+
+/* Table Actions Cell Formatting */
+.ant-table-cell.erp-table-actions-cell {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  padding-right: 12px !important;
+}
+
+/* Remove default right column border on hover actions cell */
+.ant-table-thead > tr > th.erp-table-actions-cell {
+  border-bottom: 1px solid #f0f0f0;
+}

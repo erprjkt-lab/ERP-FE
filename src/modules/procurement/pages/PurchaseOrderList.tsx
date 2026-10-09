@@ -1,24 +1,23 @@
-import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { CheckOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { PurchaseOrder } from '@/types/procurement'
+import type { TableActionItem } from '@/components/ui'
+import type { PurchaseOrderItemRow } from '@/types/procurement'
 import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
-import { usePurchaseOrders } from '../hooks/usePurchaseOrders'
+import { useApprovePurchaseOrder, usePurchaseOrderItems } from '../hooks/usePurchaseOrders'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 
 const STATUS_OPTIONS = Object.entries(PO_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
-const getColumns = (
-  onView: (record: PurchaseOrder) => void,
-  onEdit: (record: PurchaseOrder) => void,
-): TableColumnsType<PurchaseOrder> => [
+const getColumns = (): TableColumnsType<PurchaseOrderItemRow> => [
   {
     title: 'P.O. No / Date',
     key: 'poNumber',
@@ -30,36 +29,43 @@ const getColumns = (
       </div>
     ),
   },
-  { title: 'Supplier', dataIndex: 'supplierName', key: 'supplierName' },
+  { title: 'Supplier', dataIndex: 'supplierName', key: 'supplierName', render: v => v ?? '—' },
+  { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
+  { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
   {
-    title: 'Item Name',
-    key: 'itemName',
-    render: (_, record) => {
-      if (!record.items.length) return '—'
-      return record.items[0]?.itemName ?? record.items[0]?.itemId ?? '—'
-    },
-  },
-  {
-    title: 'Qty',
-    key: 'qty',
+    title: 'Ordered',
+    dataIndex: 'orderedQty',
+    key: 'orderedQty',
     align: 'right' as const,
-    width: 80,
-    render: (_, record) => {
-      if (!record.items.length) return '—'
-      const totalQty = record.items.reduce((sum, item) => sum + item.orderedQty, 0)
-      return totalQty > 0 ? totalQty : '—'
-    },
+    width: 90,
   },
+  {
+    title: 'Received',
+    dataIndex: 'receivedQty',
+    key: 'receivedQty',
+    align: 'right' as const,
+    width: 90,
+  },
+  {
+    title: 'Pending',
+    dataIndex: 'pendingQty',
+    key: 'pendingQty',
+    align: 'right' as const,
+    width: 90,
+  },
+  { title: 'UOM', dataIndex: 'uomName', key: 'uomName', width: 80, render: v => v ?? '—' },
   {
     title: 'Source',
     key: 'source',
     width: 100,
-    render: (_, r) => (r.purchaseEnquiryId ? 'From Enquiry' : 'Direct'),
+    render: (_, r) => (r.fromEnquiry ? 'From Enquiry' : 'Direct'),
   },
   {
-    title: 'Net Amount',
-    key: 'netAmount',
-    render: (_, r) => r.netAmount.toFixed(2),
+    title: 'Line Total',
+    dataIndex: 'lineTotal',
+    key: 'lineTotal',
+    align: 'right' as const,
+    render: v => v.toFixed(2),
   },
   {
     title: 'Status',
@@ -67,72 +73,99 @@ const getColumns = (
     key: 'status',
     render: status => (
       <StatusBadge
-        status={PO_STATUS_BADGE[status as PurchaseOrder['status']]}
-        label={PO_STATUS_LABELS[status as PurchaseOrder['status']]}
+        status={PO_STATUS_BADGE[status as PurchaseOrderItemRow['status']]}
+        label={PO_STATUS_LABELS[status as PurchaseOrderItemRow['status']]}
       />
-    ),
-  },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 80,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View">
-          <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={e => {
-              e.stopPropagation()
-              onView(record)
-            }}
-          />
-        </Tooltip>
-        {record.status === 'DRAFT' && (
-          <Tooltip title="Edit">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={e => {
-                e.stopPropagation()
-                onEdit(record)
-              }}
-            />
-          </Tooltip>
-        )}
-      </Space>
     ),
   },
 ]
 
+const getOrderActions = (
+  record: PurchaseOrderItemRow,
+  a: {
+    onView: (record: PurchaseOrderItemRow) => void
+    onEdit: (record: PurchaseOrderItemRow) => void
+    onApprove: (record: PurchaseOrderItemRow) => void
+  },
+): TableActionItem[] => {
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View PO',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (record.status === 'PENDING_APPROVAL') {
+    actions.push(
+      {
+        key: 'edit',
+        label: 'Edit PO',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        onClick: () => a.onEdit(record),
+      },
+      {
+        key: 'approve',
+        label: 'Approve PO',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        onClick: () => a.onApprove(record),
+      },
+    )
+  }
+
+  return actions
+}
+
 export const PurchaseOrderList: FC = () => {
   const navigate = useNavigate()
+  const { message } = App.useApp()
+  const { mutateAsync: approveOrder } = useApprovePurchaseOrder()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-  const { data: orders, isLoading } = usePurchaseOrders()
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const filters = useProcurementFilters('order')
   const setFilter = useProcurementStore(s => s.setFilter)
   const resetFilters = useProcurementStore(s => s.resetFilter)
+  // Status is filtered server-side; search only narrows the loaded page.
+  const {
+    data: items,
+    meta,
+    isLoading,
+    isFetching,
+  } = usePurchaseOrderItems({ page, perPage: pageSize, status: filters.status })
 
-  const columns = getColumns(
-    record => navigate(`/purchase/orders/${record.id}`),
-    record => setDrawerState({ mode: 'edit', id: record.id }),
+  const handleApprove = async (record: PurchaseOrderItemRow) => {
+    try {
+      await approveOrder(record.purchaseOrderId)
+      message.success('Purchase order approved')
+    } catch (error) {
+      message.error(getErrorMessage(error))
+    }
+  }
+
+  const columns = getColumns()
+
+  const filtered = items.filter(
+    row => !filters.search || row.poNumber.toLowerCase().includes(filters.search.toLowerCase()),
   )
 
-  const filtered = orders.filter(po => {
-    if (filters.search && !po.poNumber.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false
-    }
-    if (filters.status && po.status !== filters.status) return false
-    return true
-  })
+  const rowActions = {
+    onView: (record: PurchaseOrderItemRow) =>
+      navigate(`/purchase/orders/${record.purchaseOrderId}`),
+    onEdit: (record: PurchaseOrderItemRow) =>
+      setDrawerState({ mode: 'edit', id: record.purchaseOrderId }),
+    onApprove: handleApprove,
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Purchase Orders"
-        subtitle={`${filtered.length} of ${orders.length} purchase orders`}
+        subtitle={`${meta?.total ?? 0} purchase order items`}
         breadcrumbs={[{ label: 'Purchase', href: '/purchase' }, { label: 'Purchase Order' }]}
         actions={
           <Button
@@ -157,14 +190,24 @@ export const PurchaseOrderList: FC = () => {
             <Select
               placeholder="Status"
               value={filters.status}
-              onChange={v => setFilter('order', 'status', v)}
+              onChange={v => {
+                setFilter('order', 'status', v ?? null)
+                setPage(1)
+              }}
               allowClear
               style={{ width: '100%' }}
               options={STATUS_OPTIONS}
             />
           </Col>
           <Col>
-            <Button onClick={() => resetFilters('order')}>Clear filters</Button>
+            <Button
+              onClick={() => {
+                resetFilters('order')
+                setPage(1)
+              }}
+            >
+              Clear filters
+            </Button>
           </Col>
         </Row>
       </PageHeader>
@@ -175,15 +218,25 @@ export const PurchaseOrderList: FC = () => {
           body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
         }}
       >
-        <DataTable<PurchaseOrder>
+        <DataTable<PurchaseOrderItemRow>
           columns={columns}
           dataSource={filtered}
           rowKey="id"
-          loading={isLoading}
-          totalLabel="purchase orders"
+          loading={isLoading || isFetching}
+          pagination={{
+            current: page,
+            pageSize,
+            total: meta?.total ?? 0,
+            onChange: (nextPage, nextPageSize) => {
+              setPage(nextPage)
+              setPageSize(nextPageSize)
+            },
+          }}
+          totalLabel="purchase order items"
           fillHeight
+          rowActions={record => getOrderActions(record, rowActions)}
           onRow={record => ({
-            onClick: () => navigate(`/purchase/orders/${record.id}`),
+            onClick: () => navigate(`/purchase/orders/${record.purchaseOrderId}`),
             style: { cursor: 'pointer' },
           })}
         />

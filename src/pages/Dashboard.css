@@ -1,0 +1,585 @@
+/* ==========================================================================
+   CoreFlow Tech - Enterprise Command Center Dashboard Styling
+   Modern, Slick, High-Density Executive Layout
+   ========================================================================== */
+
+.cf-dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+/* --------------------------------------------------------------------------
+   2. REFINED TELEMETRY KPI METRIC CARDS
+   -------------------------------------------------------------------------- */
+.cf-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.cf-kpi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.cf-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.07);
+}
+
+.cf-kpi-card-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+/* Color Theming for KPI Cards */
+.cf-kpi-stock:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.cf-kpi-stock .cf-kpi-card-top-bar {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+}
+.cf-kpi-stock .cf-kpi-icon-box {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.cf-kpi-qc:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.cf-kpi-qc .cf-kpi-card-top-bar {
+  background: linear-gradient(90deg, #f59e0b, #eab308);
+}
+.cf-kpi-qc .cf-kpi-icon-box {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.cf-kpi-jobs:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+}
+.cf-kpi-jobs .cf-kpi-card-top-bar {
+  background: linear-gradient(90deg, #f97316, #ea580c);
+}
+.cf-kpi-jobs .cf-kpi-icon-box {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+}
+
+.cf-kpi-deliveries:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+.cf-kpi-deliveries .cf-kpi-card-top-bar {
+  background: linear-gradient(90deg, #10b981, #00a0e3);
+}
+.cf-kpi-deliveries .cf-kpi-icon-box {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.cf-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cf-kpi-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: -0.01em;
+}
+
+.cf-kpi-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.cf-kpi-card:hover .cf-kpi-icon-box {
+  transform: scale(1.08);
+}
+
+.cf-kpi-body {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cf-kpi-number {
+  font-size: 32px;
+  font-weight: 700;
+  font-family:
+    'Space Grotesk',
+    -apple-system,
+    sans-serif;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.cf-kpi-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.cf-tag-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.cf-tag-warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+.cf-tag-success {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.cf-kpi-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.cf-kpi-link-text {
+  color: #00a0e3;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.2s ease;
+}
+
+.cf-kpi-card:hover .cf-kpi-link-text {
+  transform: translateX(3px);
+}
+
+/* --------------------------------------------------------------------------
+   3. SECTION CONTAINERS & CARDS
+   -------------------------------------------------------------------------- */
+.cf-dash-card {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cf-dash-card-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cf-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cf-card-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.cf-card-title-group h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  font-family:
+    'Space Grotesk',
+    -apple-system,
+    sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.cf-card-extra-action {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00a0e3;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.cf-card-extra-action:hover {
+  text-decoration: underline;
+}
+
+.cf-dash-card-body {
+  padding: 20px 22px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   4. PRODUCTION OPERATIONS & JOB CARD STAGE FLOW
+   -------------------------------------------------------------------------- */
+.cf-production-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.cf-donut-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.cf-stage-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.cf-stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.cf-stage-row:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.cf-stage-label-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.cf-stage-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.cf-stage-count-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cf-stage-count {
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  color: #0f172a;
+}
+
+/* Overdue Priority Alert Callout */
+.cf-overdue-banner {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.cf-overdue-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cf-overdue-icon {
+  font-size: 16px;
+  color: #e11d48;
+}
+
+.cf-overdue-text {
+  font-size: 12.5px;
+  color: #9f1239;
+  font-weight: 600;
+}
+
+.cf-overdue-sub {
+  font-size: 11px;
+  color: #e11d48;
+}
+
+/* --------------------------------------------------------------------------
+   5. LOW STOCK & INVENTORY WATCHLIST
+   -------------------------------------------------------------------------- */
+.cf-stock-filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cf-stock-filter-pill {
+  border: none;
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cf-stock-filter-pill:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.cf-stock-filter-pill.active {
+  background: #00a0e3;
+  color: #ffffff;
+}
+
+.cf-stock-scroll-list {
+  max-height: 330px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+/* Custom Scrollbar */
+.cf-stock-scroll-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.cf-stock-scroll-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.cf-stock-scroll-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.cf-stock-scroll-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.cf-stock-item-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: all 0.2s ease;
+}
+
+.cf-stock-item-row:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+.cf-stock-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.cf-stock-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cf-stock-severity-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.cf-severity-critical {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.cf-severity-low {
+  background: #ffedd5;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.cf-severity-reorder {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.cf-stock-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.cf-stock-ratio-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   6. LOWER SECTION: QUALITY QUEUE & DISPATCH FULFILLMENT
+   -------------------------------------------------------------------------- */
+.cf-qc-item-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.cf-qc-item-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.cf-qc-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cf-qc-grn-no {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.cf-qc-supplier {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Delivery Fulfilled Empty State */
+.cf-fulfilled-empty-box {
+  padding: 30px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  border: 1px dashed #bbf7d0;
+}
+
+.cf-fulfilled-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.cf-fulfilled-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #166534;
+  margin: 0;
+}
+
+.cf-fulfilled-sub {
+  font-size: 12px;
+  color: #15803d;
+  max-width: 320px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVENESS
+   -------------------------------------------------------------------------- */
+@media (max-width: 1200px) {
+  .cf-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .cf-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cf-donut-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+}

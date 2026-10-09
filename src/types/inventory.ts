@@ -3,7 +3,7 @@ import type { BaseEntity, ID } from './index'
 export type StockRequisitionPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
 
 export type StockRequisitionStatus =
-  'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CLOSED' | 'CANCELLED'
+  'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CLOSED' | 'CANCELLED'
 
 export interface StockRequisitionItem {
   id: ID
@@ -35,7 +35,7 @@ export interface StockRequisition extends BaseEntity {
 
 export type StockAdjustmentReason = 'PHYSICAL_COUNT' | 'DAMAGE' | 'EXPIRY' | 'OTHER'
 
-export type StockAdjustmentStatus = 'DRAFT' | 'APPROVED' | 'CANCELLED'
+export type StockAdjustmentStatus = 'PENDING_APPROVAL' | 'APPROVED'
 
 export interface StockAdjustmentItem {
   id: ID
@@ -99,4 +99,49 @@ export interface StockLedgerEntry {
   quantity: number
   inOut: number
   rate?: number | null
+}
+
+export interface OpeningStockItem {
+  id: ID
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  locationId: ID
+  locationName?: string
+  batchNo?: string
+  heatNo?: string
+  serialNo?: string
+  qty: number
+  rate?: number
+  remarks?: string
+}
+
+export interface OpeningStock extends BaseEntity {
+  entryNumber: string
+  entryDate: string
+  remarks?: string
+  items: OpeningStockItem[]
+}
+
+export interface StockTransferItem {
+  id: ID
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  batchNo?: string
+  heatNo?: string
+  serialNo?: string
+  qty: number
+  remarks?: string
+}
+
+export interface StockTransfer extends BaseEntity {
+  transferNumber: string
+  transferDate: string
+  fromLocationId: ID
+  fromLocationName?: string
+  toLocationId: ID
+  toLocationName?: string
+  remarks?: string
+  items: StockTransferItem[]
 }

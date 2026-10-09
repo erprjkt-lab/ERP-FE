@@ -1,7 +1,7 @@
 import { DownloadOutlined, EyeOutlined, PlusOutlined, StopOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
@@ -9,10 +9,11 @@ import { downloadDeliveryChallanPdf } from '@/api/deliveryChallans'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { DeliveryChallan } from '@/types/sales'
+import type { TableActionItem } from '@/components/ui'
+import type { DeliveryChallanItemRow, DeliveryChallanStatus } from '@/types/sales'
 import { DeliveryChallanFormDrawer } from '../components/DeliveryChallanFormDrawer'
 import { CHALLAN_STATUS_BADGE, CHALLAN_STATUS_LABELS } from '../constants'
-import { useCancelDeliveryChallan, useDeliveryChallans } from '../hooks/useDeliveryChallans'
+import { useCancelDeliveryChallan, useDeliveryChallanItems } from '../hooks/useDeliveryChallans'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
 
 const STATUS_OPTIONS = Object.entries(CHALLAN_STATUS_LABELS).map(([value, label]) => ({
@@ -21,48 +22,35 @@ const STATUS_OPTIONS = Object.entries(CHALLAN_STATUS_LABELS).map(([value, label]
 }))
 
 interface RowActions {
-  onView: (record: DeliveryChallan) => void
-  onDownload: (record: DeliveryChallan) => void
-  onCancel: (record: DeliveryChallan) => void
+  onView: (record: DeliveryChallanItemRow) => void
+  onDownload: (record: DeliveryChallanItemRow) => void
+  onCancel: (record: DeliveryChallanItemRow) => void
   downloadingId: string | undefined
   cancellingId: string | undefined
 }
 
-const action = (
-  title: string,
-  icon: ReactNode,
-  onClick: () => void,
-  opts?: { danger?: boolean; disabled?: boolean; loading?: boolean },
-) => (
-  <Tooltip title={title} key={title}>
-    <Button
-      type="text"
-      size="small"
-      danger={opts?.danger}
-      disabled={opts?.disabled}
-      loading={opts?.loading}
-      icon={icon}
-      onClick={onClick}
-    />
-  </Tooltip>
-)
-
-const getColumns = (a: RowActions): TableColumnsType<DeliveryChallan> => [
+const getColumns = (): TableColumnsType<DeliveryChallanItemRow> => [
   { title: 'Challan #', dataIndex: 'challanNumber', key: 'challanNumber', width: 150 },
   { title: 'Date', dataIndex: 'challanDate', key: 'challanDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
+  { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
+  { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
   {
-    title: 'Vehicle No',
-    dataIndex: 'vehicleNo',
-    key: 'vehicleNo',
-    width: 130,
-    render: v => v || '—',
+    title: 'Dispatch Qty',
+    dataIndex: 'dispatchQty',
+    key: 'dispatchQty',
+    width: 110,
+    align: 'right',
   },
+  { title: 'Billed Qty', dataIndex: 'billedQty', key: 'billedQty', width: 100, align: 'right' },
+  { title: 'UOM', dataIndex: 'uomName', key: 'uomName', width: 80, render: v => v ?? '—' },
   {
-    title: 'Net Amount',
-    key: 'netAmount',
-    width: 130,
-    render: (_, r) => r.netAmount.toFixed(2),
+    title: 'Line Total',
+    dataIndex: 'lineTotal',
+    key: 'lineTotal',
+    width: 120,
+    align: 'right',
+    render: v => v.toFixed(2),
   },
   {
     title: 'Status',
@@ -71,28 +59,38 @@ const getColumns = (a: RowActions): TableColumnsType<DeliveryChallan> => [
     width: 120,
     render: status => (
       <StatusBadge
-        status={CHALLAN_STATUS_BADGE[status as DeliveryChallan['status']]}
-        label={CHALLAN_STATUS_LABELS[status as DeliveryChallan['status']]}
+        status={CHALLAN_STATUS_BADGE[status as DeliveryChallanStatus]}
+        label={CHALLAN_STATUS_LABELS[status as DeliveryChallanStatus]}
       />
     ),
   },
+]
+
+const getChallanActions = (record: DeliveryChallanItemRow, a: RowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 120,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        {action('View', <EyeOutlined />, () => a.onView(record))}
-        {action('Download PDF', <DownloadOutlined />, () => a.onDownload(record), {
-          loading: a.downloadingId === record.id,
-        })}
-        {action('Cancel Challan', <StopOutlined />, () => a.onCancel(record), {
-          danger: true,
-          disabled: record.status !== 'DISPATCHED',
-          loading: a.cancellingId === record.id,
-        })}
-      </Space>
-    ),
+    key: 'view',
+    label: 'View',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'download',
+    label: 'Download PDF',
+    icon: <DownloadOutlined />,
+    variant: 'primary',
+    loading: a.downloadingId === record.deliveryChallanId,
+    onClick: () => a.onDownload(record),
+  },
+  {
+    key: 'cancel',
+    label: 'Cancel Challan',
+    icon: <StopOutlined />,
+    variant: 'danger',
+    danger: true,
+    disabled: record.status !== 'DISPATCHED',
+    loading: a.cancellingId === record.deliveryChallanId,
+    onClick: () => a.onCancel(record),
   },
 ]
 
@@ -108,11 +106,11 @@ export const DeliveryChallanList: FC = () => {
   const [cancellingId, setCancellingId] = useState<string>()
 
   const {
-    data: challans,
+    data: challanItems,
     meta,
     isLoading,
     isFetching,
-  } = useDeliveryChallans({ page, perPage: pageSize, status })
+  } = useDeliveryChallanItems({ page, perPage: pageSize, status })
   const { mutateAsync: runCancel } = useCancelDeliveryChallan()
 
   const handleStatusChange = (value: string | null) => {
@@ -120,10 +118,10 @@ export const DeliveryChallanList: FC = () => {
     setPage(1)
   }
 
-  const handleDownload = async (record: DeliveryChallan) => {
-    setDownloadingId(record.id)
+  const handleDownload = async (record: DeliveryChallanItemRow) => {
+    setDownloadingId(record.deliveryChallanId)
     try {
-      await downloadDeliveryChallanPdf(Number(record.id), record.challanNumber)
+      await downloadDeliveryChallanPdf(Number(record.deliveryChallanId), record.challanNumber)
     } catch (error) {
       message.error(getErrorMessage(error))
     } finally {
@@ -131,7 +129,7 @@ export const DeliveryChallanList: FC = () => {
     }
   }
 
-  const handleCancel = (record: DeliveryChallan) => {
+  const handleCancel = (record: DeliveryChallanItemRow) => {
     modal.confirm({
       title: `Cancel ${record.challanNumber}?`,
       content:
@@ -139,9 +137,9 @@ export const DeliveryChallanList: FC = () => {
       okText: 'Cancel Challan',
       okButtonProps: { danger: true },
       onOk: async () => {
-        setCancellingId(record.id)
+        setCancellingId(record.deliveryChallanId)
         try {
-          await runCancel(record.id)
+          await runCancel(record.deliveryChallanId)
           message.success('Delivery challan cancelled')
         } catch (error) {
           message.error(getErrorMessage(error))
@@ -152,19 +150,21 @@ export const DeliveryChallanList: FC = () => {
     })
   }
 
-  const columns = getColumns({
-    onView: record => navigate(`/sales/delivery-challans/${record.id}`),
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
+    onView: record => navigate(`/sales/delivery-challans/${record.deliveryChallanId}`),
     onDownload: handleDownload,
     onCancel: handleCancel,
     downloadingId,
     cancellingId,
-  })
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Delivery Challans"
-        subtitle={`${meta?.total ?? 0} delivery challans`}
+        subtitle={`${meta?.total ?? 0} delivery challan items`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Delivery Challan' }]}
         actions={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
@@ -197,9 +197,9 @@ export const DeliveryChallanList: FC = () => {
           body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
         }}
       >
-        <DataTable<DeliveryChallan>
+        <DataTable<DeliveryChallanItemRow>
           columns={columns}
-          dataSource={challans}
+          dataSource={challanItems}
           rowKey="id"
           loading={isLoading || isFetching}
           pagination={{
@@ -211,10 +211,11 @@ export const DeliveryChallanList: FC = () => {
               setPageSize(nextPageSize)
             },
           }}
-          totalLabel="delivery challans"
+          totalLabel="delivery challan items"
           fillHeight
+          rowActions={record => getChallanActions(record, rowActions)}
           onRow={record => ({
-            onClick: () => navigate(`/sales/delivery-challans/${record.id}`),
+            onClick: () => navigate(`/sales/delivery-challans/${record.deliveryChallanId}`),
             style: { cursor: 'pointer' },
           })}
         />

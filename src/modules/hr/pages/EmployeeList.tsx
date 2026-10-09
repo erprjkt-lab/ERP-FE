@@ -5,19 +5,7 @@ import {
   EyeOutlined,
   PlusOutlined,
 } from '@ant-design/icons'
-import {
-  App,
-  Avatar,
-  Button,
-  Card,
-  Col,
-  Input,
-  Row,
-  Select,
-  Space,
-  theme as antTheme,
-  Tooltip,
-} from 'antd'
+import { App, Avatar, Button, Card, Col, Input, Row, Select, Space, theme as antTheme } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -25,6 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { Employee } from '@/types/hr'
 import { EmployeeFormDrawer } from '../components/EmployeeFormDrawer'
 import { EMPLOYEE_STATUS_OPTIONS } from '../constants'
@@ -33,12 +22,7 @@ import { useHRStore } from '../store/hrStore'
 import { getDepartmentColor } from '../utils/departmentColor'
 import { getErrorMessage } from '@/api/client'
 
-const getColumns = (
-  colorTextDescription: string,
-  onView: (record: Employee) => void,
-  onEdit: (record: Employee) => void,
-  onDelete: (record: Employee) => void,
-): TableColumnsType<Employee> => [
+const getColumns = (colorTextDescription: string): TableColumnsType<Employee> => [
   {
     title: 'Employee',
     key: 'employee',
@@ -74,29 +58,36 @@ const getColumns = (
     key: 'status',
     render: status => <StatusBadge status={status ?? 'active'} />,
   },
+]
+
+interface EmployeeRowActions {
+  onView: (record: Employee) => void
+  onEdit: (record: Employee) => void
+  onDelete: (record: Employee) => void
+}
+
+const getEmployeeActions = (record: Employee, a: EmployeeRowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 120,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
-        </Tooltip>
-        <Tooltip title="Edit">
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-        </Tooltip>
-        <Tooltip title="Delete">
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => onDelete(record)}
-          />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'view',
+    label: 'View',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'edit',
+    label: 'Edit',
+    icon: <EditOutlined />,
+    variant: 'primary',
+    onClick: () => a.onEdit(record),
+  },
+  {
+    key: 'delete',
+    label: 'Delete',
+    icon: <DeleteOutlined />,
+    variant: 'danger',
+    danger: true,
+    onClick: () => a.onDelete(record),
   },
 ]
 
@@ -126,12 +117,13 @@ export const EmployeeList: FC = () => {
     })
   }
 
-  const columns = getColumns(
-    token.colorTextDescription,
-    record => navigate(`/hr/employees/${record.id}`),
-    record => setDrawerState({ mode: 'edit', id: record.id }),
-    handleDelete,
-  )
+  const columns = getColumns(token.colorTextDescription)
+
+  const rowActions: EmployeeRowActions = {
+    onView: record => navigate(`/hr/employees/${record.id}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+    onDelete: handleDelete,
+  }
 
   const filtered = employees.filter(e => {
     if (
@@ -204,6 +196,7 @@ export const EmployeeList: FC = () => {
           loading={isLoading}
           totalLabel="employees"
           fillHeight
+          rowActions={record => getEmployeeActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/hr/employees/${record.id}`),
             style: { cursor: 'pointer' },

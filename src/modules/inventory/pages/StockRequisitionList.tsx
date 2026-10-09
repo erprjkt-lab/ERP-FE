@@ -7,17 +7,17 @@ import {
   EyeOutlined,
   LockOutlined,
   PlusOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { StockRequisition } from '@/types/inventory'
 import { StockRequisitionFormDrawer } from '../components/StockRequisitionFormDrawer'
 import { STOCK_REQUISITION_STATUS_BADGE, STOCK_REQUISITION_STATUS_LABELS } from '../constants'
@@ -28,7 +28,6 @@ import {
   useDeleteStockRequisition,
   useRejectStockRequisition,
   useStockRequisitions,
-  useSubmitStockRequisition,
 } from '../hooks/useStockRequisitions'
 import { useInventoryFilters, useInventoryStore } from '../store/inventoryStore'
 
@@ -37,16 +36,9 @@ const STATUS_OPTIONS = Object.entries(STOCK_REQUISITION_STATUS_LABELS).map(([val
   label,
 }))
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
 interface RowActions {
   onView: (record: StockRequisition) => void
   onEdit: (record: StockRequisition) => void
-  onSubmit: (record: StockRequisition) => void
   onApprove: (record: StockRequisition) => void
   onReject: (record: StockRequisition) => void
   onClose: (record: StockRequisition) => void
@@ -54,7 +46,7 @@ interface RowActions {
   onDelete: (record: StockRequisition) => void
 }
 
-const getColumns = (a: RowActions): TableColumnsType<StockRequisition> => [
+const getColumns = (): TableColumnsType<StockRequisition> => [
   { title: 'Requisition #', dataIndex: 'requisitionNumber', key: 'requisitionNumber', width: 150 },
   { title: 'Date', dataIndex: 'requisitionDate', key: 'requisitionDate', width: 110 },
   {
@@ -95,41 +87,91 @@ const getColumns = (a: RowActions): TableColumnsType<StockRequisition> => [
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 200,
-    render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
-      const isPending = record.status === 'PENDING_APPROVAL'
-      const isApproved = record.status === 'APPROVED'
-      const isFinished =
-        record.status === 'CLOSED' || record.status === 'CANCELLED' || record.status === 'REJECTED'
-
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {(isDraft || isPending) && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Submit for Approval', <SendOutlined />, () => a.onSubmit(record))}
-          {isPending && action('Approve', <CheckOutlined />, () => a.onApprove(record))}
-          {/* Reject = thumbs-down (workflow decision); Cancel = stop sign (abort the document) */}
-          {isPending && action('Reject', <DislikeOutlined />, () => a.onReject(record), true)}
-          {/* Lock = close/seal the requisition; CloseCircle = abort/cancel it */}
-          {isApproved && action('Close Requisition', <LockOutlined />, () => a.onClose(record))}
-          {!isFinished && action('Cancel', <CloseCircleOutlined />, () => a.onCancel(record), true)}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getRequisitionActions = (record: StockRequisition, a: RowActions): TableActionItem[] => {
+  const isPending = record.status === 'PENDING_APPROVAL'
+  const isApproved = record.status === 'APPROVED'
+  const isFinished =
+    record.status === 'CLOSED' || record.status === 'CANCELLED' || record.status === 'REJECTED'
+
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (isPending) {
+    actions.push(
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        onClick: () => a.onEdit(record),
+      },
+      {
+        key: 'approve',
+        label: 'Approve',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        onClick: () => a.onApprove(record),
+      },
+      {
+        key: 'reject',
+        label: 'Reject',
+        icon: <DislikeOutlined />,
+        variant: 'danger',
+        danger: true,
+        onClick: () => a.onReject(record),
+      },
+    )
+  }
+
+  if (isApproved) {
+    actions.push({
+      key: 'close',
+      label: 'Close Requisition',
+      icon: <LockOutlined />,
+      variant: 'accent',
+      onClick: () => a.onClose(record),
+    })
+  }
+
+  if (!isFinished) {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel',
+      icon: <CloseCircleOutlined />,
+      variant: 'danger',
+      danger: true,
+      onClick: () => a.onCancel(record),
+    })
+  }
+
+  if (isPending) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      onClick: () => a.onDelete(record),
+    })
+  }
+
+  return actions
+}
 
 export const StockRequisitionList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
   const { data: requisitions, isLoading } = useStockRequisitions()
   const { mutateAsync: deleteRequisition } = useDeleteStockRequisition()
-  const { mutateAsync: submitForApproval } = useSubmitStockRequisition()
   const { mutateAsync: approve } = useApproveStockRequisition()
   const { mutateAsync: reject } = useRejectStockRequisition()
   const { mutateAsync: close } = useCloseStockRequisition()
@@ -139,22 +181,6 @@ export const StockRequisitionList: FC = () => {
   const resetFilters = useInventoryStore(s => s.resetFilter)
 
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-
-  const handleSubmit = (record: StockRequisition) => {
-    modal.confirm({
-      title: 'Submit for approval?',
-      content: 'The requisition will be sent for approval and can no longer be edited.',
-      okText: 'Submit',
-      onOk: async () => {
-        try {
-          await submitForApproval(record.id)
-          message.success('Requisition submitted for approval')
-        } catch (error) {
-          message.error(getErrorMessage(error))
-        }
-      },
-    })
-  }
 
   const handleApprove = (record: StockRequisition) => {
     modal.confirm({
@@ -256,16 +282,17 @@ export const StockRequisitionList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/inventory/requisitions/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
-    onSubmit: handleSubmit,
     onApprove: handleApprove,
     onReject: handleReject,
     onClose: handleClose,
     onCancel: handleCancel,
     onDelete: handleDelete,
-  })
+  }
 
   const filtered = requisitions.filter(sr => {
     if (
@@ -332,6 +359,7 @@ export const StockRequisitionList: FC = () => {
           loading={isLoading}
           totalLabel="requisitions"
           fillHeight
+          rowActions={record => getRequisitionActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/inventory/requisitions/${record.id}`),
             style: { cursor: 'pointer' },

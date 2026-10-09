@@ -416,3 +416,90 @@ export interface QcResultPayload {
   heat_verified?: boolean | null
   remark?: string | null
 }
+
+// ---------- Item-wise (flat) listings — GET /grn-items, /purchase-order-items, /purchase-enquiry-items ----------
+// One row per item line, already joined with its header + item master by the BE
+// (*ItemListResource). Numeric columns can arrive as decimal strings.
+
+export interface ApiGrnItemRow {
+  id: number
+  grn_id: number
+  grn_no: string
+  grn_date: string
+  supplier_id: number
+  supplier_name: string | null
+  po_item_id: number | null
+  po_number: string | null
+  item_id: number
+  item_code: string | null
+  item_name: string | null
+  item_type: string | null
+  grade_id: number | null
+  material_grade: string | null
+  received_qty: number | string
+  commercial_unit: string | null
+  commercial_qty: number | string | null
+  rate: number | string | null
+  batch_no: string | null
+  heat_no: string | null
+  heat_verified: boolean | null
+  serial_no: string | null
+  location_id: number | null
+  location_code: string | null
+  location_name: string | null
+  accepted_qty: number | string | null
+  rejected_qty: number | string | null
+  short_qty: number | string | null
+  line_status: number
+  remark: string | null
+}
+
+export interface ApiPurchaseOrderItemRow {
+  id: number
+  purchase_order_id: number
+  po_number: string
+  po_date: string
+  po_status: string
+  supplier_id: number
+  supplier_name: string | null
+  supplier_quotation_item_id: number | null
+  purchase_enquiry_item_id: number | null
+  item_id: number
+  item_code: string | null
+  item_name: string | null
+  item_type: string | null
+  ordered_qty: number | string
+  received_qty: number | string
+  pending_qty: number
+  uom_id: number | null
+  uom_name: string | null
+  uom_code: string | null
+  rate: number | string
+  discount_percent: number | string | null
+  tax_percent: number | string | null
+  line_total: number | string
+  delivery_date: string | null
+  remarks: string | null
+}
+
+export interface ApiPurchaseEnquiryItemRow {
+  id: number
+  purchase_enquiry_id: number
+  enquiry_number: string
+  enquiry_date: string
+  enquiry_due_date: string | null
+  priority: string
+  enquiry_status: string
+  item_id: number
+  item_code: string | null
+  item_name: string | null
+  item_type: string | null
+  item_description: string | null
+  required_qty: number | string
+  uom_id: number | null
+  uom_name: string | null
+  uom_code: string | null
+  required_date: string | null
+  preferred_delivery_date: string | null
+  remarks: string | null
+}

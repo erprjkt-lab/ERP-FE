@@ -298,3 +298,84 @@ export interface DeliveryChallanPayload {
   remarks?: string | null
   items: DeliveryChallanItemPayload[]
 }
+
+// ---------- Item-wise (flat) listings — GET /sales-enquiry-items, /sales-order-items, /delivery-challan-items ----------
+// One row per item line, joined with its header + item master + party by the BE
+// (*ItemListResource). Numeric columns can arrive as decimal strings.
+
+export interface ApiSalesEnquiryItemRow {
+  id: number
+  sales_enquiry_id: number
+  enquiry_number: string
+  enquiry_date: string
+  enquiry_status: string
+  party_id: number
+  party_name: string | null
+  item_id: number
+  item_code: string | null
+  item_name: string | null
+  item_type: string | null
+  uom_id: number | null
+  uom_name: string | null
+  uom_code: string | null
+  qty: number | string
+  annual_volume: number | string | null
+  drawing_no: string | null
+  process_route: string | null
+  fg_weight: number | string | null
+  gross_weight: number | string | null
+  drawing_received: boolean | null
+  feasible_status: string
+  item_remark: string | null
+  item_status: string
+}
+
+export interface ApiSalesOrderItemRow {
+  id: number
+  sales_order_id: number
+  order_number: string
+  order_date: string
+  order_status: string
+  party_id: number
+  party_name: string | null
+  sales_quotation_item_id: number | null
+  item_id: number
+  item_code: string | null
+  item_name: string | null
+  item_type: string | null
+  uom_id: number | null
+  uom_name: string | null
+  uom_code: string | null
+  qty: number | string
+  rate: number | string
+  quoted_rate: number | string | null
+  discount_percent: number | string | null
+  tax_percent: number | string | null
+  line_total: number | string
+  committed_date: string | null
+  item_remark: string | null
+}
+
+export interface ApiDeliveryChallanItemRow {
+  id: number
+  delivery_challan_id: number
+  challan_number: string
+  challan_date: string
+  challan_status: string
+  party_id: number
+  party_name: string | null
+  sales_order_item_id: number | null
+  item_id: number
+  item_code: string | null
+  item_name: string | null
+  item_type: string | null
+  uom_id: number | null
+  uom_name: string | null
+  uom_code: string | null
+  dispatch_qty: number | string
+  rate: number | string
+  order_rate: number | string | null
+  line_total: number | string
+  billed_qty: number | string | null
+  item_remark: string | null
+}

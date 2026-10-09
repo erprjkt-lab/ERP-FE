@@ -6,7 +6,6 @@ import {
   getPurchaseRequisition,
   listPurchaseRequisitions,
   rejectPurchaseRequisition,
-  submitPurchaseRequisition,
   updatePurchaseRequisition,
 } from '@/api/purchaseRequisitions'
 import type {
@@ -190,18 +189,6 @@ export function useUpdatePurchaseRequisition() {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requisitions'] })
       queryClient.invalidateQueries({ queryKey: ['purchase-requisitions', variables.id] })
-    },
-  })
-}
-
-export function useSubmitRequisitionForApproval() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string) =>
-      toPurchaseRequisition((await submitPurchaseRequisition(Number(id))).data),
-    onSuccess: (_result, id) => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-requisitions'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-requisitions', id] })
     },
   })
 }

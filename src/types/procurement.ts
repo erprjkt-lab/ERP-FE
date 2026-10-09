@@ -3,10 +3,9 @@ import type { BaseEntity, ID } from './index'
 export type Priority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
 
 export type PurchaseRequisitionStatus =
-  'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CLOSED' | 'CANCELLED'
+  'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CLOSED' | 'CANCELLED'
 
 export type PurchaseEnquiryStatus =
-  | 'DRAFT'
   | 'SENT'
   | 'PARTIALLY_RESPONDED'
   | 'RESPONDED'
@@ -20,7 +19,13 @@ export type PurchaseEnquirySupplierStatus =
   'PENDING' | 'SENT' | 'RESPONDED' | 'DECLINED' | 'NO_RESPONSE' | 'SELECTED' | 'NOT_SELECTED'
 
 export type PurchaseOrderStatus =
-  'DRAFT' | 'APPROVED' | 'SENT' | 'PARTIALLY_RECEIVED' | 'RECEIVED' | 'CLOSED' | 'CANCELLED'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'SENT'
+  | 'PARTIALLY_RECEIVED'
+  | 'RECEIVED'
+  | 'CLOSED'
+  | 'CANCELLED'
 
 export interface PurchaseRequisitionItem {
   id: ID
@@ -212,4 +217,66 @@ export interface Grn extends BaseEntity {
   remarks?: string
   items: GrnItem[]
   createdBy: string
+}
+
+// Flat item-wise rows for the list pages (GET /grn-items, /purchase-order-items,
+// /purchase-enquiry-items). Header ids are kept so row actions can target the document.
+
+export interface GrnItemRow {
+  id: ID
+  grnId: ID
+  grnNo: string
+  grnDate: string
+  supplierId: ID
+  supplierName?: string
+  poNumber?: string
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  materialGrade?: string
+  receivedQty: number
+  commercialUnit?: string
+  batchNo?: string
+  heatNo?: string
+  locationName?: string
+  acceptedQty: number | null
+  rejectedQty: number | null
+  lineStatus: GrnLineStatus
+}
+
+export interface PurchaseOrderItemRow {
+  id: ID
+  purchaseOrderId: ID
+  poNumber: string
+  poDate: string
+  status: PurchaseOrderStatus
+  supplierId: ID
+  supplierName?: string
+  fromEnquiry: boolean
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  orderedQty: number
+  receivedQty: number
+  pendingQty: number
+  uomName?: string
+  rate: number
+  lineTotal: number
+  deliveryDate?: string
+}
+
+export interface PurchaseEnquiryItemRow {
+  id: ID
+  purchaseEnquiryId: ID
+  enquiryNumber: string
+  enquiryDate: string
+  enquiryDueDate?: string
+  priority: Priority
+  status: PurchaseEnquiryStatus
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  requiredQty: number
+  uomName?: string
+  requiredDate?: string
 }

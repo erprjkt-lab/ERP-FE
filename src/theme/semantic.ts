@@ -1,6 +1,6 @@
 export const SEMANTIC_TOKENS = {
-  colorSuccess: '#3F7D58',
-  colorWarning: '#C2650F',
-  colorError: '#B3402F',
-  colorInfo: '#4A6FA5',
+  colorSuccess: '#16A34A',
+  colorWarning: '#D97706',
+  colorError: '#DC2626',
+  colorInfo: '#0289C3',
 }

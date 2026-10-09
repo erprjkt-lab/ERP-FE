@@ -1,7 +1,8 @@
 import { apiRequest } from '@/api/client'
-import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
+import type { ApiEnvelope, ItemListParams, PaginatedEnvelope } from '@/types/api'
 import type {
   ApiSalesOrder,
+  ApiSalesOrderItemRow,
   SalesOrderFromQuotationPayload,
   SalesOrderPayload,
 } from '@/types/api/sales'
@@ -57,4 +58,17 @@ export function cancelSalesOrder(
   reason: string | null,
 ): Promise<ApiEnvelope<ApiSalesOrder>> {
   return apiRequest(`/api/v1/sales-orders/${id}/cancel`, { method: 'POST', body: { reason } })
+}
+
+// Flat one-row-per-order-line listing (joined with order, customer, item and UOM).
+export function listSalesOrderItems(
+  params: ItemListParams = {},
+): Promise<PaginatedEnvelope<ApiSalesOrderItemRow>> {
+  return apiRequest('/api/v1/sales-order-items', {
+    query: {
+      page: params.page ?? 1,
+      per_page: params.perPage ?? 20,
+      ...(params.status ? { status: params.status } : {}),
+    },
+  })
 }
