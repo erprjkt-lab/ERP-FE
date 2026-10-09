@@ -34,7 +34,7 @@ const ENQUIRY_STATUSES = Object.keys(ENQUIRY_STATUS_LABELS) as PurchaseEnquirySt
 
 const ALL = 'all'
 const GROUP_BADGE_COLOR: Record<string, string> = {
-  [ALL]: '#1677ff',
+  [ALL]: '#0289C3',
   pending: '#fa8c16',
   completed: '#52c41a',
   cancelled: '#bfbfbf',

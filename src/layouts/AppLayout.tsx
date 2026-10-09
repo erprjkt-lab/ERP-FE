@@ -8,9 +8,10 @@ import { useSidebarMenu } from '@/hooks/useMenus'
 import { DASHBOARD_ITEM } from '@/layouts/navConfig'
 import { buildSidebarItems, findActiveKeys, getKeyPath } from '@/layouts/sidebarNav'
 import { useAppStore } from '@/store'
-import { BRAND_GRADIENT_FROM, BRAND_GRADIENT_TO } from '@/theme/brand'
+import { useAuthStore } from '@/store/authStore'
 import { SIDEBAR_BG, SIDEBAR_BORDER } from '@/theme/sidebar'
 import { FONT_DISPLAY } from '@/theme/typography'
+import brandMark from '@/assets/brand/02.png'
 
 const { Header, Sider, Content } = Layout
 
@@ -19,6 +20,7 @@ const HEADER_HEIGHT = 48
 
 export const AppLayout: FC = () => {
   const { sidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useAppStore()
+  const userName = useAuthStore(state => state.user?.name) ?? 'Admin'
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = antTheme.useToken()
@@ -92,32 +94,50 @@ export const AppLayout: FC = () => {
         >
           <div
             style={{
-              width: 28,
-              height: 28,
+              width: 32,
+              height: 32,
               flexShrink: 0,
-              borderRadius: 6,
-              background: `linear-gradient(135deg, ${BRAND_GRADIENT_FROM}, ${BRAND_GRADIENT_TO})`,
+              borderRadius: 8,
+              background: 'rgba(0, 160, 227, 0.08)',
+              border: '1px solid rgba(0, 160, 227, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              padding: 4,
             }}
           >
-            <Typography.Text strong style={{ fontSize: 14, color: '#fff' }}>
-              E
-            </Typography.Text>
+            <img
+              src={brandMark}
+              alt="CoreFlow Tech"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
           {!sidebarCollapsed && (
-            <Typography.Title
-              level={4}
-              style={{
-                margin: '0 0 0 10px',
-                fontSize: 18,
-                color: '#fff',
-                fontFamily: FONT_DISPLAY,
-              }}
-            >
-              ERP App
-            </Typography.Title>
+            <div style={{ marginLeft: 10, display: 'flex', flexDirection: 'column' }}>
+              <Typography.Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: '#fff',
+                  fontFamily: FONT_DISPLAY,
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1.2,
+                }}
+              >
+                CoreFlow <span style={{ color: '#00A0E3' }}>Tech</span>
+              </Typography.Text>
+              <span
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: 600,
+                  color: 'rgba(255, 255, 255, 0.45)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Enterprise ERP
+              </span>
+            </div>
           )}
         </div>
         <Menu
@@ -178,8 +198,12 @@ export const AppLayout: FC = () => {
                 gap: 8,
               }}
             >
-              <Avatar size={24} icon={<UserOutlined />} />
-              <Typography.Text style={{ fontWeight: 500 }}>Admin</Typography.Text>
+              <Avatar
+                size={24}
+                style={{ background: token.colorPrimary }}
+                icon={<UserOutlined />}
+              />
+              <Typography.Text style={{ fontWeight: 500 }}>{userName}</Typography.Text>
               <DownOutlined style={{ fontSize: 10, color: token.colorTextTertiary }} />
             </Button>
           </Dropdown>

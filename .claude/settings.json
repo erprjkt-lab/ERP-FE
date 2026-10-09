@@ -18,7 +18,8 @@
       "Bash(node -e \"console.log\\(require\\('d:/ERP-FE/node_modules/@rolldown/binding-win32-x64-msvc/package.json'\\).version\\)\")",
       "Bash(node -e \"console.log\\(require\\('d:/ERP-FE/node_modules/rolldown/package.json'\\).version\\)\")",
       "Bash(nvm list *)",
-      "Bash(\"/c/nvm/nvm/v22.12.0/node.exe\" -v)"
+      "Bash(\"/c/nvm/nvm/v22.12.0/node.exe\" -v)",
+      "mcp__puppeteer__puppeteer_screenshot"
     ],
     "deny": ["Bash(git push --force *)", "Bash(git reset --hard *)", "Bash(rm -rf *)"]
   },

@@ -122,14 +122,14 @@
 }
 
 .erp-table-action-btn:focus-visible {
-  outline: 2px solid #1677ff;
+  outline: 2px solid #00a0e3;
   outline-offset: 1px;
 }
 
 /* Variant Styles */
 .erp-table-action-btn--primary:hover {
-  background: #e6f4ff;
-  color: #1677ff;
+  background: rgba(0, 160, 227, 0.1);
+  color: #0289c3;
 }
 
 .erp-table-action-btn--danger:hover {

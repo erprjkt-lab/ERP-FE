@@ -62,6 +62,7 @@ export interface PermissionState {
   canApprove: (moduleKey: string) => boolean
   hasRole: (role: string) => boolean
   hasAnyRole: (roles: string[]) => boolean
+  hasPermission: (permission: string) => boolean
 }
 
 /**
@@ -231,6 +232,10 @@ export const usePermissionStore = create<PermissionState>()(
       hasAnyRole: (roles: string[]) => {
         const userRoles = get().userRoles
         return roles.some(role => userRoles.includes(role))
+      },
+
+      hasPermission: (permission: string) => {
+        return get().userPermissions.includes(permission)
       },
     }),
     {
