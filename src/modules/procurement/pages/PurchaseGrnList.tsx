@@ -48,6 +48,14 @@ const getColumns = (): TableColumnsType<GrnItemRow> => [
     width: 110,
   },
   {
+    title: 'Rate',
+    dataIndex: 'rate',
+    key: 'rate',
+    align: 'right' as const,
+    width: 80,
+    render: v => (v ? `₹${v.toFixed(2)}` : '—'),
+  },
+  {
     title: 'Accepted',
     dataIndex: 'acceptedQty',
     key: 'acceptedQty',
