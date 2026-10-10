@@ -83,6 +83,7 @@ import {
   RejectionReviewList,
 } from '@/modules/production'
 import { FirList, IirList, IprList } from '@/modules/quality'
+import { ReportPage, ReportsLanding } from '@/modules/reports'
 import {
   DeliveryChallanDetail,
   DeliveryChallanForm,
@@ -300,6 +301,10 @@ function App() {
                 <Route path="/quality/ipr" element={<IprList />} />
                 <Route path="/quality/fir" element={<FirList />} />
                 <Route path="/quality/iir" element={<IirList />} />
+
+                {/* One generic page serves every report; the slug picks its config. */}
+                <Route path="/reports" element={<ReportsLanding />} />
+                <Route path="/reports/:slug" element={<ReportPage />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route

@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { useCustomers } from '@/modules/masters/hooks/useCustomers'
 import { useFinishedGoods } from '@/modules/masters/hooks/useFinishedGoods'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
+import { useSalesOrders } from '@/modules/sales/hooks/useSalesOrders'
 import { MANUFACTURING_ROUTE_CODE, useCreateJobCard } from '../hooks/useJobCards'
 import { useItemProcessRoute } from '../hooks/useItemProcessRoute'
 import { useProcesses } from '../hooks/useProcesses'
@@ -46,6 +47,7 @@ export const JobCardForm: FC = () => {
   const { data: locations = [] } = useLocations()
   const { data: customers = [] } = useCustomers()
   const { data: processes = [] } = useProcesses()
+  const { data: salesOrders = [] } = useSalesOrders()
   const { mutateAsync: createJobCard, isPending: saving } = useCreateJobCard()
 
   const itemId = Form.useWatch('itemId', form) as string | undefined
@@ -59,6 +61,12 @@ export const JobCardForm: FC = () => {
   const locationOptions = locations.map(loc => ({ label: loc.name, value: loc.id }))
   const customerOptions = (customers ?? []).map(c => ({ label: c.name, value: c.id }))
   const processOptions = processes.map(p => ({ label: p.processName, value: p.id }))
+  const salesOrderLineOptions = salesOrders.flatMap(order =>
+    order.items.map(item => ({
+      label: `${order.orderNumber} · ${item.itemCode || item.itemName} (Qty: ${item.qty})`,
+      value: item.id,
+    })),
+  )
 
   const handleFinish = async (values: JobCardFormValues) => {
     if (!overrideRoute && itemId && !loadingRoute && activeRoute.length === 0) {
@@ -135,9 +143,8 @@ export const JobCardForm: FC = () => {
                   label="Sales Order"
                   name="salesOrderLineId"
                   fieldType="select"
-                  options={[]}
-                  disabled
-                  placeholder="Sales module not integrated yet"
+                  options={salesOrderLineOptions}
+                  placeholder="Optional — select a sales order line"
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>

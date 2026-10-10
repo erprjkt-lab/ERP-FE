@@ -1,5 +1,6 @@
 import {
   AppstoreOutlined,
+  BarChartOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
   ShopOutlined,
@@ -8,6 +9,7 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import type { ReactNode } from 'react'
+import { REPORTS } from '@/modules/reports/reportRegistry'
 import type { ApiSidebarNode } from '@/types/api/rbac'
 
 // Shaped to drop straight into antd's Menu `items`, whose own union keeps leaves and
@@ -102,6 +104,15 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
     { path: '/quality/fir', label: 'FIR' },
     { path: '/quality/iir', label: 'IIR' },
   ],
+
+  // Every report's BE module key is `report-<slug>`, so the registry already holds
+  // the mapping — listing all nineteen again here would only invite drift.
+  ...Object.fromEntries(
+    REPORTS.map(report => [
+      `report-${report.slug}`,
+      [{ path: `/reports/${report.slug}`, label: report.title }],
+    ]),
+  ),
 }
 
 // BE icon names (feather-style, from the module registry) → the antd icon we render.
@@ -114,9 +125,16 @@ const ICONS: Record<string, ReactNode> = {
   package: <InboxOutlined />,
   cpu: <ToolOutlined />,
   'check-circle': <SafetyCertificateOutlined />,
+  'bar-chart-2': <BarChartOutlined />,
 }
 
 export const pendingPath = (moduleKey: string) => `/pending/${moduleKey}`
+
+/** Reports are many and uniform, so they get a landing page of cards instead of a
+ * submenu — nineteen leaves would push the rest of the sidebar off screen. Matched
+ * on the children's module keys rather than the folder's label, which BE can rename. */
+const isReportsFolder = (node: ApiSidebarNode) =>
+  node.children.length > 0 && node.children.every(child => child.module_key?.startsWith('report-'))
 
 /**
  * Turns the BE's permission-filtered menu tree into antd Menu items. Only the top
@@ -131,7 +149,11 @@ export function buildSidebarItems(nodes: ApiSidebarNode[], depth = 0): SidebarIt
 
     // Folder node: structural only, so drop it when nothing inside is visible.
     if (!node.module_key) {
-      if (childItems.length > 0) {
+      if (childItems.length === 0) continue
+
+      if (isReportsFolder(node)) {
+        items.push({ key: '/reports', label: node.name, icon })
+      } else {
         items.push({ key: `folder-${node.id}`, label: node.name, icon, children: childItems })
       }
       continue

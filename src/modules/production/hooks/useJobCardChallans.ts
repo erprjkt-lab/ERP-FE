@@ -63,6 +63,7 @@ export function useChallansForJobCard(jobCardId: string | undefined) {
 // touches). This is real data from real endpoints, just N requests instead
 // of one; a global list endpoint on the backend would make this cheaper.
 export function useAllChallans() {
+  const queryClient = useQueryClient()
   const { data: jobCards, isLoading: jobCardsLoading } = useJobCards()
 
   const results = useQueries({
@@ -74,6 +75,7 @@ export function useAllChallans() {
   })
 
   const isLoading = jobCardsLoading || results.some(r => r.isLoading)
+  const isFetching = results.some(r => r.isFetching)
   const byId = new Map<string, Challan>()
   for (const result of results) {
     for (const challan of result.data ?? []) {
@@ -81,7 +83,11 @@ export function useAllChallans() {
     }
   }
 
-  return { data: Array.from(byId.values()), isLoading }
+  const refetch = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
+  }
+
+  return { data: Array.from(byId.values()), isLoading, isFetching, refetch }
 }
 
 export function useCreateChallan() {

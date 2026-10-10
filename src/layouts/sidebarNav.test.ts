@@ -66,6 +66,39 @@ describe('buildSidebarItems', () => {
   it('drops a folder whose children are all hidden', () => {
     expect(buildSidebarItems([node({ id: 1, name: 'Administration' })])).toEqual([])
   })
+
+  it('collapses the reports folder into one link to the landing page', () => {
+    const [group] = buildSidebarItems([
+      node({
+        id: 9,
+        name: 'Reports',
+        icon: 'bar-chart-2',
+        children: [
+          node({ id: 90, name: 'Stock Ledger Report', module_key: 'report-stock-ledger' }),
+          node({ id: 91, name: 'GRN Register', module_key: 'report-grn-register' }),
+        ],
+      }),
+    ])
+
+    expect(group).toMatchObject({ key: '/reports', label: 'Reports' })
+    expect('children' in group).toBe(false)
+  })
+
+  it('still expands a reports folder the employee can see nothing in', () => {
+    expect(buildSidebarItems([node({ id: 9, name: 'Reports', icon: 'bar-chart-2' })])).toEqual([])
+  })
+
+  it('leaves a non-report folder expanded', () => {
+    const [group] = buildSidebarItems([
+      node({
+        id: 5,
+        name: 'Sales',
+        children: [node({ id: 43, name: 'Sales Orders', module_key: 'sales-orders' })],
+      }),
+    ])
+
+    expect('children' in group).toBe(true)
+  })
 })
 
 describe('findActiveKeys', () => {
