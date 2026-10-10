@@ -22,6 +22,10 @@ interface RequestOptions {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
+// Track concurrent 401s to prevent logout spam
+let last401Time = 0
+const LOGOUT_COOLDOWN = 1000 // Only logout once per second max
+
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   const url = new URL(`${BASE_URL}${path}`)
   if (query) {
@@ -38,7 +42,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, query } = options
-  const token = useAuthStore.getState().token
+  const authState = useAuthStore.getState()
+  const token = authState.token
+
+  // If no token and not a login request, redirect to login
+  if (!token && !path.includes('/login')) {
+    const now = Date.now()
+    if (now - last401Time > LOGOUT_COOLDOWN) {
+      last401Time = now
+      authState.clear()
+    }
+    throw new ApiRequestError('Unauthenticated', 401)
+  }
 
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -62,8 +77,14 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       isRecord(payload) && isRecord(payload.errors)
         ? (payload.errors as Record<string, string[]>)
         : undefined
+
     if (response.status === 401) {
-      useAuthStore.getState().clear()
+      const now = Date.now()
+      // Only clear auth once per LOGOUT_COOLDOWN to prevent spam logout
+      if (now - last401Time > LOGOUT_COOLDOWN) {
+        last401Time = now
+        authState.clear()
+      }
     }
     throw new ApiRequestError(message, response.status, fieldErrors)
   }
