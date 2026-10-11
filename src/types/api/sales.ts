@@ -379,3 +379,127 @@ export interface ApiDeliveryChallanItemRow {
   billed_qty: number | string | null
   item_remark: string | null
 }
+
+// ---------- Sales Invoice — GET/POST /sales-invoices, /sales-invoices/from-challan ----------
+
+export interface ApiSalesInvoiceItemStock {
+  id: number
+  location_id: number
+  location_name?: string | null
+  batch_no: string | null
+  heat_no: string | null
+  serial_no: string | null
+  qty: number | string
+}
+
+export interface ApiSalesInvoiceItem {
+  id: number
+  sales_invoice_id: number
+  delivery_challan_item_id: number | null
+  item_id: number
+  item?: ApiItemMaster
+  uom_id: number
+  uom?: ApiUom
+  qty: number | string
+  rate: number | string
+  challan_rate: number | string | null
+  discount_percent: number | string | null
+  discount_amount: number | string | null
+  tax_percent: number | string | null
+  tax_amount: number | string | null
+  line_total: number | string
+  item_remark: string | null
+  stocks?: ApiSalesInvoiceItemStock[]
+}
+
+export interface ApiSalesInvoice {
+  id: number
+  invoice_number: string
+  sales_order_id: number | null
+  party_id: number
+  party_name?: string | null
+  party_state_code: string | null
+  gstin: string | null
+  gst_type: string | null
+  invoice_date: string | null
+  taxable_amount: number | string | null
+  tax_amount: number | string | null
+  net_amount: number | string | null
+  status: string
+  remarks: string | null
+  items?: ApiSalesInvoiceItem[]
+  created_at: string | null
+  created_by: number | null
+  updated_by: number | null
+}
+
+export interface SalesInvoiceFromChallanItemPayload {
+  delivery_challan_item_id: number
+  qty: number
+  rate?: number | null
+  item_remark?: string | null
+}
+
+export interface SalesInvoiceFromChallanPayload {
+  invoice_date?: string | null
+  remarks?: string | null
+  items: SalesInvoiceFromChallanItemPayload[]
+}
+
+export interface SalesInvoiceItemStockPayload {
+  location_id: number
+  batch_no?: string | null
+  heat_no?: string | null
+  serial_no?: string | null
+  qty: number
+}
+
+export interface SalesInvoiceItemPayload {
+  item_id: number
+  uom_id: number
+  rate: number
+  discount_percent?: number | null
+  discount_amount?: number | null
+  tax_percent?: number | null
+  tax_amount?: number | null
+  item_remark?: string | null
+  stocks: SalesInvoiceItemStockPayload[]
+}
+
+export interface SalesInvoicePayload {
+  party_id: number
+  party_state_code?: string | null
+  gstin?: string | null
+  gst_type?: string | null
+  invoice_date: string
+  remarks?: string | null
+  items: SalesInvoiceItemPayload[]
+}
+
+export interface ApiSalesInvoiceItemRow {
+  id: number
+  sales_invoice_id: number
+  invoice_number: string
+  invoice_date: string
+  invoice_status: string
+  sales_order_id: number | null
+  party_id: number
+  party_name: string | null
+  delivery_challan_item_id: number | null
+  item_id: number
+  item_code: string | null
+  item_name: string | null
+  item_type: string | null
+  uom_id: number | null
+  uom_name: string | null
+  uom_code: string | null
+  qty: number | string
+  rate: number | string
+  challan_rate: number | string | null
+  discount_percent: number | string | null
+  discount_amount: number | string | null
+  tax_percent: number | string | null
+  tax_amount: number | string | null
+  line_total: number | string
+  item_remark: string | null
+}

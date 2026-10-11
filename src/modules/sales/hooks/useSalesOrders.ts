@@ -11,7 +11,7 @@ import {
   updateSalesOrder,
 } from '@/api/salesOrders'
 import type { SalesListParams } from '@/api/salesEnquiries'
-import type { ItemListParams } from '@/types/api'
+import type { SalesOrderItemListParams } from '@/api/salesOrders'
 import type {
   ApiSalesOrder,
   ApiSalesOrderItem,
@@ -233,7 +233,7 @@ function toSalesOrderItemRow(api: ApiSalesOrderItemRow): SalesOrderItemRow {
 }
 
 // Item-wise (one row per line) listing — server-side paginated.
-export function useSalesOrderItems(params: ItemListParams = {}) {
+export function useSalesOrderItems(params: SalesOrderItemListParams = {}) {
   const query = useQuery({
     queryKey: ['sales-orders', 'items', params],
     queryFn: () => listSalesOrderItems(params),

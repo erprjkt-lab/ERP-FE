@@ -51,7 +51,7 @@ export const VendorForm: FC = () => {
         address: vendor.address,
         countryId: vendor.countryId ?? undefined,
         stateId: vendor.stateId ?? undefined,
-        cityId: vendor.cityId ?? undefined,
+        cityName: vendor.cityName,
         pincode: vendor.pincode,
         gstNumber: vendor.gstNumber,
         bankName: vendor.bankName,
@@ -69,7 +69,7 @@ export const VendorForm: FC = () => {
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
@@ -85,8 +85,8 @@ export const VendorForm: FC = () => {
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       bankName: values.bankName as string | undefined,
@@ -212,7 +212,7 @@ export const VendorForm: FC = () => {
                     }
                     onChange={() => {
                       form.setFieldValue('stateId', undefined)
-                      form.setFieldValue('cityId', undefined)
+                      form.setFieldValue('cityName', undefined)
                     }}
                   />
                 </Form.Item>
@@ -233,14 +233,14 @@ export const VendorForm: FC = () => {
                         .toLowerCase()
                         .includes(input.toLowerCase())
                     }
-                    onChange={() => form.setFieldValue('cityId', undefined)}
+                    onChange={() => form.setFieldValue('cityName', undefined)}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} md={8}>
                 <FormField
                   label="City"
-                  name="cityId"
+                  name="cityName"
                   fieldType="select"
                   options={cityOptions}
                   rules={[{ required: true, message: 'City is required' }]}

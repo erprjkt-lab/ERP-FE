@@ -4,6 +4,7 @@ import type {
   FeasibleStatus,
   SalesEnquiryItemStatus,
   SalesEnquiryStatus,
+  SalesInvoiceStatus,
   SalesOrderStatus,
   SalesQuotationStatus,
 } from '@/types/sales'
@@ -85,5 +86,17 @@ export const CHALLAN_STATUS_LABELS: Record<DeliveryChallanStatus, string> = {
 
 export const CHALLAN_STATUS_BADGE: Record<DeliveryChallanStatus, StatusBadgeStatus> = {
   DISPATCHED: 'fulfilled',
+  CANCELLED: 'cancelled',
+}
+
+export const INVOICE_STATUS_LABELS: Record<SalesInvoiceStatus, string> = {
+  DRAFT: 'Draft',
+  POSTED: 'Posted',
+  CANCELLED: 'Cancelled',
+}
+
+export const INVOICE_STATUS_BADGE: Record<SalesInvoiceStatus, StatusBadgeStatus> = {
+  DRAFT: 'draft',
+  POSTED: 'fulfilled',
   CANCELLED: 'cancelled',
 }

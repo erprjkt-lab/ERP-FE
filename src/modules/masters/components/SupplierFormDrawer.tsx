@@ -46,7 +46,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   useEffect(() => {
     if (!open) return
@@ -61,7 +61,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
         address: supplier.address,
         countryId: supplier.countryId ?? undefined,
         stateId: supplier.stateId ?? undefined,
-        cityId: supplier.cityId ?? undefined,
+        cityName: supplier.cityName,
         pincode: supplier.pincode,
         gstNumber: supplier.gstNumber,
         panNumber: supplier.panNumber,
@@ -111,8 +111,8 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       panNumber: values.panNumber as string | undefined,
@@ -210,7 +210,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
                 }
                 onChange={() => {
                   form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
+                  form.setFieldValue('cityName', undefined)
                 }}
               />
             </Form.Item>
@@ -229,12 +229,12 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                onChange={() => form.setFieldValue('cityId', undefined)}
+                onChange={() => form.setFieldValue('cityName', undefined)}
               />
             </Form.Item>
             <FormField
               label="City"
-              name="cityId"
+              name="cityName"
               fieldType="select"
               options={cityOptions}
               rules={[{ required: true, message: 'City is required' }]}

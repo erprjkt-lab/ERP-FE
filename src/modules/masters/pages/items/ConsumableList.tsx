@@ -11,6 +11,7 @@ import {
   useUpdateConsumable,
 } from '../../hooks/useConsumables'
 import { useItemCategories } from '../../hooks/useItemCategories'
+import { useHsnCodes } from '../../hooks/useHsnCodes'
 import { useUoms } from '../../hooks/useUoms'
 
 export const ConsumableList: FC = () => {
@@ -20,9 +21,11 @@ export const ConsumableList: FC = () => {
   const { mutateAsync: deleteConsumable } = useDeleteConsumable()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { data: hsnCodes = [] } = useHsnCodes()
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
+  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
 
   return (
     <SimpleMasterList<Consumable>
@@ -70,7 +73,12 @@ export const ConsumableList: FC = () => {
               fieldType="select"
               options={uomOptions}
             />
-            <FormField label="HSN Code" name="hsnCode" />
+            <FormField
+              label="HSN Code"
+              name="hsnCode"
+              fieldType="select"
+              options={hsnCodeOptions}
+            />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField label="Price" name="price" fieldType="number" />
             <FormField

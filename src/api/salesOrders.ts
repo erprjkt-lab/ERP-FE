@@ -60,15 +60,21 @@ export function cancelSalesOrder(
   return apiRequest(`/api/v1/sales-orders/${id}/cancel`, { method: 'POST', body: { reason } })
 }
 
+export interface SalesOrderItemListParams extends ItemListParams {
+  /** Narrows to the lines for one item (BE filter: item_id). */
+  itemId?: string
+}
+
 // Flat one-row-per-order-line listing (joined with order, customer, item and UOM).
 export function listSalesOrderItems(
-  params: ItemListParams = {},
+  params: SalesOrderItemListParams = {},
 ): Promise<PaginatedEnvelope<ApiSalesOrderItemRow>> {
   return apiRequest('/api/v1/sales-order-items', {
     query: {
       page: params.page ?? 1,
       per_page: params.perPage ?? 20,
       ...(params.status ? { status: params.status } : {}),
+      ...(params.itemId ? { item_id: params.itemId } : {}),
     },
   })
 }

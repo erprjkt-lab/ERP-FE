@@ -452,6 +452,7 @@ export interface ApiGrnItemRow {
   short_qty: number | string | null
   line_status: number
   remark: string | null
+  has_inspection_report?: boolean
 }
 
 export interface ApiPurchaseOrderItemRow {

@@ -233,8 +233,10 @@ export interface GrnItemRow {
   itemId: ID
   itemCode?: string
   itemName?: string
+  itemType?: string
   materialGrade?: string
   receivedQty: number
+  rate: number | null
   commercialUnit?: string
   batchNo?: string
   heatNo?: string
@@ -242,6 +244,7 @@ export interface GrnItemRow {
   acceptedQty: number | null
   rejectedQty: number | null
   lineStatus: GrnLineStatus
+  hasInspectionReport: boolean
 }
 
 export interface PurchaseOrderItemRow {

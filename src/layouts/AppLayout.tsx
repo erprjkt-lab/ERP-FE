@@ -32,7 +32,11 @@ export const AppLayout: FC = () => {
   // loads (or if it fails) only the dashboard shows.
   const { data: sidebarTree } = useSidebarMenu()
   const sidebarItems = buildSidebarItems(sidebarTree ?? [])
-  const navItems = [DASHBOARD_ITEM, ...sidebarItems]
+  // The BE tree carries its own Dashboard module (mapped to '/'), so the hardcoded
+  // entry is only a fallback for before the menu loads — otherwise it duplicates.
+  const navItems = sidebarItems.some(item => item.key === '/')
+    ? sidebarItems
+    : [DASHBOARD_ITEM, ...sidebarItems]
 
   const { selectedKey, openKeys: activeOpenKeys } = findActiveKeys(sidebarItems, location.pathname)
   const isDashboard = location.pathname === '/'

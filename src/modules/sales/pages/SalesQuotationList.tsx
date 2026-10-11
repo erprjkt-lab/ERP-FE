@@ -2,7 +2,6 @@ import {
   CheckOutlined,
   CloseOutlined,
   DeleteOutlined,
-  DiffOutlined,
   EditOutlined,
   EyeOutlined,
   FileDoneOutlined,
@@ -21,7 +20,7 @@ import type { TableActionItem } from '@/components/ui'
 import type { SalesQuotation } from '@/types/sales'
 import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
 import { QUOTATION_STATUS_BADGE, QUOTATION_STATUS_LABELS } from '../constants'
-import { useCreateSalesOrderFromQuotation } from '../hooks/useSalesOrders'
+import { useCreateSalesOrderFromQuotation, useSalesOrders } from '../hooks/useSalesOrders'
 import {
   useDeleteSalesQuotation,
   useSalesQuotationAction,
@@ -92,7 +91,11 @@ const getColumns = (): TableColumnsType<SalesQuotation> => [
   },
 ]
 
-const getQuotationActions = (record: SalesQuotation, a: RowActions): TableActionItem[] => {
+const getQuotationActions = (
+  record: SalesQuotation,
+  a: RowActions,
+  hasOrder: boolean,
+): TableActionItem[] => {
   const isSent = record.status === 'SENT'
   const isAccepted = record.status === 'ACCEPTED'
   const actions: TableActionItem[] = [
@@ -135,17 +138,10 @@ const getQuotationActions = (record: SalesQuotation, a: RowActions): TableAction
     )
   }
 
-  if (!isAccepted && record.status !== 'REVISED') {
-    actions.push({
-      key: 'revise',
-      label: 'Revise',
-      icon: <DiffOutlined />,
-      variant: 'accent',
-      onClick: () => a.onRevise(record),
-    })
-  }
+  // Revise is switched off for now by request; onRevise/handleAction stay wired
+  // so it is a one-block restore when the flow is signed off.
 
-  if (isAccepted) {
+  if (isAccepted && !hasOrder) {
     actions.push({
       key: 'create-order',
       label: 'Create Sales Order',
@@ -187,6 +183,12 @@ export const SalesQuotationList: FC = () => {
   const { mutateAsync: runAction } = useSalesQuotationAction()
   const { mutateAsync: createOrder } = useCreateSalesOrderFromQuotation()
   const { mutateAsync: removeQuotation } = useDeleteSalesQuotation()
+  // No flag on the quotation resource says whether an order was raised from it,
+  // so cross-reference the sales orders' sales_quotation_id instead.
+  const { data: salesOrders } = useSalesOrders({ perPage: 200 })
+  const orderedQuotationIds = new Set(
+    salesOrders.map(o => o.salesQuotationId).filter((id): id is string => !!id),
+  )
 
   // Status filtering happens server-side, so changing it has to send the
   // user back to page 1 — otherwise they can sit on a page number that
@@ -334,7 +336,9 @@ export const SalesQuotationList: FC = () => {
           }}
           totalLabel="quotations"
           fillHeight
-          rowActions={record => getQuotationActions(record, rowActions)}
+          rowActions={record =>
+            getQuotationActions(record, rowActions, orderedQuotationIds.has(record.id))
+          }
           onRow={record => ({
             onClick: () => navigate(`/sales/quotations/${record.id}`),
             style: { cursor: 'pointer' },

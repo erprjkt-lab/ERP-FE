@@ -234,3 +234,72 @@ export interface DeliveryChallanItemRow {
   lineTotal: number
   billedQty: number
 }
+
+export type SalesInvoiceStatus = 'DRAFT' | 'POSTED' | 'CANCELLED'
+
+export interface SalesInvoiceItemStock {
+  id: ID
+  locationId: ID
+  locationName?: string
+  batchNo: string | null
+  heatNo: string | null
+  serialNo: string | null
+  qty: number
+}
+
+export interface SalesInvoiceItem {
+  id: ID
+  deliveryChallanItemId: ID | null
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  uomId: ID | null
+  uomName?: string
+  qty: number
+  rate: number
+  challanRate: number | null
+  discountPercent: number
+  discountAmount: number
+  taxPercent: number
+  taxAmount: number
+  lineTotal: number
+  itemRemark: string | null
+  stocks: SalesInvoiceItemStock[]
+}
+
+export interface SalesInvoice {
+  id: ID
+  invoiceNumber: string
+  salesOrderId: ID | null
+  partyId: ID
+  partyName?: string
+  partyStateCode: string | null
+  gstin: string | null
+  gstType: string | null
+  invoiceDate: string
+  taxableAmount: number
+  taxAmount: number
+  netAmount: number
+  status: SalesInvoiceStatus
+  remarks: string | null
+  items: SalesInvoiceItem[]
+  createdBy: string
+  createdAt: string
+}
+
+export interface SalesInvoiceItemRow {
+  id: ID
+  salesInvoiceId: ID
+  invoiceNumber: string
+  invoiceDate: string
+  status: SalesInvoiceStatus
+  partyId: ID
+  partyName?: string
+  itemId: ID
+  itemCode?: string
+  itemName?: string
+  uomName?: string
+  qty: number
+  rate: number
+  lineTotal: number
+}

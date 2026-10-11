@@ -13,6 +13,7 @@ import {
   useRawMaterial,
   useUpdateRawMaterial,
 } from '../hooks/useRawMaterials'
+import { useHsnCodes } from '../hooks/useHsnCodes'
 import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -40,10 +41,12 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
   const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { data: hsnCodes = [] } = useHsnCodes()
   const { data: materialGrades = [] } = useMaterialGrades()
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
+  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
   const materialGradeOptions = materialGrades.map(m => ({
     label: m.material_grade,
     value: String(m.id),
@@ -178,7 +181,12 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
               fieldType="select"
               options={uomOptions}
             />
-            <FormField label="HSN Code" name="hsnCode" />
+            <FormField
+              label="HSN Code"
+              name="hsnCode"
+              fieldType="select"
+              options={hsnCodeOptions}
+            />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField
               label="Status"

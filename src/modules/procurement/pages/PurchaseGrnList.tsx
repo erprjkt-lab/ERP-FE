@@ -1,4 +1,4 @@
-import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
+import { AuditOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
@@ -7,10 +7,11 @@ import { useNavigate } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { IncomingInspectionDrawer } from '@/modules/quality/components/IncomingInspectionDrawer'
 import type { TableActionItem } from '@/components/ui'
 import type { GrnItemRow, GrnLineStatus } from '@/types/procurement'
 import { GrnFormDrawer } from '../components/GrnFormDrawer'
-import { GRN_LINE_STATUS_BADGE, GRN_LINE_STATUS_LABELS } from '../constants'
+import { GRN_LINE_STATUS_BADGE, GRN_LINE_STATUS_LABELS, ITEM_TYPE_RAW_MATERIAL } from '../constants'
 import { useGrnItems } from '../hooks/usePurchaseGrns'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 
@@ -22,6 +23,7 @@ const STATUS_OPTIONS = Object.entries(GRN_LINE_STATUS_LABELS).map(([value, label
 interface RowActions {
   onView: (record: GrnItemRow) => void
   onEdit: (record: GrnItemRow) => void
+  onIir: (record: GrnItemRow) => void
 }
 
 const getColumns = (): TableColumnsType<GrnItemRow> => [
@@ -100,11 +102,25 @@ const getGrnActions = (record: GrnItemRow, a: RowActions): TableActionItem[] => 
     variant: 'primary',
     onClick: () => a.onEdit(record),
   },
+  // IIR only applies to raw-material lines (same rule as the GRN detail page).
+  // item_type arrives as a raw join column, so it can be the int or its string form.
+  ...(Number(record.itemType) === ITEM_TYPE_RAW_MATERIAL
+    ? [
+        {
+          key: 'iir',
+          label: record.hasInspectionReport ? 'IIR ✓' : 'IIR',
+          icon: <AuditOutlined />,
+          variant: 'default' as const,
+          onClick: () => a.onIir(record),
+        },
+      ]
+    : []),
 ]
 
 export const PurchaseGrnList: FC = () => {
   const navigate = useNavigate()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
+  const [iirRow, setIirRow] = useState<GrnItemRow>()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const filters = useProcurementFilters('grn')
@@ -123,6 +139,7 @@ export const PurchaseGrnList: FC = () => {
   const rowActions: RowActions = {
     onView: record => navigate(`/purchase/grn/${record.grnId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.grnId }),
+    onIir: record => setIirRow(record),
   }
 
   const filtered = items.filter(
@@ -209,6 +226,15 @@ export const PurchaseGrnList: FC = () => {
           })}
         />
       </Card>
+
+      <IncomingInspectionDrawer
+        open={!!iirRow}
+        grnItemId={iirRow?.id}
+        itemId={iirRow?.itemId}
+        itemName={iirRow?.itemName ?? iirRow?.itemId}
+        grnNo={iirRow?.grnNo}
+        onClose={() => setIirRow(undefined)}
+      />
 
       <GrnFormDrawer
         open={!!drawerState}

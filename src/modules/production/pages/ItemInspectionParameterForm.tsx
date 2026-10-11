@@ -14,7 +14,7 @@ import {
   useInspectionParameters,
   useUpdateInspectionParameter,
 } from '../hooks/useInspectionParameters'
-import { useProcesses } from '../hooks/useProcesses'
+import { useItemProcessRoute } from '../hooks/useItemProcessRoute'
 
 const PARAM_TYPE_OPTIONS: { label: string; value: InspectionParamType }[] = [
   { label: 'Product', value: 'product' },
@@ -37,12 +37,17 @@ export const ItemInspectionParameterForm: FC = () => {
     ? { label: 'Raw Materials', href: '/masters/raw-materials' }
     : { label: 'BOM', href: '/production/bom' }
   const { data: parameters = [], isLoading } = useInspectionParameters(itemId)
-  const { data: processes = [] } = useProcesses()
+  const { data: routeSteps } = useItemProcessRoute(itemId)
   const { mutateAsync: createParameter } = useCreateInspectionParameter(itemId)
   const { mutateAsync: updateParameter } = useUpdateInspectionParameter(itemId)
   const { mutateAsync: deleteParameter } = useDeleteInspectionParameter(itemId)
 
-  const processOptions = processes.map(p => ({ label: p.processName, value: p.id }))
+  // Only the processes actually on this item's process route are inspectable,
+  // so the picker is scoped to the route rather than the whole process master.
+  const processOptions = routeSteps.map(step => ({
+    label: step.processName,
+    value: step.processId,
+  }))
 
   return (
     <SimpleMasterList<InspectionParameter>
@@ -137,6 +142,7 @@ export const ItemInspectionParameterForm: FC = () => {
               name="controlMethod"
               fieldType="select"
               options={CONTROL_METHOD_OPTIONS}
+              rules={[{ required: true, message: 'Control method is required' }]}
             />
             <FormField
               label="Status"

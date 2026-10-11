@@ -1,6 +1,7 @@
 import {
   AppstoreOutlined,
   BarChartOutlined,
+  DashboardOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
   ShopOutlined,
@@ -45,6 +46,10 @@ const isSubmenu = (item: SidebarItem): item is SidebarSubmenu => 'children' in i
  * to a /pending placeholder so the user still sees it in the tree.
  */
 export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
+  // BE ships its own top-level `dashboard` module; point it at the real page so
+  // it doesn't fall through to the /pending placeholder as a second entry.
+  dashboard: [{ path: '/', label: 'Dashboard' }],
+
   employees: [{ path: '/hr/employees', label: 'Employees' }],
   departments: [{ path: '/hr/departments', label: 'Departments' }],
   designations: [{ path: '/hr/designations', label: 'Designations' }],
@@ -117,6 +122,7 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
 
 // BE icon names (feather-style, from the module registry) → the antd icon we render.
 const ICONS: Record<string, ReactNode> = {
+  home: <DashboardOutlined />,
   settings: <SettingOutlined />,
   database: <AppstoreOutlined />,
   box: <AppstoreOutlined />,

@@ -47,6 +47,7 @@ import {
   SupplierDetail,
   SupplierForm,
   SupplierList,
+  UomList,
   VendorDetail,
   VendorForm,
   VendorList,
@@ -91,6 +92,8 @@ import {
   SalesEnquiryDetail,
   SalesEnquiryForm,
   SalesEnquiryList,
+  SalesInvoiceDetail,
+  SalesInvoiceList,
   SalesOrderDetail,
   SalesOrderForm,
   SalesOrderList,
@@ -113,6 +116,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/hr/shifts',
   '/hr/user-permissions',
   '/masters/customers',
+  '/masters/units',
   '/masters/suppliers',
   '/masters/vendors',
   '/masters/finished-goods',
@@ -129,6 +133,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/sales/quotations',
   '/sales/orders',
   '/sales/delivery-challans',
+  '/sales/invoices',
   '/inventory/ledger',
   '/inventory/stock-balance',
   '/inventory/requisitions',
@@ -206,6 +211,8 @@ function App() {
                   <Route path="dies-blocks" element={<DieBlockList />} />
                 </Route>
 
+                <Route path="/masters/units" element={<UomList />} />
+
                 <Route path="/hsn-category-grade/hsn-codes" element={<HsnCodeList />} />
                 <Route path="/hsn-category-grade/item-categories" element={<ItemCategoryList />} />
                 <Route path="/hsn-category-grade/material-grades" element={<MaterialGradeList />} />
@@ -256,6 +263,9 @@ function App() {
                 <Route path="/sales/delivery-challans" element={<DeliveryChallanList />} />
                 <Route path="/sales/delivery-challans/new" element={<DeliveryChallanForm />} />
                 <Route path="/sales/delivery-challans/:id" element={<DeliveryChallanDetail />} />
+
+                <Route path="/sales/invoices" element={<SalesInvoiceList />} />
+                <Route path="/sales/invoices/:id" element={<SalesInvoiceDetail />} />
 
                 <Route path="/inventory/ledger" element={<StockLedger />} />
                 <Route path="/inventory/stock-balance" element={<StockBalance />} />

@@ -213,8 +213,10 @@ function toGrnItemRow(api: ApiGrnItemRow): GrnItemRow {
     itemId: String(api.item_id),
     itemCode: api.item_code ?? undefined,
     itemName: api.item_name ?? undefined,
+    itemType: api.item_type ?? undefined,
     materialGrade: api.material_grade ?? undefined,
     receivedQty: Number(api.received_qty),
+    rate: optionalNumber(api.rate),
     commercialUnit: api.commercial_unit ?? undefined,
     batchNo: api.batch_no ?? undefined,
     heatNo: api.heat_no ?? undefined,
@@ -222,6 +224,7 @@ function toGrnItemRow(api: ApiGrnItemRow): GrnItemRow {
     acceptedQty: optionalNumber(api.accepted_qty),
     rejectedQty: optionalNumber(api.rejected_qty),
     lineStatus: api.line_status as GrnLineStatus,
+    hasInspectionReport: api.has_inspection_report ?? false,
   }
 }
 

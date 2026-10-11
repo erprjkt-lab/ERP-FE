@@ -182,8 +182,10 @@ export const SalesQuotationDetail: FC = () => {
             <Button icon={<CloseOutlined />} danger disabled={!isSent} onClick={handleReject}>
               Reject
             </Button>
+            {/* Revise is switched off for now by request; flip `disabled` back to
+                `isAccepted || quotation.status === 'REVISED'` to restore it. */}
             <Button
-              disabled={isAccepted || quotation.status === 'REVISED'}
+              disabled
               loading={actionPending}
               onClick={() => handle('revise', 'Revision created')}
             >
