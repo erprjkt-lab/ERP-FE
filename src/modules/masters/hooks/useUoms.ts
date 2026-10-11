@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { listUoms } from '@/api/uom'
+import { FALLBACK_UOMS } from '../constants'
 
 export function useUoms() {
   const { data, isLoading } = useQuery({
@@ -7,5 +8,6 @@ export function useUoms() {
     queryFn: listUoms,
     staleTime: Infinity,
   })
-  return { data: data?.data ?? [], isLoading }
+  const uoms = data?.data ?? []
+  return { data: uoms.length ? uoms : FALLBACK_UOMS, isLoading }
 }
