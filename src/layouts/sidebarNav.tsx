@@ -10,7 +10,6 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import type { ReactNode } from 'react'
-import { REPORTS } from '@/modules/reports/reportRegistry'
 import type { ApiSidebarNode } from '@/types/api/rbac'
 
 // Shaped to drop straight into antd's Menu `items`, whose own union keeps leaves and
@@ -59,6 +58,7 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
   customers: [{ path: '/masters/customers', label: 'Customers' }],
   suppliers: [{ path: '/masters/suppliers', label: 'Suppliers' }],
   vendors: [{ path: '/masters/vendors', label: 'Vendors' }],
+  uom: [{ path: '/masters/units', label: 'Units of Measure' }],
   'finished-goods': [{ path: '/masters/finished-goods', label: 'Finished Goods' }],
   'raw-materials': [{ path: '/masters/raw-materials', label: 'Raw Materials' }],
   consumables: [{ path: '/masters/items/consumables', label: 'Consumables' }],
@@ -83,6 +83,7 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
   'sales-quotations': [{ path: '/sales/quotations', label: 'Sales Quotations' }],
   'sales-orders': [{ path: '/sales/orders', label: 'Sales Orders' }],
   'delivery-challans': [{ path: '/sales/delivery-challans', label: 'Delivery Challans' }],
+  'sales-invoices': [{ path: '/sales/invoices', label: 'Sales Invoices' }],
 
   stock: [
     { path: '/inventory/stock-balance', label: 'Stock Balance' },
@@ -93,6 +94,7 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
   'stock-adjustments': [{ path: '/inventory/adjustments', label: 'Stock Adjustments' }],
   'opening-stock': [{ path: '/inventory/opening-stock', label: 'Opening Stock' }],
   'stock-transfer': [{ path: '/inventory/transfers', label: 'Stock Transfer' }],
+  locations: [{ path: '/inventory/locations', label: 'Store Locations' }],
 
   'job-cards': [
     { path: '/production/work-orders', label: 'Work Orders (Job Cards)' },
@@ -110,12 +112,12 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
     { path: '/quality/iir', label: 'IIR' },
   ],
 
-  // Every report's BE module key is `report-<slug>`, so the registry already holds
-  // the mapping — listing all nineteen again here would only invite drift.
+  // BE groups the reports into five `reports-<area>` modules, all of which land on
+  // the same cards page — the per-report routes hang off /reports/:slug from there.
   ...Object.fromEntries(
-    REPORTS.map(report => [
-      `report-${report.slug}`,
-      [{ path: `/reports/${report.slug}`, label: report.title }],
+    ['sales', 'purchase', 'inventory', 'hr', 'production'].map(area => [
+      `reports-${area}`,
+      [{ path: '/reports', label: 'Reports' }],
     ]),
   ),
 }
@@ -140,7 +142,7 @@ export const pendingPath = (moduleKey: string) => `/pending/${moduleKey}`
  * submenu — nineteen leaves would push the rest of the sidebar off screen. Matched
  * on the children's module keys rather than the folder's label, which BE can rename. */
 const isReportsFolder = (node: ApiSidebarNode) =>
-  node.children.length > 0 && node.children.every(child => child.module_key?.startsWith('report-'))
+  node.children.length > 0 && node.children.every(child => child.module_key?.startsWith('reports-'))
 
 /**
  * Turns the BE's permission-filtered menu tree into antd Menu items. Only the top

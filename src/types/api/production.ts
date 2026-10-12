@@ -242,6 +242,8 @@ export interface ApiJobCardMovement {
   from_process_name: string | null
   to_process_id: number
   to_process_name: string | null
+  rejection_review_id: number | null
+  is_rework: boolean
   moved_qty: number
   moved_at: string | null
   moved_by: number | null

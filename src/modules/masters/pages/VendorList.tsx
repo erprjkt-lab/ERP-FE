@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { TableActionItem } from '@/components/ui'
 import type { Vendor } from '@/types/masters'
 import { VendorFormDrawer } from '../components/VendorFormDrawer'
-import { MASTER_STATUS_OPTIONS, VENDOR_TYPE_OPTIONS } from '../constants'
+import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteVendor, useVendors } from '../hooks/useVendors'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -108,7 +108,6 @@ export const VendorList: FC = () => {
       return false
     }
     if (filters.status && v.status !== filters.status) return false
-    if (filters.vendorType && v.vendorType !== filters.vendorType) return false
     return true
   })
 
@@ -145,16 +144,6 @@ export const VendorList: FC = () => {
               allowClear
               style={{ width: '100%' }}
               options={MASTER_STATUS_OPTIONS}
-            />
-          </Col>
-          <Col xs={24} sm={8} md={4}>
-            <Select
-              placeholder="Type"
-              value={filters.vendorType}
-              onChange={v => setFilter('vendorType', v)}
-              allowClear
-              style={{ width: '100%' }}
-              options={VENDOR_TYPE_OPTIONS}
             />
           </Col>
           <Col>

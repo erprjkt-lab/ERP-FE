@@ -13,6 +13,7 @@ export { StockAdjustmentDetail } from './pages/StockAdjustmentDetail'
 
 export { StockIssueList } from './pages/StockIssueList'
 
+export { LocationList } from './pages/LocationList'
 export { OpeningStockList } from './pages/OpeningStockList'
 export { StockTransferList } from './pages/StockTransferList'
 

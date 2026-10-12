@@ -24,6 +24,9 @@ export interface SimpleMasterListProps<T extends { id: string }> {
   getInitialValues?: (record: T) => Record<string, unknown>
   onSubmit: (values: Record<string, unknown>, editing: T | null) => Promise<void>
   onDelete: (record: T) => Promise<void>
+  /** Reshapes a row's actions — drop the defaults, disable them, or add more.
+   *  Left out, every row gets the usual Edit/Delete pair. */
+  rowActions?: (record: T, defaults: TableActionItem[]) => TableActionItem[]
   /** Drops the PageHeader/Card page chrome for use inside another drawer. */
   embedded?: boolean
 }
@@ -43,6 +46,7 @@ export function SimpleMasterList<T extends { id: string }>({
   getInitialValues,
   onSubmit,
   onDelete,
+  rowActions,
   embedded = false,
 }: SimpleMasterListProps<T>) {
   const { modal, message } = App.useApp()
@@ -102,23 +106,27 @@ export function SimpleMasterList<T extends { id: string }>({
     })
   }
 
-  const getMasterActions = (record: T): TableActionItem[] => [
-    {
-      key: 'edit',
-      label: 'Edit',
-      icon: <EditOutlined />,
-      variant: 'primary',
-      onClick: () => openEdit(record),
-    },
-    {
-      key: 'delete',
-      label: 'Delete',
-      icon: <DeleteOutlined />,
-      variant: 'danger',
-      danger: true,
-      onClick: () => handleDelete(record),
-    },
-  ]
+  const getMasterActions = (record: T): TableActionItem[] => {
+    const defaults: TableActionItem[] = [
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        onClick: () => openEdit(record),
+      },
+      {
+        key: 'delete',
+        label: 'Delete',
+        icon: <DeleteOutlined />,
+        variant: 'danger',
+        danger: true,
+        onClick: () => handleDelete(record),
+      },
+    ]
+
+    return rowActions ? rowActions(record, defaults) : defaults
+  }
 
   const formDrawer = (
     <FormDrawer

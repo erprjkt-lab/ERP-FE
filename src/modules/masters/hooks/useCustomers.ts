@@ -8,7 +8,6 @@ import {
 } from '@/api/customers'
 import type { ApiGstType, ApiParty, CreatePartyPayload, PartyPayload } from '@/types/api/masters'
 import type { Customer, GstType } from '@/types/masters'
-import { useMastersLocalStore } from '../store/mastersLocalStore'
 import type { CustomerInput } from '../store/mastersStore'
 
 const GST_TYPE_TO_API: Record<GstType, ApiGstType> = {
@@ -31,12 +30,11 @@ const GST_TYPE_FROM_API: Partial<Record<ApiGstType, GstType>> = {
 // resolved back to a world-master city on read — only the display name survives
 // the round trip. country/state come back as expanded {id, name} objects already,
 // so no separate country-list lookup is needed to show their names.
-function toCustomer(api: ApiParty, customerType: Customer['customerType']): Customer {
+function toCustomer(api: ApiParty): Customer {
   return {
     id: String(api.id),
     code: api.party_code,
     name: api.party_name,
-    customerType,
     status: api.status === 0 ? 'inactive' : 'active',
     contactPerson: api.contact_person ?? '',
     mobile: api.mobile,
@@ -102,38 +100,33 @@ function toCreatePayload(input: CustomerInput): CreatePartyPayload {
 }
 
 export function useCustomers() {
-  const customerTypes = useMastersLocalStore(s => s.customerTypes)
   const query = useQuery({
     queryKey: ['customers'],
     queryFn: async () => (await listCustomers()).data,
   })
 
-  const data = query.data?.map(api => toCustomer(api, customerTypes[String(api.id)] ?? null))
+  const data = query.data?.map(toCustomer)
 
   return { ...query, data, isLoading: query.isLoading }
 }
 
 export function useCustomer(id: string | undefined) {
-  const customerTypes = useMastersLocalStore(s => s.customerTypes)
   const query = useQuery({
     queryKey: ['customers', id],
     queryFn: async () => (await getCustomer(Number(id))).data,
     enabled: !!id,
   })
 
-  const data = query.data && id ? toCustomer(query.data, customerTypes[id] ?? null) : undefined
+  const data = query.data ? toCustomer(query.data) : undefined
 
   return { ...query, data, isLoading: query.isLoading }
 }
 
 export function useCreateCustomer() {
   const queryClient = useQueryClient()
-  const setCustomerType = useMastersLocalStore(s => s.setCustomerType)
   return useMutation({
     mutationFn: async (input: CustomerInput) => {
-      const result = (await createCustomer(toCreatePayload(input))).data
-      setCustomerType(String(result.id), input.customerType ?? null)
-      return result
+      return (await createCustomer(toCreatePayload(input))).data
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customers'] }),
   })
@@ -141,12 +134,9 @@ export function useCreateCustomer() {
 
 export function useUpdateCustomer() {
   const queryClient = useQueryClient()
-  const setCustomerType = useMastersLocalStore(s => s.setCustomerType)
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<CustomerInput> }) => {
-      const result = await updateCustomer(Number(id), buildPartyFields(payload))
-      if ('customerType' in payload) setCustomerType(id, payload.customerType ?? null)
-      return result
+      return await updateCustomer(Number(id), buildPartyFields(payload))
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
@@ -157,12 +147,8 @@ export function useUpdateCustomer() {
 
 export function useDeleteCustomer() {
   const queryClient = useQueryClient()
-  const removeCustomerType = useMastersLocalStore(s => s.removeCustomerType)
   return useMutation({
-    mutationFn: async (id: string) => {
-      await deleteCustomer(Number(id))
-      removeCustomerType(id)
-    },
+    mutationFn: (id: string) => deleteCustomer(Number(id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customers'] }),
   })
 }

@@ -76,7 +76,7 @@ export const JobCardDetail: FC = () => {
   // counted, and mixing them would double-count every step.
   const firstPassLogs = logs.filter(log => !log.isRework)
   const progress = computeStepProgress(jobCard?.routes ?? [], firstPassLogs, movements, orderedQty)
-  const reworkBatches = computeReworkBatches(jobCard?.routes ?? [], reworkReviews, logs)
+  const reworkBatches = computeReworkBatches(jobCard?.routes ?? [], reworkReviews, logs, movements)
   const activeBatch = reworkBatches.find(batch => batch.review.id === activeReworkReviewId)
   const activeRows = activeBatch?.steps ?? progress
   const currentStep = progress.find(row => row.isCurrent)
@@ -245,6 +245,12 @@ export const JobCardDetail: FC = () => {
     },
     { title: 'From', dataIndex: 'fromProcessName', key: 'fromProcessName' },
     { title: 'To', dataIndex: 'toProcessName', key: 'toProcessName' },
+    {
+      title: 'Type',
+      key: 'type',
+      width: 100,
+      render: (_, record) => (record.isRework ? <Tag color="red">Rework</Tag> : <Tag>Regular</Tag>),
+    },
     { title: 'Moved', dataIndex: 'movedQty', key: 'movedQty', width: 90 },
     {
       title: 'Accepted',

@@ -2,16 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createVendor, deleteVendor, getVendor, listVendors, updateVendor } from '@/api/vendors'
 import type { ApiParty, CreatePartyPayload, PartyPayload } from '@/types/api/masters'
 import type { Vendor } from '@/types/masters'
-import { useMastersLocalStore } from '../store/mastersLocalStore'
 import type { VendorInput } from '../store/mastersStore'
 
 // See useCustomers.ts for why cityId isn't resolvable from the API response.
-function toVendor(api: ApiParty, vendorType: Vendor['vendorType']): Vendor {
+function toVendor(api: ApiParty): Vendor {
   return {
     id: String(api.id),
     code: api.party_code,
     name: api.party_name,
-    vendorType,
     contactPerson: api.contact_person ?? '',
     mobile: api.mobile,
     email: api.email ?? '',
@@ -61,38 +59,33 @@ function toCreatePayload(input: VendorInput): CreatePartyPayload {
 }
 
 export function useVendors() {
-  const vendorTypes = useMastersLocalStore(s => s.vendorTypes)
   const query = useQuery({
     queryKey: ['vendors'],
     queryFn: async () => (await listVendors()).data,
   })
 
-  const data = query.data?.map(api => toVendor(api, vendorTypes[String(api.id)] ?? null))
+  const data = query.data?.map(toVendor)
 
   return { ...query, data, isLoading: query.isLoading }
 }
 
 export function useVendor(id: string | undefined) {
-  const vendorTypes = useMastersLocalStore(s => s.vendorTypes)
   const query = useQuery({
     queryKey: ['vendors', id],
     queryFn: async () => (await getVendor(Number(id))).data,
     enabled: !!id,
   })
 
-  const data = query.data && id ? toVendor(query.data, vendorTypes[id] ?? null) : undefined
+  const data = query.data ? toVendor(query.data) : undefined
 
   return { ...query, data, isLoading: query.isLoading }
 }
 
 export function useCreateVendor() {
   const queryClient = useQueryClient()
-  const setVendorType = useMastersLocalStore(s => s.setVendorType)
   return useMutation({
     mutationFn: async (input: VendorInput) => {
-      const result = (await createVendor(toCreatePayload(input))).data
-      setVendorType(String(result.id), input.vendorType ?? null)
-      return result
+      return (await createVendor(toCreatePayload(input))).data
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vendors'] }),
   })
@@ -100,12 +93,9 @@ export function useCreateVendor() {
 
 export function useUpdateVendor() {
   const queryClient = useQueryClient()
-  const setVendorType = useMastersLocalStore(s => s.setVendorType)
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<VendorInput> }) => {
-      const result = await updateVendor(Number(id), buildPartyFields(payload))
-      if ('vendorType' in payload) setVendorType(id, payload.vendorType ?? null)
-      return result
+      return await updateVendor(Number(id), buildPartyFields(payload))
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] })
@@ -116,12 +106,8 @@ export function useUpdateVendor() {
 
 export function useDeleteVendor() {
   const queryClient = useQueryClient()
-  const removeVendorType = useMastersLocalStore(s => s.removeVendorType)
   return useMutation({
-    mutationFn: async (id: string) => {
-      await deleteVendor(Number(id))
-      removeVendorType(id)
-    },
+    mutationFn: (id: string) => deleteVendor(Number(id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vendors'] }),
   })
 }

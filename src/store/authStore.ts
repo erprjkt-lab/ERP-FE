@@ -14,7 +14,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    set => ({
+    (set, get) => ({
       token: null,
       user: null,
       isLoggedOut: false,
@@ -22,9 +22,11 @@ export const useAuthStore = create<AuthState>()(
       setUser: user => set({ user }),
       clear: () => set({ token: null, user: null, isLoggedOut: true }),
       validateToken: () => {
-        // Check if token exists and is a valid string
-        const state = useAuthStore.getState()
-        return !!state.token && typeof state.token === 'string' && state.token.length > 10
+        // Reads through `get` rather than useAuthStore.getState(): referring to the
+        // store inside its own initializer makes its type circular, which silently
+        // degrades every `useAuthStore(state => ...)` selector in the app to `any`.
+        const { token } = get()
+        return typeof token === 'string' && token.length > 10
       },
     }),
     {

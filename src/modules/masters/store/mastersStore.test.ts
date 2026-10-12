@@ -9,11 +9,7 @@ describe('useMastersStore', () => {
 
   describe('customer filters', () => {
     it('starts with empty/default filters', () => {
-      expect(useMastersStore.getState().customerFilters).toEqual({
-        search: '',
-        status: null,
-        customerType: null,
-      })
+      expect(useMastersStore.getState().customerFilters).toEqual({ search: '', status: null })
     })
 
     it('setCustomerFilter updates a single key', () => {
@@ -25,13 +21,8 @@ describe('useMastersStore', () => {
     it('resetCustomerFilters restores defaults', () => {
       useMastersStore.getState().setCustomerFilter('search', 'acme')
       useMastersStore.getState().setCustomerFilter('status', 'active')
-      useMastersStore.getState().setCustomerFilter('customerType', 'retail')
       useMastersStore.getState().resetCustomerFilters()
-      expect(useMastersStore.getState().customerFilters).toEqual({
-        search: '',
-        status: null,
-        customerType: null,
-      })
+      expect(useMastersStore.getState().customerFilters).toEqual({ search: '', status: null })
     })
   })
 
@@ -50,19 +41,15 @@ describe('useMastersStore', () => {
 
   describe('vendor filters', () => {
     it('setVendorFilter updates a single key', () => {
-      useMastersStore.getState().setVendorFilter('vendorType', 'service')
-      expect(useMastersStore.getState().vendorFilters.vendorType).toBe('service')
+      useMastersStore.getState().setVendorFilter('status', 'inactive')
+      expect(useMastersStore.getState().vendorFilters.status).toBe('inactive')
     })
 
     it('resetVendorFilters restores defaults', () => {
-      useMastersStore.getState().setVendorFilter('vendorType', 'service')
+      useMastersStore.getState().setVendorFilter('status', 'inactive')
       useMastersStore.getState().setVendorFilter('search', 'apex')
       useMastersStore.getState().resetVendorFilters()
-      expect(useMastersStore.getState().vendorFilters).toEqual({
-        search: '',
-        status: null,
-        vendorType: null,
-      })
+      expect(useMastersStore.getState().vendorFilters).toEqual({ search: '', status: null })
     })
   })
 })

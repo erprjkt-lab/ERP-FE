@@ -1,7 +1,6 @@
 import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
-import { UploadField } from '@/components/ui/UploadField'
 import type { Consumable } from '@/types/masters'
 import { MASTER_STATUS_OPTIONS } from '../../constants'
 import {
@@ -90,9 +89,6 @@ export const ConsumableList: FC = () => {
             />
           </div>
           <FormField label="Description" name="description" fieldType="textarea" />
-          <FormField label="Image" name="imageUrl">
-            <UploadField mode="image" accept="image/*" />
-          </FormField>
         </>
       )}
       onSubmit={async (values, editing) => {
@@ -108,7 +104,6 @@ export const ConsumableList: FC = () => {
           gstPercent: values.gstPercent as number | undefined,
           description: values.description as string | undefined,
           status: (values.status as 'active' | 'inactive') ?? 'active',
-          imageUrl: values.imageUrl as string | undefined,
           price: values.price as number | undefined,
         }
         if (editing) {

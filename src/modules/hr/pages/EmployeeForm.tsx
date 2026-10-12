@@ -8,12 +8,7 @@ import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useRoles } from '@/hooks/useRoles'
 import type { CreateEmployeePayload, UpdateEmployeePayload } from '@/types/api/hr'
-import {
-  BRANCH_OPTIONS,
-  EMPLOYEE_STATUS_OPTIONS,
-  EMPLOYMENT_TYPE_OPTIONS,
-  GENDER_OPTIONS,
-} from '../constants'
+import { EMPLOYEE_STATUS_OPTIONS, EMPLOYMENT_TYPE_OPTIONS, GENDER_OPTIONS } from '../constants'
 import { useDepartments } from '../hooks/useDepartments'
 import { useDesignations } from '../hooks/useDesignations'
 import { useCreateEmployee, useEmployee, useUpdateEmployee } from '../hooks/useEmployees'
@@ -49,7 +44,6 @@ export const EmployeeForm: FC = () => {
         phone: employee.phone,
         gender: employee.gender,
         dateOfBirth: employee.dateOfBirth ? dayjs(employee.dateOfBirth, DATE_FORMAT) : undefined,
-        branch: employee.branch,
         departmentId: employee.departmentId ?? undefined,
         designationId: employee.designationId ?? undefined,
         shiftId: employee.shiftId ?? undefined,
@@ -87,7 +81,6 @@ export const EmployeeForm: FC = () => {
       date_of_birth: values.dateOfBirth
         ? (values.dateOfBirth as dayjs.Dayjs).format(DATE_FORMAT)
         : null,
-      branch: values.branch ? Number(values.branch) : null,
       department_id: values.departmentId ? Number(values.departmentId) : null,
       designation_id: values.designationId ? Number(values.designationId) : null,
       shift_id: values.shiftId ? Number(values.shiftId) : null,
@@ -210,15 +203,6 @@ export const EmployeeForm: FC = () => {
                   fieldType="select"
                   placeholder="Select designation"
                   options={designationOptions}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8}>
-                <FormField
-                  label="Branch"
-                  name="branch"
-                  fieldType="select"
-                  placeholder="Select branch"
-                  options={BRANCH_OPTIONS}
                 />
               </Col>
               <Col xs={24} sm={12} md={8}>

@@ -281,6 +281,20 @@ export interface ItemMasterPayload {
 
 // Self-referencing hierarchy — a top-level row (no parent) acts as a warehouse.
 // location_type > 0 is system-generated and locked from edit/deactivate/delete.
+export interface CreateLocationPayload {
+  code: string
+  name: string
+  parent_location_id?: number | null
+  // BE rejects anything but 0 here: location_type > 0 marks a system-generated
+  // row, which only the backend may create.
+  location_type?: 0
+  is_active?: boolean
+}
+
+export type UpdateLocationPayload = Partial<
+  Pick<CreateLocationPayload, 'code' | 'name' | 'parent_location_id'>
+>
+
 export interface ApiLocation {
   id: number
   code: string

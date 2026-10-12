@@ -14,6 +14,7 @@ import {
 } from '@/modules/hr'
 import {
   IssueMaterialList,
+  LocationList,
   OpeningStockList,
   StockAdjustmentDetail,
   StockAdjustmentForm,
@@ -142,6 +143,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/inventory/transfers',
   '/inventory/opening-stock',
   '/inventory/issue-material',
+  '/inventory/locations',
   '/production/process',
   '/production/bom',
   '/production/work-orders',
@@ -279,6 +281,7 @@ function App() {
                 <Route path="/inventory/adjustments/new" element={<StockAdjustmentForm />} />
                 <Route path="/inventory/adjustments/:id" element={<StockAdjustmentDetail />} />
 
+                <Route path="/inventory/locations" element={<LocationList />} />
                 <Route path="/inventory/stock-issues" element={<StockIssueList />} />
                 <Route path="/inventory/transfers" element={<StockTransferList />} />
                 <Route path="/inventory/opening-stock" element={<OpeningStockList />} />

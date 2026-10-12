@@ -30,7 +30,13 @@ export interface StepProgress {
  * draws on the job card's ordered qty once material has been issued.
  *
  * Only OK qty travels onward: rejected units are scrapped, and moving forward
- * is capped at what this step produced but has not already sent on. */
+ * is capped at what this step produced but has not already sent on.
+ *
+ * Rework is a separate run: ERP-BE tags the movement it auto-creates when a
+ * Rework review is approved (`is_rework`), and keeps a `regular`/`rework` split
+ * of its own in GET /job-cards/{id}/process-summary. Rework movements are
+ * dropped here so a redo never leaks into the first pass's numbers — see
+ * computeReworkBatch() for the other half. */
 export function computeStepProgress(
   routes: JobCardRouteStep[],
   logs: ProcessLog[],
@@ -51,11 +57,13 @@ export function computeStepProgress(
     {},
   )
 
+  const regularMovements = movements.filter(movement => !movement.isRework)
+
   const movedIn: Record<string, number> = {}
   const movedOut: Record<string, number> = {}
   const settled: Record<string, number> = {}
 
-  for (const movement of movements) {
+  for (const movement of regularMovements) {
     movedIn[movement.toProcessId] = (movedIn[movement.toProcessId] ?? 0) + movement.movedQty
     movedOut[movement.fromProcessId] = (movedOut[movement.fromProcessId] ?? 0) + movement.movedQty
 
@@ -65,7 +73,7 @@ export function computeStepProgress(
     }
   }
 
-  const acceptedOnly = movements.reduce<Record<string, number>>((acc, movement) => {
+  const acceptedOnly = regularMovements.reduce<Record<string, number>>((acc, movement) => {
     for (const acceptance of movement.acceptances) {
       acc[movement.toProcessId] = (acc[movement.toProcessId] ?? 0) + acceptance.acceptedQty
     }

@@ -5,9 +5,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import type { CustomerType, GstType } from '@/types/masters'
+import type { GstType } from '@/types/masters'
 import {
-  CUSTOMER_TYPE_OPTIONS,
   GST_REGEX,
   GST_TYPE_OPTIONS,
   IFSC_REGEX,
@@ -45,7 +44,6 @@ export const CustomerForm: FC = () => {
       form.setFieldsValue({
         code: customer.code,
         name: customer.name,
-        customerType: customer.customerType,
         status: customer.status,
         contactPerson: customer.contactPerson,
         mobile: customer.mobile,
@@ -85,7 +83,6 @@ export const CustomerForm: FC = () => {
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
       name: values.name as string,
-      customerType: (values.customerType as CustomerType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -156,14 +153,6 @@ export const CustomerForm: FC = () => {
                   label="Customer Name"
                   name="name"
                   rules={[{ required: true, message: 'Customer name is required' }]}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={12}>
-                <FormField
-                  label="Customer Type"
-                  name="customerType"
-                  fieldType="select"
-                  options={CUSTOMER_TYPE_OPTIONS}
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>

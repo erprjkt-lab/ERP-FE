@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { TableActionItem } from '@/components/ui'
 import type { Customer } from '@/types/masters'
 import { CustomerFormDrawer } from '../components/CustomerFormDrawer'
-import { CUSTOMER_TYPE_OPTIONS, MASTER_STATUS_OPTIONS } from '../constants'
+import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteCustomer, useCustomers } from '../hooks/useCustomers'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -113,7 +113,6 @@ export const CustomerList: FC = () => {
       return false
     }
     if (filters.status && c.status !== filters.status) return false
-    if (filters.customerType && c.customerType !== filters.customerType) return false
     return true
   })
 
@@ -150,16 +149,6 @@ export const CustomerList: FC = () => {
               allowClear
               style={{ width: '100%' }}
               options={MASTER_STATUS_OPTIONS}
-            />
-          </Col>
-          <Col xs={24} sm={8} md={4}>
-            <Select
-              placeholder="Type"
-              value={filters.customerType}
-              onChange={v => setFilter('customerType', v)}
-              allowClear
-              style={{ width: '100%' }}
-              options={CUSTOMER_TYPE_OPTIONS}
             />
           </Col>
           <Col>

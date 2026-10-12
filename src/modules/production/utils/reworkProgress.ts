@@ -1,4 +1,9 @@
-import type { JobCardRouteStep, ProcessLog, RejectionReview } from '@/types/production'
+import type {
+  JobCardMovement,
+  JobCardRouteStep,
+  ProcessLog,
+  RejectionReview,
+} from '@/types/production'
 import type { StepProgress } from './jobCardProgress'
 
 export interface ReworkBatch {
@@ -15,17 +20,38 @@ export interface ReworkBatch {
  * The rework batch's own pass through the route, built only from logs citing its
  * review. ERP-BE balance-checks the review's reviewed_qty at the rework step only;
  * every later step is ordinary forward flow it re-classifies as rework, so here the
- * batch simply carries its OK qty from one step to the next. Movement/acceptance
- * paperwork isn't part of this — the backend doesn't gate a rework log on it.
+ * batch simply carries its OK qty from one step to the next.
+ *
+ * Approving the review makes ERP-BE auto-create a movement into the rework step
+ * tagged with the review id. That movement still has to be accepted like any
+ * other, so it is what the redo step's Unaccepted/In columns are drawn from —
+ * logging itself is not gated on it (the backend balances against reviewed_qty),
+ * which is why a missing acceptance shows up as Unaccepted rather than blocking.
  */
 export function computeReworkBatch(
   routes: JobCardRouteStep[],
   review: RejectionReview,
   logs: ProcessLog[],
+  movements: JobCardMovement[] = [],
 ): ReworkBatch {
   const sorted = [...routes].sort((a, b) => a.sequenceNo - b.sequenceNo)
   const startIndex = sorted.findIndex(step => step.processId === review.reworkProcessId)
   const batchLogs = logs.filter(log => log.inboundReworkReviewId === review.id)
+  const batchMovements = movements.filter(movement => movement.reworkReviewId === review.id)
+
+  const movedInAt = (processId: string) =>
+    batchMovements
+      .filter(movement => movement.toProcessId === processId)
+      .reduce((sum, movement) => sum + movement.movedQty, 0)
+
+  const settledAt = (processId: string) =>
+    batchMovements
+      .filter(movement => movement.toProcessId === processId)
+      .reduce(
+        (sum, movement) =>
+          sum + movement.acceptances.reduce((a, acc) => a + acc.acceptedQty + acc.shortQty, 0),
+        0,
+      )
 
   const slice = sorted.slice(Math.max(startIndex, 0))
   const loggedAt = (processId: string) =>
@@ -47,7 +73,7 @@ export function computeReworkBatch(
 
     steps.push({
       step,
-      unacceptedQty: 0,
+      unacceptedQty: Math.max(movedInAt(step.processId) - settledAt(step.processId), 0),
       acceptedQty: availableQty,
       okQty,
       rejectedQty,
@@ -86,6 +112,7 @@ export function computeReworkBatches(
   routes: JobCardRouteStep[],
   reviews: RejectionReview[],
   logs: ProcessLog[],
+  movements: JobCardMovement[] = [],
 ): ReworkBatch[] {
-  return reviews.map(review => computeReworkBatch(routes, review, logs))
+  return reviews.map(review => computeReworkBatch(routes, review, logs, movements))
 }

@@ -5,7 +5,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { UploadField } from '@/components/ui/UploadField'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
@@ -55,7 +54,6 @@ export const RawMaterialForm: FC = () => {
         gstPercent: rawMaterial.gstPercent,
         description: rawMaterial.description,
         status: rawMaterial.status,
-        imageUrl: rawMaterial.imageUrl,
         materialGradeId: rawMaterial.materialGradeId ?? undefined,
         materialType: rawMaterial.materialType,
         shape: rawMaterial.shape,
@@ -88,7 +86,6 @@ export const RawMaterialForm: FC = () => {
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
       materialGradeId: values.materialGradeId as string | undefined,
       materialGrade: materialGradeOptions.find(o => o.value === values.materialGradeId)?.label,
       materialType: values.materialType as string | undefined,
@@ -245,12 +242,6 @@ export const RawMaterialForm: FC = () => {
 
           <FormSection title="Price">
             <FormField label="Price" name="price" fieldType="number" />
-          </FormSection>
-
-          <FormSection title="Image">
-            <FormField label="Image" name="imageUrl">
-              <UploadField mode="image" accept="image/*" />
-            </FormField>
           </FormSection>
         </Form>
       </Card>

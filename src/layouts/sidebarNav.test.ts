@@ -74,8 +74,8 @@ describe('buildSidebarItems', () => {
         name: 'Reports',
         icon: 'bar-chart-2',
         children: [
-          node({ id: 90, name: 'Stock Ledger Report', module_key: 'report-stock-ledger' }),
-          node({ id: 91, name: 'GRN Register', module_key: 'report-grn-register' }),
+          node({ id: 90, name: 'Inventory', module_key: 'reports-inventory' }),
+          node({ id: 91, name: 'Purchase', module_key: 'reports-purchase' }),
         ],
       }),
     ])

@@ -58,7 +58,6 @@ export const FinishedGoodForm: FC = () => {
         gstPercent: finishedGood.gstPercent,
         description: finishedGood.description,
         status: finishedGood.status,
-        imageUrl: finishedGood.imageUrl,
         customerId: finishedGood.customerId ?? undefined,
         customerPartNo: finishedGood.customerPartNo,
         drawingNo: finishedGood.drawingNo,
@@ -89,7 +88,6 @@ export const FinishedGoodForm: FC = () => {
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
       customerId: (values.customerId as string | undefined) ?? null,
       customerName: customerOptions.find(o => o.value === values.customerId)?.label,
       customerPartNo: values.customerPartNo as string | undefined,
@@ -248,12 +246,6 @@ export const FinishedGoodForm: FC = () => {
                 <FormField label="Price" name="price" fieldType="number" />
               </Col>
             </Row>
-          </FormSection>
-
-          <FormSection title="Image">
-            <FormField label="Image" name="imageUrl">
-              <UploadField mode="image" accept="image/*" />
-            </FormField>
           </FormSection>
         </Form>
       </Card>

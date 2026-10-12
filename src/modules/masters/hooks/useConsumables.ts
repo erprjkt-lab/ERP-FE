@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { consumablesApi } from '@/api/items'
 import type { ApiItemCategory, ApiItemMaster, ApiUom } from '@/types/api/masters'
 import type { Consumable } from '@/types/masters'
-import { useMastersLocalStore } from '../store/mastersLocalStore'
 import type { ConsumableInput } from '../store/mastersStore'
 import { useItemCategories } from './useItemCategories'
 import { useUoms } from './useUoms'
@@ -15,7 +14,6 @@ function toConsumable(
   api: ApiItemMaster,
   categoriesById: Map<string, ApiItemCategory>,
   uomsById: Map<string, ApiUom>,
-  imageUrl: string | undefined,
 ): Consumable {
   const categoryId = idOrNull(api.category_id)
   const uomId = idOrNull(api.uom_id)
@@ -34,7 +32,7 @@ function toConsumable(
     gstPercent: api.gst_percent ?? undefined,
     description: api.description ?? undefined,
     status: api.status === 0 ? 'inactive' : 'active',
-    imageUrl,
+    imageUrl: api.image ?? undefined,
     price: api.price ?? undefined,
     batchTracking: api.batch_tracking,
     heatTracking: api.heat_tracking,
@@ -69,27 +67,21 @@ function useLookupMaps() {
 
 export function useConsumables() {
   const { categoriesById, uomsById } = useLookupMaps()
-  const itemImages = useMastersLocalStore(s => s.itemImages)
   const query = useQuery({
     queryKey: ['consumables'],
     queryFn: async () => (await consumablesApi.list()).data,
   })
 
-  const data = query.data?.map(api =>
-    toConsumable(api, categoriesById, uomsById, itemImages[String(api.id)]),
-  )
+  const data = query.data?.map(api => toConsumable(api, categoriesById, uomsById))
 
   return { ...query, data, isLoading: query.isLoading }
 }
 
 export function useCreateConsumable() {
   const queryClient = useQueryClient()
-  const setItemImage = useMastersLocalStore(s => s.setItemImage)
   return useMutation({
     mutationFn: async (input: ConsumableInput) => {
-      const result = await consumablesApi.create(toPayload(input))
-      setItemImage(String(result.data.id), input.imageUrl)
-      return result
+      return await consumablesApi.create(toPayload(input))
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['consumables'] }),
   })
@@ -97,12 +89,9 @@ export function useCreateConsumable() {
 
 export function useUpdateConsumable() {
   const queryClient = useQueryClient()
-  const setItemImage = useMastersLocalStore(s => s.setItemImage)
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<ConsumableInput> }) => {
-      const result = await consumablesApi.update(Number(id), toPayload(payload))
-      if ('imageUrl' in payload) setItemImage(id, payload.imageUrl)
-      return result
+      return await consumablesApi.update(Number(id), toPayload(payload))
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['consumables'] }),
   })
@@ -110,12 +99,8 @@ export function useUpdateConsumable() {
 
 export function useDeleteConsumable() {
   const queryClient = useQueryClient()
-  const removeItemImage = useMastersLocalStore(s => s.removeItemImage)
   return useMutation({
-    mutationFn: async (id: string) => {
-      await consumablesApi.remove(Number(id))
-      removeItemImage(id)
-    },
+    mutationFn: (id: string) => consumablesApi.remove(Number(id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['consumables'] }),
   })
 }

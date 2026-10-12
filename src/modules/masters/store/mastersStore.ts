@@ -4,7 +4,6 @@ import type { Status } from '@/types'
 import type {
   Consumable,
   Customer,
-  CustomerType,
   DieBlock,
   Fixture,
   FinishedGood,
@@ -14,7 +13,6 @@ import type {
   RawMaterial,
   Supplier,
   Vendor,
-  VendorType,
 } from '@/types/masters'
 import { MOCK_DIE_BLOCKS, MOCK_FIXTURES } from '../_mock/seed'
 import { generateId, generateSequentialCode } from '../utils/generateCode'
@@ -42,16 +40,16 @@ export type FixtureInput = Omit<Fixture, 'id' | 'code' | 'createdAt' | 'updatedA
 export type DieBlockInput = Omit<DieBlock, 'id' | 'code' | 'createdAt' | 'updatedAt'>
 
 interface MastersState {
-  customerFilters: MasterListFilters & { customerType: CustomerType | null }
-  setCustomerFilter: (key: 'search' | 'status' | 'customerType', value: string | null) => void
+  customerFilters: MasterListFilters
+  setCustomerFilter: (key: 'search' | 'status', value: string | null) => void
   resetCustomerFilters: () => void
 
   supplierFilters: MasterListFilters
   setSupplierFilter: (key: 'search' | 'status', value: string | null) => void
   resetSupplierFilters: () => void
 
-  vendorFilters: MasterListFilters & { vendorType: VendorType | null }
-  setVendorFilter: (key: 'search' | 'status' | 'vendorType', value: string | null) => void
+  vendorFilters: MasterListFilters
+  setVendorFilter: (key: 'search' | 'status', value: string | null) => void
   resetVendorFilters: () => void
 
   finishedGoodFilters: MasterListFilters
@@ -137,21 +135,20 @@ export const useMastersStore = create<MastersState>()(
       const dieBlockCrud = makeCrudActions(set, 'dieBlocks', 'die', 'DIE')
 
       return {
-        customerFilters: { ...DEFAULT_FILTERS, customerType: null },
+        customerFilters: { ...DEFAULT_FILTERS },
         setCustomerFilter: (key, value) =>
           set(s => ({ customerFilters: { ...s.customerFilters, [key]: value } })),
-        resetCustomerFilters: () =>
-          set({ customerFilters: { ...DEFAULT_FILTERS, customerType: null } }),
+        resetCustomerFilters: () => set({ customerFilters: { ...DEFAULT_FILTERS } }),
 
         supplierFilters: { ...DEFAULT_FILTERS },
         setSupplierFilter: (key, value) =>
           set(s => ({ supplierFilters: { ...s.supplierFilters, [key]: value } })),
         resetSupplierFilters: () => set({ supplierFilters: { ...DEFAULT_FILTERS } }),
 
-        vendorFilters: { ...DEFAULT_FILTERS, vendorType: null },
+        vendorFilters: { ...DEFAULT_FILTERS },
         setVendorFilter: (key, value) =>
           set(s => ({ vendorFilters: { ...s.vendorFilters, [key]: value } })),
-        resetVendorFilters: () => set({ vendorFilters: { ...DEFAULT_FILTERS, vendorType: null } }),
+        resetVendorFilters: () => set({ vendorFilters: { ...DEFAULT_FILTERS } }),
 
         finishedGoodFilters: { ...DEFAULT_FILTERS },
         setFinishedGoodFilter: (key, value) =>

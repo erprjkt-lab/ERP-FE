@@ -62,6 +62,9 @@ export interface JobCardMovement {
   fromProcessName: string
   toProcessId: string
   toProcessName: string
+  /** Set when ERP-BE auto-created this movement by approving a Rework review. */
+  reworkReviewId: string | null
+  isRework: boolean
   movedQty: number
   movedAt: string
   acceptances: JobCardAcceptance[]

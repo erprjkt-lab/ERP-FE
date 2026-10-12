@@ -5,14 +5,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import type { VendorType } from '@/types/masters'
 import {
   GST_REGEX,
   IFSC_REGEX,
   MASTER_STATUS_OPTIONS,
   MOBILE_REGEX,
   PINCODE_REGEX,
-  VENDOR_TYPE_OPTIONS,
 } from '../constants'
 import { useCities } from '../hooks/useCities'
 import { useCountries } from '../hooks/useCountries'
@@ -42,7 +40,6 @@ export const VendorForm: FC = () => {
       form.setFieldsValue({
         code: vendor.code,
         name: vendor.name,
-        vendorType: vendor.vendorType,
         status: vendor.status,
         contactPerson: vendor.contactPerson,
         mobile: vendor.mobile,
@@ -74,7 +71,6 @@ export const VendorForm: FC = () => {
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
       name: values.name as string,
-      vendorType: (values.vendorType as VendorType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -139,14 +135,7 @@ export const VendorForm: FC = () => {
                   rules={[{ required: true, message: 'Vendor name is required' }]}
                 />
               </Col>
-              <Col xs={24} sm={12} md={12}>
-                <FormField
-                  label="Vendor Type"
-                  name="vendorType"
-                  fieldType="select"
-                  options={VENDOR_TYPE_OPTIONS}
-                />
-              </Col>
+              <Col xs={24} sm={12} md={12}></Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField
                   label="Contact Person"

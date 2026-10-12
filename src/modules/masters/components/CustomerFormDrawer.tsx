@@ -4,9 +4,8 @@ import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
-import type { CustomerType, GstType } from '@/types/masters'
+import type { GstType } from '@/types/masters'
 import {
-  CUSTOMER_TYPE_OPTIONS,
   DEFAULT_COUNTRY_NAME,
   GST_REGEX,
   GST_TYPE_OPTIONS,
@@ -59,7 +58,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
       form.setFieldsValue({
         code: customer.code,
         name: customer.name,
-        customerType: customer.customerType,
         status: customer.status,
         contactPerson: customer.contactPerson,
         mobile: customer.mobile,
@@ -114,7 +112,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
 
     const payload = {
       name: values.name as string,
-      customerType: (values.customerType as CustomerType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -175,12 +172,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
               label="Customer Name"
               name="name"
               rules={[{ required: true, message: 'Customer name is required' }]}
-            />
-            <FormField
-              label="Customer Type"
-              name="customerType"
-              fieldType="select"
-              options={CUSTOMER_TYPE_OPTIONS}
             />
             <FormField
               label="Contact Person"
