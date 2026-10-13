@@ -12,6 +12,7 @@ import {
   Typography,
 } from 'antd'
 import type { TableColumnsType } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -51,7 +52,7 @@ export const DirectStockIssueFormDrawer: FC<DirectStockIssueFormDrawerProps> = (
   const [form] = Form.useForm<{ issuedTo: string; issueDate?: dayjs.Dayjs }>()
   const [itemLines, setItemLines] = useState<ItemLine[]>([])
   const [pendingItemId, setPendingItemId] = useState<string>()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: employees } = useEmployees()
   const { mutateAsync: createDirectIssue, isPending } = useCreateDirectStockIssue()
 
@@ -177,6 +178,7 @@ export const DirectStockIssueFormDrawer: FC<DirectStockIssueFormDrawerProps> = (
                 value={pendingItemId}
                 onChange={setPendingItemId}
                 options={itemOptions}
+                popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                 showSearch
                 allowClear
                 filterOption={(input, option) =>

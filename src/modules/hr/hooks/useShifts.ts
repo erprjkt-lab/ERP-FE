@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createShift, deleteShift, listShifts, updateShift } from '@/api/shifts'
 import type { ApiShift, CreateShiftPayload, UpdateShiftPayload } from '@/types/api/hr'
 import type { Shift } from '@/types/hr'
@@ -16,11 +16,17 @@ function toShift(api: ApiShift): Shift {
   }
 }
 
-export function useShifts() {
-  return useQuery({
-    queryKey: ['shifts'],
-    queryFn: async () => (await listShifts()).data.map(toShift),
+export function useShifts(page = 1, perPage = 100) {
+  const query = useQuery({
+    queryKey: ['shifts', page, perPage],
+    queryFn: () => listShifts(page, perPage),
+    placeholderData: keepPreviousData,
   })
+  return {
+    ...query,
+    data: query.data?.data.map(toShift),
+    meta: query.data?.meta,
+  }
 }
 
 export function useCreateShift() {

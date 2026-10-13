@@ -1,11 +1,12 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Form, Space, Tooltip } from 'antd'
-import type { FormInstance, TableColumnsType } from 'antd'
+import { App, Button, Card, Form } from 'antd'
+import type { FormInstance, TableColumnsType, TableProps } from 'antd'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { PageHeader } from '@/components/ui/PageHeader'
+import type { TableActionItem } from '@/components/ui'
 import { getErrorMessage } from '@/api/client'
 
 export interface SimpleMasterListProps<T extends { id: string }> {
@@ -23,6 +24,12 @@ export interface SimpleMasterListProps<T extends { id: string }> {
   getInitialValues?: (record: T) => Record<string, unknown>
   onSubmit: (values: Record<string, unknown>, editing: T | null) => Promise<void>
   onDelete: (record: T) => Promise<void>
+  /** Reshapes a row's actions — drop the defaults, disable them, or add more.
+   *  Left out, every row gets the usual Edit/Delete pair. */
+  rowActions?: (record: T, defaults: TableActionItem[]) => TableActionItem[]
+  /** Server-side paging: pass DataTable's pagination config straight through.
+   *  Left out, the table pages through whatever rows it was given. */
+  pagination?: TableProps<T>['pagination']
   /** Drops the PageHeader/Card page chrome for use inside another drawer. */
   embedded?: boolean
 }
@@ -42,6 +49,8 @@ export function SimpleMasterList<T extends { id: string }>({
   getInitialValues,
   onSubmit,
   onDelete,
+  rowActions,
+  pagination,
   embedded = false,
 }: SimpleMasterListProps<T>) {
   const { modal, message } = App.useApp()
@@ -101,35 +110,27 @@ export function SimpleMasterList<T extends { id: string }>({
     })
   }
 
-  const columnsWithActions: TableColumnsType<T> = [
-    ...columns,
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 100,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="Edit">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => openEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Delete">
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record)}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ]
+  const getMasterActions = (record: T): TableActionItem[] => {
+    const defaults: TableActionItem[] = [
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        onClick: () => openEdit(record),
+      },
+      {
+        key: 'delete',
+        label: 'Delete',
+        icon: <DeleteOutlined />,
+        variant: 'danger',
+        danger: true,
+        onClick: () => handleDelete(record),
+      },
+    ]
+
+    return rowActions ? rowActions(record, defaults) : defaults
+  }
 
   const formDrawer = (
     <FormDrawer
@@ -161,11 +162,13 @@ export function SimpleMasterList<T extends { id: string }>({
         </div>
         <Card styles={{ body: { padding: 0 } }}>
           <DataTable<T>
-            columns={columnsWithActions}
+            columns={columns}
             dataSource={data}
             rowKey="id"
             loading={loading}
             totalLabel={totalLabel}
+            pagination={pagination}
+            rowActions={getMasterActions}
           />
         </Card>
         {formDrawer}
@@ -193,12 +196,14 @@ export function SimpleMasterList<T extends { id: string }>({
         }}
       >
         <DataTable<T>
-          columns={columnsWithActions}
+          columns={columns}
           dataSource={data}
           rowKey="id"
           loading={loading}
           totalLabel={totalLabel}
+          pagination={pagination}
           fillHeight
+          rowActions={getMasterActions}
         />
       </Card>
 

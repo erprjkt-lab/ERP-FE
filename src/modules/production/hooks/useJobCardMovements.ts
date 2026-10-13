@@ -14,6 +14,8 @@ function toMovement(api: ApiJobCardMovement): JobCardMovement {
     fromProcessName: api.from_process_name ?? '',
     toProcessId: String(api.to_process_id),
     toProcessName: api.to_process_name ?? '',
+    reworkReviewId: api.rejection_review_id ? String(api.rejection_review_id) : null,
+    isRework: api.is_rework,
     movedQty: Number(api.moved_qty),
     movedAt: api.moved_at ?? '',
     acceptances: (api.acceptances ?? []).map(acceptance => ({

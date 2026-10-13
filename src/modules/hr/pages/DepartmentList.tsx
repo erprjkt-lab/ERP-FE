@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import type { Department } from '@/types/hr'
@@ -10,7 +11,8 @@ import {
 } from '../hooks/useDepartments'
 
 export const DepartmentList: FC = () => {
-  const { data: departments = [], isLoading } = useDepartments()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: departments = [], meta, isLoading } = useDepartments(page, pageSize)
   const { mutateAsync: createDepartment } = useCreateDepartment()
   const { mutateAsync: updateDepartment } = useUpdateDepartment()
   const { mutateAsync: deleteDepartment } = useDeleteDepartment()
@@ -23,6 +25,7 @@ export const DepartmentList: FC = () => {
       totalLabel="departments"
       addButtonLabel="Add Department"
       data={departments}
+      pagination={paginationProps(meta?.total)}
       loading={isLoading}
       columns={[{ title: 'Name', dataIndex: 'name', key: 'name' }]}
       renderFields={() => (

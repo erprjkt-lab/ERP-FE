@@ -46,10 +46,6 @@ export function deleteSalesQuotation(id: number): Promise<ApiEnvelope<null>> {
   return apiRequest(`/api/v1/sales-quotations/${id}`, { method: 'DELETE' })
 }
 
-export function sendSalesQuotation(id: number): Promise<ApiEnvelope<ApiSalesQuotation>> {
-  return apiRequest(`/api/v1/sales-quotations/${id}/send`, { method: 'POST' })
-}
-
 export function acceptSalesQuotation(id: number): Promise<ApiEnvelope<ApiSalesQuotation>> {
   return apiRequest(`/api/v1/sales-quotations/${id}/accept`, { method: 'POST' })
 }

@@ -14,6 +14,7 @@ import {
   Typography,
 } from 'antd'
 import type { TableColumnsType } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect, useMemo, useState } from 'react'
@@ -80,7 +81,7 @@ export const DeliveryChallanForm: FC = () => {
   const [pendingItemId, setPendingItemId] = useState<string>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: confirmedOrders } = useSalesOrders({ status: 'CONFIRMED', perPage: 200 })
   const { data: selectedOrder } = useSalesOrder(salesOrderId)
   const { dispatchedByItemId } = useSalesOrderDispatchedQtyByItem(salesOrderId)
@@ -384,6 +385,7 @@ export const DeliveryChallanForm: FC = () => {
                 value={pendingItemId}
                 onChange={setPendingItemId}
                 options={itemOptions}
+                popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                 showSearch
                 filterOption={(input, option) =>
                   String(option?.label ?? '')

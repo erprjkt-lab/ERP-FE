@@ -1,8 +1,9 @@
-import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { ArrowLeftOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons'
+import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -11,7 +12,7 @@ import type { PurchaseOrderItem } from '@/types/procurement'
 import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
 import { usePurchaseEnquiries } from '../hooks/usePurchaseEnquiries'
-import { usePurchaseOrder } from '../hooks/usePurchaseOrders'
+import { useApprovePurchaseOrder, usePurchaseOrder } from '../hooks/usePurchaseOrders'
 
 export const PurchaseOrderDetail: FC = () => {
   const { id } = useParams()
@@ -19,6 +20,18 @@ export const PurchaseOrderDetail: FC = () => {
   const [editOpen, setEditOpen] = useState(false)
   const { data: order, isLoading } = usePurchaseOrder(id)
   const { data: enquiries } = usePurchaseEnquiries()
+  const { message } = App.useApp()
+  const { mutateAsync: approveOrder, isPending: approving } = useApprovePurchaseOrder()
+
+  const handleApprove = async () => {
+    if (!id) return
+    try {
+      await approveOrder(id)
+      message.success('Purchase order approved')
+    } catch (error) {
+      message.error(getErrorMessage(error))
+    }
+  }
 
   if (!order) {
     return (
@@ -68,10 +81,20 @@ export const PurchaseOrderDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/orders')}>
               Back
             </Button>
-            {order.status === 'DRAFT' && (
-              <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-                Edit
-              </Button>
+            {order.status === 'PENDING_APPROVAL' && (
+              <>
+                <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                  Edit
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  loading={approving}
+                  onClick={handleApprove}
+                >
+                  Approve
+                </Button>
+              </>
             )}
             {sourceEnquiry && (
               <Button onClick={() => navigate(`/purchase/enquiries/${sourceEnquiry.id}`)}>

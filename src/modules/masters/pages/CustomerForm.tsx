@@ -5,9 +5,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import type { CustomerType, GstType } from '@/types/masters'
+import type { GstType } from '@/types/masters'
 import {
-  CUSTOMER_TYPE_OPTIONS,
   GST_REGEX,
   GST_TYPE_OPTIONS,
   IFSC_REGEX,
@@ -45,7 +44,6 @@ export const CustomerForm: FC = () => {
       form.setFieldsValue({
         code: customer.code,
         name: customer.name,
-        customerType: customer.customerType,
         status: customer.status,
         contactPerson: customer.contactPerson,
         mobile: customer.mobile,
@@ -54,7 +52,7 @@ export const CustomerForm: FC = () => {
         address: customer.address,
         countryId: customer.countryId ?? undefined,
         stateId: customer.stateId ?? undefined,
-        cityId: customer.cityId ?? undefined,
+        cityName: customer.cityName,
         pincode: customer.pincode,
         gstNumber: customer.gstNumber,
         panNumber: customer.panNumber,
@@ -80,12 +78,11 @@ export const CustomerForm: FC = () => {
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
       name: values.name as string,
-      customerType: (values.customerType as CustomerType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -96,8 +93,8 @@ export const CustomerForm: FC = () => {
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       panNumber: values.panNumber as string | undefined,
@@ -156,14 +153,6 @@ export const CustomerForm: FC = () => {
                   label="Customer Name"
                   name="name"
                   rules={[{ required: true, message: 'Customer name is required' }]}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={12}>
-                <FormField
-                  label="Customer Type"
-                  name="customerType"
-                  fieldType="select"
-                  options={CUSTOMER_TYPE_OPTIONS}
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
@@ -231,7 +220,7 @@ export const CustomerForm: FC = () => {
                     }
                     onChange={() => {
                       form.setFieldValue('stateId', undefined)
-                      form.setFieldValue('cityId', undefined)
+                      form.setFieldValue('cityName', undefined)
                     }}
                   />
                 </Form.Item>
@@ -252,14 +241,14 @@ export const CustomerForm: FC = () => {
                         .toLowerCase()
                         .includes(input.toLowerCase())
                     }
-                    onChange={() => form.setFieldValue('cityId', undefined)}
+                    onChange={() => form.setFieldValue('cityName', undefined)}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} md={8}>
                 <FormField
                   label="City"
-                  name="cityId"
+                  name="cityName"
                   fieldType="select"
                   options={cityOptions}
                   rules={[{ required: true, message: 'City is required' }]}

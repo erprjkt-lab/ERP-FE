@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
+import { useLocations } from '@/modules/inventory/hooks/useLocations'
 import type { Machine } from '@/types/masters'
 import {
   useCreateMachine,
@@ -17,6 +18,10 @@ export const MachineList: FC = () => {
   const { mutateAsync: createMachine } = useCreateMachine()
   const { mutateAsync: updateMachine } = useUpdateMachine()
   const { mutateAsync: deleteMachine } = useDeleteMachine()
+  const { data: locations } = useLocations()
+  // machine_location is a free-text column on item_master, so the option value
+  // is the location name rather than its id.
+  const locationOptions = locations.map(l => ({ label: `${l.code} — ${l.name}`, value: l.name }))
 
   return (
     <SimpleMasterList<Machine>
@@ -64,7 +69,12 @@ export const MachineList: FC = () => {
           <FormField label="Warranty Expiry" name="warrantyExpiry" fieldType="date" />
           <FormField label="AMC Expiry" name="amcExpiry" fieldType="date" />
           <FormField label="Maintenance Interval" name="maintenanceInterval" />
-          <FormField label="Machine Location" name="machineLocation" />
+          <FormField
+            label="Machine Location"
+            name="machineLocation"
+            fieldType="select"
+            options={locationOptions}
+          />
           <FormField label="Price" name="price" fieldType="number" />
         </div>
       )}

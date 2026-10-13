@@ -6,8 +6,11 @@ import type {
   UpdateMaterialGradePayload,
 } from '@/types/api/masters'
 
-export function listMaterialGrades(): Promise<PaginatedEnvelope<ApiMaterialGrade>> {
-  return apiRequest('/api/v1/material-grades', { query: { per_page: 200 } })
+export function listMaterialGrades(
+  page = 1,
+  perPage = 200,
+): Promise<PaginatedEnvelope<ApiMaterialGrade>> {
+  return apiRequest('/api/v1/material-grades', { query: { page, per_page: perPage } })
 }
 
 export function getMaterialGrade(id: number): Promise<ApiEnvelope<ApiMaterialGrade>> {

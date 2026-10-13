@@ -7,7 +7,6 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ledgerText } from '@/theme/typography'
 import { EmployeeFormDrawer } from '../components/EmployeeFormDrawer'
-import { getBranchLabel } from '../constants'
 import { useEmployee } from '../hooks/useEmployees'
 import { getDepartmentColor } from '../utils/departmentColor'
 
@@ -101,9 +100,6 @@ export const EmployeeDetail: FC = () => {
                       </Descriptions.Item>
                       <Descriptions.Item label="Shift">
                         {employee.shift?.name ?? '—'}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Branch">
-                        {getBranchLabel(employee.branch) ?? '—'}
                       </Descriptions.Item>
                       <Descriptions.Item label="Join Date">
                         {employee.joinDate ?? '—'}

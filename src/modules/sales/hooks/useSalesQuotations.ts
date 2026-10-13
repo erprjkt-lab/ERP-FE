@@ -8,7 +8,6 @@ import {
   listSalesQuotations,
   rejectSalesQuotation,
   reviseSalesQuotation,
-  sendSalesQuotation,
   updateSalesQuotation,
 } from '@/api/salesQuotations'
 import type { SalesListParams } from '@/api/salesEnquiries'
@@ -194,7 +193,7 @@ export function useDeleteSalesQuotation() {
   })
 }
 
-type QuotationAction = 'send' | 'accept' | 'reject' | 'revise'
+type QuotationAction = 'accept' | 'reject' | 'revise'
 
 export function useSalesQuotationAction() {
   const queryClient = useQueryClient()
@@ -210,8 +209,6 @@ export function useSalesQuotationAction() {
     }) => {
       const numericId = Number(id)
       switch (action) {
-        case 'send':
-          return toSalesQuotation((await sendSalesQuotation(numericId)).data)
         case 'accept':
           return toSalesQuotation((await acceptSalesQuotation(numericId)).data)
         case 'reject':

@@ -22,6 +22,8 @@ export interface LogProductionModalProps {
   nextProcessName?: string
   outputLocationName?: string
   hasMaterialIssued: boolean
+  /** Set when logging a redo: tags the log as this approved Rework review's qty. */
+  reworkReviewId?: string
 }
 
 interface LogFormValues {
@@ -46,6 +48,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
   nextProcessName,
   outputLocationName,
   hasMaterialIssued,
+  reworkReviewId,
 }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm<LogFormValues>()
@@ -101,6 +104,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
         ok_qty: okQty,
         rejected_qty: values.rejectedQty ?? 0,
         bypassed_qty: values.bypassedQty ?? 0,
+        inbound_rework_review_id: reworkReviewId ? Number(reworkReviewId) : undefined,
         production_seconds: values.productionMinutes ? values.productionMinutes * 60 : 0,
         downtime_seconds: values.downtimeMinutes ? values.downtimeMinutes * 60 : 0,
         remark: values.remark || undefined,
@@ -127,7 +131,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
     <Modal
       title={
         <Space wrap>
-          <span>Log Production</span>
+          <span>{reworkReviewId ? 'Log Rework' : 'Log Production'}</span>
           {step && <Tag color="blue">{step.step.processName}</Tag>}
           <Tag color={pendingQty > 0 ? 'orange' : 'default'}>Pending: {pendingQty}</Tag>
         </Space>

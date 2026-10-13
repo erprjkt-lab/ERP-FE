@@ -4,6 +4,7 @@ import type {
   FeasibleStatus,
   SalesEnquiryItemStatus,
   SalesEnquiryStatus,
+  SalesInvoiceStatus,
   SalesOrderStatus,
   SalesQuotationStatus,
 } from '@/types/sales'
@@ -49,7 +50,6 @@ export const FEASIBLE_STATUS_OPTIONS = (
 ).map(value => ({ value, label: FEASIBLE_STATUS_LABELS[value] }))
 
 export const QUOTATION_STATUS_LABELS: Record<SalesQuotationStatus, string> = {
-  DRAFT: 'Draft',
   SENT: 'Sent',
   ACCEPTED: 'Accepted',
   REJECTED: 'Rejected',
@@ -58,7 +58,6 @@ export const QUOTATION_STATUS_LABELS: Record<SalesQuotationStatus, string> = {
 }
 
 export const QUOTATION_STATUS_BADGE: Record<SalesQuotationStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
   SENT: 'pending',
   ACCEPTED: 'approved',
   REJECTED: 'rejected',
@@ -87,5 +86,17 @@ export const CHALLAN_STATUS_LABELS: Record<DeliveryChallanStatus, string> = {
 
 export const CHALLAN_STATUS_BADGE: Record<DeliveryChallanStatus, StatusBadgeStatus> = {
   DISPATCHED: 'fulfilled',
+  CANCELLED: 'cancelled',
+}
+
+export const INVOICE_STATUS_LABELS: Record<SalesInvoiceStatus, string> = {
+  DRAFT: 'Draft',
+  POSTED: 'Posted',
+  CANCELLED: 'Cancelled',
+}
+
+export const INVOICE_STATUS_BADGE: Record<SalesInvoiceStatus, StatusBadgeStatus> = {
+  DRAFT: 'draft',
+  POSTED: 'fulfilled',
   CANCELLED: 'cancelled',
 }

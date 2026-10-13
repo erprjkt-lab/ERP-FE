@@ -25,6 +25,7 @@ import {
   useUpdateSalesEnquiry,
 } from '../hooks/useSalesEnquiries'
 import type { SalesEnquiryItemInput } from '../hooks/useSalesEnquiries'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 
 interface ItemRowValues {
   itemId: string
@@ -56,7 +57,7 @@ export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
   const [form] = Form.useForm<EnquiryFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: existing } = useSalesEnquiry(enquiryId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesEnquiry()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesEnquiry()
@@ -221,6 +222,7 @@ export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
                         <Select
                           placeholder="Select item"
                           options={itemOptions}
+                          popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                           showSearch
                           filterOption={(input, option) =>
                             String(option?.label ?? '')

@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
-import type { VendorType } from '@/types/masters'
 import {
   DEFAULT_COUNTRY_NAME,
   GST_REGEX,
@@ -12,7 +11,6 @@ import {
   MASTER_STATUS_OPTIONS,
   MOBILE_REGEX,
   PINCODE_REGEX,
-  VENDOR_TYPE_OPTIONS,
 } from '../constants'
 import { useCities } from '../hooks/useCities'
 import { useCountries } from '../hooks/useCountries'
@@ -46,7 +44,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   useEffect(() => {
     if (!open) return
@@ -54,7 +52,6 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
       form.setFieldsValue({
         code: vendor.code,
         name: vendor.name,
-        vendorType: vendor.vendorType,
         status: vendor.status,
         contactPerson: vendor.contactPerson,
         mobile: vendor.mobile,
@@ -63,7 +60,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
         address: vendor.address,
         countryId: vendor.countryId ?? undefined,
         stateId: vendor.stateId ?? undefined,
-        cityId: vendor.cityId ?? undefined,
+        cityName: vendor.cityName,
         pincode: vendor.pincode,
         gstNumber: vendor.gstNumber,
         bankName: vendor.bankName,
@@ -101,7 +98,6 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
 
     const payload = {
       name: values.name as string,
-      vendorType: (values.vendorType as VendorType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -112,8 +108,8 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       bankName: values.bankName as string | undefined,
@@ -154,12 +150,6 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
               label="Vendor Name"
               name="name"
               rules={[{ required: true, message: 'Vendor name is required' }]}
-            />
-            <FormField
-              label="Vendor Type"
-              name="vendorType"
-              fieldType="select"
-              options={VENDOR_TYPE_OPTIONS}
             />
             <FormField
               label="Contact Person"
@@ -215,7 +205,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
                 }
                 onChange={() => {
                   form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
+                  form.setFieldValue('cityName', undefined)
                 }}
               />
             </Form.Item>
@@ -234,12 +224,12 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                onChange={() => form.setFieldValue('cityId', undefined)}
+                onChange={() => form.setFieldValue('cityName', undefined)}
               />
             </Form.Item>
             <FormField
               label="City"
-              name="cityId"
+              name="cityName"
               fieldType="select"
               options={cityOptions}
               rules={[{ required: true, message: 'City is required' }]}

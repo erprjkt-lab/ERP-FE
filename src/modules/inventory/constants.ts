@@ -17,7 +17,6 @@ export const STOCK_REQUISITION_PRIORITY_OPTIONS: {
 ]
 
 export const STOCK_REQUISITION_STATUS_LABELS: Record<StockRequisitionStatus, string> = {
-  DRAFT: 'Draft',
   PENDING_APPROVAL: 'Pending Approval',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
@@ -26,7 +25,6 @@ export const STOCK_REQUISITION_STATUS_LABELS: Record<StockRequisitionStatus, str
 }
 
 export const STOCK_REQUISITION_STATUS_BADGE: Record<StockRequisitionStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
   PENDING_APPROVAL: 'pending',
   APPROVED: 'approved',
   REJECTED: 'rejected',
@@ -42,15 +40,13 @@ export const STOCK_ADJUSTMENT_REASON_OPTIONS: { label: string; value: StockAdjus
 ]
 
 export const STOCK_ADJUSTMENT_STATUS_LABELS: Record<StockAdjustmentStatus, string> = {
-  DRAFT: 'Draft',
+  PENDING_APPROVAL: 'Pending Approval',
   APPROVED: 'Approved',
-  CANCELLED: 'Cancelled',
 }
 
 export const STOCK_ADJUSTMENT_STATUS_BADGE: Record<StockAdjustmentStatus, StatusBadgeStatus> = {
-  DRAFT: 'draft',
+  PENDING_APPROVAL: 'pending',
   APPROVED: 'approved',
-  CANCELLED: 'cancelled',
 }
 
 // Mirrors StockMovement::TYPE_LABELS on the backend — kept in sync manually

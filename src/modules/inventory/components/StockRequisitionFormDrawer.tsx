@@ -69,9 +69,8 @@ export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = (
   const { mutateAsync: create, isPending: creating } = useCreateStockRequisition()
   const { mutateAsync: update, isPending: updating } = useUpdateStockRequisition()
 
-  // Only DRAFT and PENDING_APPROVAL requisitions can be edited
-  const isLocked =
-    isEdit && !!existing && existing.status !== 'DRAFT' && existing.status !== 'PENDING_APPROVAL'
+  // Only PENDING_APPROVAL requisitions can be edited
+  const isLocked = isEdit && !!existing && existing.status !== 'PENDING_APPROVAL'
 
   const departmentOptions = (departments ?? []).map(d => ({ label: d.name, value: d.id }))
   const employeeOptions = (employees ?? []).map(e => ({ label: e.fullName, value: e.id }))
@@ -159,7 +158,7 @@ export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = (
     >
       {isLocked ? (
         <Typography.Text type="secondary">
-          Only DRAFT and PENDING APPROVAL requisitions can be edited. This requisition is currently{' '}
+          Only requisitions pending approval can be edited. This requisition is currently{' '}
           <strong>{existing?.status}</strong>.
         </Typography.Text>
       ) : (

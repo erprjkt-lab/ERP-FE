@@ -6,8 +6,11 @@ import type {
   UpdateDesignationPayload,
 } from '@/types/api/hr'
 
-export function listDesignations(page = 1): Promise<PaginatedEnvelope<ApiDesignation>> {
-  return apiRequest('/api/v1/designations', { query: { page, per_page: 100 } })
+export function listDesignations(
+  page = 1,
+  perPage = 100,
+): Promise<PaginatedEnvelope<ApiDesignation>> {
+  return apiRequest('/api/v1/designations', { query: { page, per_page: perPage } })
 }
 
 export function getDesignation(id: number): Promise<ApiEnvelope<ApiDesignation>> {

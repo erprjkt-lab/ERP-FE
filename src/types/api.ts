@@ -17,3 +17,11 @@ export interface PaginatedEnvelope<T> {
   data: T[]
   meta: PaginationMeta
 }
+
+/** Query shared by the item-wise (flat) list endpoints. `status` is the header status,
+ * except GRN items where it maps to `line_status`. */
+export interface ItemListParams {
+  page?: number
+  perPage?: number
+  status?: string | null
+}

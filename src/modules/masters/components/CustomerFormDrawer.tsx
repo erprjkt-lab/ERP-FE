@@ -4,9 +4,8 @@ import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
-import type { CustomerType, GstType } from '@/types/masters'
+import type { GstType } from '@/types/masters'
 import {
-  CUSTOMER_TYPE_OPTIONS,
   DEFAULT_COUNTRY_NAME,
   GST_REGEX,
   GST_TYPE_OPTIONS,
@@ -51,7 +50,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   useEffect(() => {
     if (!open) return
@@ -59,7 +58,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
       form.setFieldsValue({
         code: customer.code,
         name: customer.name,
-        customerType: customer.customerType,
         status: customer.status,
         contactPerson: customer.contactPerson,
         mobile: customer.mobile,
@@ -68,7 +66,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         address: customer.address,
         countryId: customer.countryId ?? undefined,
         stateId: customer.stateId ?? undefined,
-        cityId: customer.cityId ?? undefined,
+        cityName: customer.cityName,
         pincode: customer.pincode,
         gstNumber: customer.gstNumber,
         panNumber: customer.panNumber,
@@ -114,7 +112,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
 
     const payload = {
       name: values.name as string,
-      customerType: (values.customerType as CustomerType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -125,8 +122,8 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       panNumber: values.panNumber as string | undefined,
@@ -175,12 +172,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
               label="Customer Name"
               name="name"
               rules={[{ required: true, message: 'Customer name is required' }]}
-            />
-            <FormField
-              label="Customer Type"
-              name="customerType"
-              fieldType="select"
-              options={CUSTOMER_TYPE_OPTIONS}
             />
             <FormField
               label="Contact Person"
@@ -236,7 +227,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
                 }
                 onChange={() => {
                   form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
+                  form.setFieldValue('cityName', undefined)
                 }}
               />
             </Form.Item>
@@ -255,12 +246,12 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                onChange={() => form.setFieldValue('cityId', undefined)}
+                onChange={() => form.setFieldValue('cityName', undefined)}
               />
             </Form.Item>
             <FormField
               label="City"
-              name="cityId"
+              name="cityName"
               fieldType="select"
               options={cityOptions}
               rules={[{ required: true, message: 'City is required' }]}

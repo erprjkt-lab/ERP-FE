@@ -109,7 +109,7 @@ Run these in any Claude Code session within this project:
 
 ## Key Design Tokens (from ConfigProvider)
 
-- `colorPrimary`: `#1677ff`
+- `colorPrimary`: `#0289C3` (CoreFlow brand azure — see `src/theme/brand.ts`)
 - `borderRadius`: `6`
 
 ## Before Committing

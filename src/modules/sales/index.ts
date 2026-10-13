@@ -13,3 +13,6 @@ export { SalesOrderDetail } from './pages/SalesOrderDetail'
 export { DeliveryChallanList } from './pages/DeliveryChallanList'
 export { DeliveryChallanForm } from './pages/DeliveryChallanForm'
 export { DeliveryChallanDetail } from './pages/DeliveryChallanDetail'
+
+export { SalesInvoiceList } from './pages/SalesInvoiceList'
+export { SalesInvoiceDetail } from './pages/SalesInvoiceDetail'

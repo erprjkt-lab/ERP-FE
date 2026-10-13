@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   approveRejectionReview,
   createRejectionReason,
@@ -107,6 +107,34 @@ export function useRejectionReviews(rejectionId: string | undefined) {
     enabled: !!rejectionId,
   })
   return { data: (query.data ?? []).map(toRejectionReview), isLoading: query.isLoading }
+}
+
+/**
+ * Every approved Rework review across this job card's rejections — the batches the
+ * shop floor is cleared to redo. One request per rejection, since ERP-BE only exposes
+ * reviews nested under their rejection.
+ */
+export function useReworkReviewsForJobCard(jobCardId: string | undefined) {
+  const { data: rejections, isLoading: rejectionsLoading } = useRejectionsForJobCard(jobCardId)
+
+  const results = useQueries({
+    queries: rejections.map(rejection => ({
+      queryKey: ['rejection-reviews', rejection.id],
+      queryFn: async () => (await listRejectionReviews(Number(rejection.id))).data,
+    })),
+  })
+
+  const reviews = results
+    .flatMap(result => result.data ?? [])
+    .map(toRejectionReview)
+    // Only an approved Rework decision can be cited on a process log.
+    .filter(review => review.decision === 'REWORK' && review.status === 'APPROVED')
+
+  return {
+    data: reviews,
+    rejections,
+    isLoading: rejectionsLoading || results.some(result => result.isLoading),
+  }
 }
 
 export function useCreateRejectionReview(rejectionId: string | undefined) {

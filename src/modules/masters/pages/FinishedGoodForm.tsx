@@ -13,6 +13,7 @@ import {
   useFinishedGood,
   useUpdateFinishedGood,
 } from '../hooks/useFinishedGoods'
+import { useHsnCodes } from '../hooks/useHsnCodes'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
 import { useUoms } from '../hooks/useUoms'
@@ -30,6 +31,7 @@ export const FinishedGoodForm: FC = () => {
   const { data: customers = [] } = useCustomers()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { data: hsnCodes = [] } = useHsnCodes()
   const { data: materialGrades = [] } = useMaterialGrades()
   const { mutateAsync: createFinishedGood, isPending: creating } = useCreateFinishedGood()
   const { mutateAsync: updateFinishedGood, isPending: updating } = useUpdateFinishedGood()
@@ -37,6 +39,7 @@ export const FinishedGoodForm: FC = () => {
   const customerOptions = customers.map(c => ({ label: c.name, value: c.id }))
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
+  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
   const materialGradeOptions = materialGrades.map(m => ({
     label: m.material_grade,
     value: String(m.id),
@@ -55,7 +58,6 @@ export const FinishedGoodForm: FC = () => {
         gstPercent: finishedGood.gstPercent,
         description: finishedGood.description,
         status: finishedGood.status,
-        imageUrl: finishedGood.imageUrl,
         customerId: finishedGood.customerId ?? undefined,
         customerPartNo: finishedGood.customerPartNo,
         drawingNo: finishedGood.drawingNo,
@@ -86,7 +88,6 @@ export const FinishedGoodForm: FC = () => {
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
       customerId: (values.customerId as string | undefined) ?? null,
       customerName: customerOptions.find(o => o.value === values.customerId)?.label,
       customerPartNo: values.customerPartNo as string | undefined,
@@ -178,7 +179,12 @@ export const FinishedGoodForm: FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
-                <FormField label="HSN Code" name="hsnCode" />
+                <FormField
+                  label="HSN Code"
+                  name="hsnCode"
+                  fieldType="select"
+                  options={hsnCodeOptions}
+                />
               </Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField label="GST %" name="gstPercent" fieldType="number" />
@@ -234,18 +240,12 @@ export const FinishedGoodForm: FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
-                <FormField label="Weight" name="weight" fieldType="number" />
+                <FormField label="Weight (kg)" name="weight" fieldType="number" />
               </Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField label="Price" name="price" fieldType="number" />
               </Col>
             </Row>
-          </FormSection>
-
-          <FormSection title="Image">
-            <FormField label="Image" name="imageUrl">
-              <UploadField mode="image" accept="image/*" />
-            </FormField>
           </FormSection>
         </Form>
       </Card>

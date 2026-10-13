@@ -22,6 +22,7 @@ import { useProcurementItems } from '../hooks/useProcurementItems'
 import { useCreatePurchaseOrderDirect } from '../hooks/usePurchaseOrders'
 import type { PurchaseOrderItemInput } from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 
 interface ItemRowValues {
   itemId: string
@@ -39,7 +40,7 @@ export const PurchaseOrderForm: FC = () => {
   const [form] = Form.useForm()
 
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
 
   const supplierOptions = suppliers.map(s => ({ label: `${s.code} — ${s.name}`, value: s.id }))
@@ -213,6 +214,7 @@ export const PurchaseOrderForm: FC = () => {
                         <Select
                           placeholder="Select item"
                           options={itemOptions}
+                          popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                           showSearch
                           filterOption={(input, option) =>
                             String(option?.label ?? '')

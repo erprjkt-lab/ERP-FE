@@ -5,7 +5,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { UploadField } from '@/components/ui/UploadField'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
@@ -14,6 +13,7 @@ import {
   useRawMaterial,
   useUpdateRawMaterial,
 } from '../hooks/useRawMaterials'
+import { useHsnCodes } from '../hooks/useHsnCodes'
 import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -30,10 +30,12 @@ export const RawMaterialForm: FC = () => {
   const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { data: hsnCodes = [] } = useHsnCodes()
   const { data: materialGrades = [] } = useMaterialGrades()
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
+  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
   const materialGradeOptions = materialGrades.map(m => ({
     label: m.material_grade,
     value: String(m.id),
@@ -52,7 +54,6 @@ export const RawMaterialForm: FC = () => {
         gstPercent: rawMaterial.gstPercent,
         description: rawMaterial.description,
         status: rawMaterial.status,
-        imageUrl: rawMaterial.imageUrl,
         materialGradeId: rawMaterial.materialGradeId ?? undefined,
         materialType: rawMaterial.materialType,
         shape: rawMaterial.shape,
@@ -85,7 +86,6 @@ export const RawMaterialForm: FC = () => {
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
       materialGradeId: values.materialGradeId as string | undefined,
       materialGrade: materialGradeOptions.find(o => o.value === values.materialGradeId)?.label,
       materialType: values.materialType as string | undefined,
@@ -178,7 +178,12 @@ export const RawMaterialForm: FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
-                <FormField label="HSN Code" name="hsnCode" />
+                <FormField
+                  label="HSN Code"
+                  name="hsnCode"
+                  fieldType="select"
+                  options={hsnCodeOptions}
+                />
               </Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField label="GST %" name="gstPercent" fieldType="number" />
@@ -237,12 +242,6 @@ export const RawMaterialForm: FC = () => {
 
           <FormSection title="Price">
             <FormField label="Price" name="price" fieldType="number" />
-          </FormSection>
-
-          <FormSection title="Image">
-            <FormField label="Image" name="imageUrl">
-              <UploadField mode="image" accept="image/*" />
-            </FormField>
           </FormSection>
         </Form>
       </Card>

@@ -10,15 +10,15 @@ export const ANTD_THEME: ThemeConfig = {
     colorPrimary: BRAND_PRIMARY,
     colorPrimaryHover: BRAND_PRIMARY_HOVER,
     colorPrimaryActive: BRAND_PRIMARY_ACTIVE,
-    borderRadius: 4,
+    borderRadius: 6,
     borderRadiusLG: 8,
-    borderRadiusSM: 3,
+    borderRadiusSM: 4,
     borderRadiusXS: 2,
     fontFamily: FONT_BODY,
     fontSize: 14,
     controlHeight: 32,
-    boxShadow: '0 1px 2px rgba(27, 29, 34, 0.06)',
-    boxShadowSecondary: '0 4px 16px rgba(27, 29, 34, 0.10)',
+    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+    boxShadowSecondary: '0 4px 16px rgba(15, 23, 42, 0.08)',
     ...NEUTRAL_TOKENS,
     ...SEMANTIC_TOKENS,
   },
@@ -26,9 +26,9 @@ export const ANTD_THEME: ThemeConfig = {
     Menu: {
       darkItemBg: SIDEBAR_BG,
       darkSubMenuItemBg: SIDEBAR_SUBMENU_BG,
-      darkItemSelectedBg: 'rgba(74, 111, 165, 0.22)',
+      darkItemSelectedBg: 'rgba(0, 160, 227, 0.16)',
       darkItemSelectedColor: '#FFFFFF',
-      darkItemHoverBg: 'rgba(255, 255, 255, 0.06)',
+      darkItemHoverBg: 'rgba(0, 160, 227, 0.08)',
       darkItemColor: 'rgba(255, 255, 255, 0.72)',
       itemBorderRadius: 6,
       itemHeight: 40,
@@ -36,6 +36,7 @@ export const ANTD_THEME: ThemeConfig = {
     Layout: {
       headerBg: '#FFFFFF',
       bodyBg: NEUTRAL_TOKENS.colorBgLayout,
+      siderBg: SIDEBAR_BG,
     },
     // Density is tuned for shop-floor use: more of a record visible without scrolling.
     Card: {
@@ -48,9 +49,9 @@ export const ANTD_THEME: ThemeConfig = {
       verticalLabelPadding: '0 0 2px',
     },
     Table: {
-      headerBg: NEUTRAL_TOKENS.colorBgContainer,
-      headerColor: NEUTRAL_TOKENS.colorTextSecondary,
-      rowHoverBg: '#F7F6F2',
+      headerBg: '#F8FAFC',
+      headerColor: '#475569',
+      rowHoverBg: '#F0F9FF',
       cellPaddingBlock: 8,
       cellPaddingBlockSM: 6,
     },
@@ -60,6 +61,15 @@ export const ANTD_THEME: ThemeConfig = {
     Button: {
       controlHeight: 32,
       fontWeight: 500,
+      primaryShadow: '0 2px 8px rgba(2, 137, 195, 0.28)',
+    },
+    Tabs: {
+      itemSelectedColor: BRAND_PRIMARY,
+      itemHoverColor: BRAND_PRIMARY_HOVER,
+      inkBarColor: BRAND_PRIMARY,
+    },
+    Tag: {
+      borderRadiusSM: 4,
     },
     Input: {
       controlHeight: 32,

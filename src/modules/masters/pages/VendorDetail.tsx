@@ -78,12 +78,6 @@ export const VendorDetail: FC = () => {
                   children: (
                     <Descriptions column={2} size="small" bordered>
                       <Descriptions.Item label="Vendor Code">{vendor.code}</Descriptions.Item>
-                      <Descriptions.Item
-                        label="Vendor Type"
-                        style={{ textTransform: 'capitalize' }}
-                      >
-                        {vendor.vendorType ?? '—'}
-                      </Descriptions.Item>
                       <Descriptions.Item label="Contact Person">
                         {vendor.contactPerson}
                       </Descriptions.Item>

@@ -1,4 +1,10 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   approvePurchaseRequisition,
   createPurchaseRequisition,
@@ -6,7 +12,6 @@ import {
   getPurchaseRequisition,
   listPurchaseRequisitions,
   rejectPurchaseRequisition,
-  submitPurchaseRequisition,
   updatePurchaseRequisition,
 } from '@/api/purchaseRequisitions'
 import type {
@@ -140,12 +145,17 @@ export function useFetchPurchaseRequisition() {
     toPurchaseRequisition(await queryClient.fetchQuery(requisitionQuery(id)))
 }
 
-export function usePurchaseRequisitions() {
+export function usePurchaseRequisitions(page = 1, perPage = 100) {
   const query = useQuery({
-    queryKey: ['purchase-requisitions'],
-    queryFn: async () => (await listPurchaseRequisitions()).data,
+    queryKey: ['purchase-requisitions', page, perPage],
+    queryFn: () => listPurchaseRequisitions(page, perPage),
+    placeholderData: keepPreviousData,
   })
-  return { data: (query.data ?? []).map(toPurchaseRequisition), isLoading: query.isLoading }
+  return {
+    data: (query.data?.data ?? []).map(toPurchaseRequisition),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+  }
 }
 
 export function usePurchaseRequisition(id: string | undefined) {
@@ -190,18 +200,6 @@ export function useUpdatePurchaseRequisition() {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requisitions'] })
       queryClient.invalidateQueries({ queryKey: ['purchase-requisitions', variables.id] })
-    },
-  })
-}
-
-export function useSubmitRequisitionForApproval() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string) =>
-      toPurchaseRequisition((await submitPurchaseRequisition(Number(id))).data),
-    onSuccess: (_result, id) => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-requisitions'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-requisitions', id] })
     },
   })
 }

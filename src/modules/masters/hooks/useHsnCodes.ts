@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createHsnCode, deleteHsnCode, listHsnCodes, updateHsnCode } from '@/api/hsnCodes'
 import type { ApiHsnCode, CreateHsnCodePayload, UpdateHsnCodePayload } from '@/types/api/masters'
 import type { HsnCode } from '@/types/masters'
@@ -19,12 +19,20 @@ function toHsnCode(api: ApiHsnCode): HsnCode {
   }
 }
 
-export function useHsnCodes() {
+/** Defaults match the old single fetch, so the dropdowns that call this with no
+ *  arguments are unaffected; the master page passes its own page/size. */
+export function useHsnCodes(page = 1, perPage = 200) {
   const query = useQuery({
-    queryKey: ['masters', 'hsnCodes'],
-    queryFn: async () => (await listHsnCodes()).data.map(toHsnCode),
+    queryKey: ['masters', 'hsnCodes', page, perPage],
+    queryFn: () => listHsnCodes(page, perPage),
+    placeholderData: keepPreviousData,
   })
-  return { ...query, data: query.data ?? [], isLoading: query.isLoading }
+  return {
+    ...query,
+    data: query.data?.data.map(toHsnCode) ?? [],
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+  }
 }
 
 export function useCreateHsnCode() {

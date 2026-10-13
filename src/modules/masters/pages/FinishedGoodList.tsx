@@ -6,13 +6,14 @@ import {
   PlusOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import { InspectionParametersDrawer } from '@/modules/production/components/InspectionParametersDrawer'
 import { ItemBomDrawer } from '@/modules/production/components/ItemBomDrawer'
 import { ItemProcessRouteDrawer } from '@/modules/production/components/ItemProcessRouteDrawer'
@@ -31,7 +32,7 @@ interface RowActions {
   onInspectionParameters: (record: FinishedGood) => void
 }
 
-const getColumns = (a: RowActions): TableColumnsType<FinishedGood> => [
+const getColumns = (): TableColumnsType<FinishedGood> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   {
     title: 'Name',
@@ -52,55 +53,44 @@ const getColumns = (a: RowActions): TableColumnsType<FinishedGood> => [
     key: 'status',
     render: status => <StatusBadge status={status} />,
   },
+]
+
+const getFinishedGoodActions = (record: FinishedGood, a: RowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 220,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="Edit">
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => a.onEdit(record)}
-          />
-        </Tooltip>
-        <Tooltip title="Delete">
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => a.onDelete(record)}
-          />
-        </Tooltip>
-        <Tooltip title="Define the ordered shop-floor operations for this item">
-          <Button
-            type="text"
-            size="small"
-            icon={<ApartmentOutlined />}
-            onClick={() => a.onProcessRoute(record)}
-          />
-        </Tooltip>
-        <Tooltip title="Define the materials consumed per unit of this item">
-          <Button
-            type="text"
-            size="small"
-            icon={<UnorderedListOutlined />}
-            onClick={() => a.onBom(record)}
-          />
-        </Tooltip>
-        <Tooltip title="Define the quality control-plan characteristics to check for this item">
-          <Button
-            type="text"
-            size="small"
-            icon={<ExperimentOutlined />}
-            onClick={() => a.onInspectionParameters(record)}
-          />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'edit',
+    label: 'Edit',
+    icon: <EditOutlined />,
+    variant: 'primary',
+    onClick: () => a.onEdit(record),
+  },
+  {
+    key: 'route',
+    label: 'Process Route',
+    icon: <ApartmentOutlined />,
+    variant: 'default',
+    onClick: () => a.onProcessRoute(record),
+  },
+  {
+    key: 'bom',
+    label: 'Bill of Materials',
+    icon: <UnorderedListOutlined />,
+    variant: 'primary',
+    onClick: () => a.onBom(record),
+  },
+  {
+    key: 'inspection',
+    label: 'Inspection Parameters',
+    icon: <ExperimentOutlined />,
+    variant: 'accent',
+    onClick: () => a.onInspectionParameters(record),
+  },
+  {
+    key: 'delete',
+    label: 'Delete',
+    icon: <DeleteOutlined />,
+    variant: 'danger',
+    danger: true,
+    onClick: () => a.onDelete(record),
   },
 ]
 
@@ -133,13 +123,15 @@ export const FinishedGoodList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: handleDelete,
     onProcessRoute: record => setProcessRouteItemId(record.id),
     onBom: record => setBomItemId(record.id),
     onInspectionParameters: record => setInspectionItemId(record.id),
-  })
+  }
 
   const filtered = finishedGoods.filter(f => {
     if (filters.search && !f.name.toLowerCase().includes(filters.search.toLowerCase())) {
@@ -203,6 +195,7 @@ export const FinishedGoodList: FC = () => {
           loading={isLoading}
           totalLabel="finished goods"
           fillHeight
+          rowActions={record => getFinishedGoodActions(record, rowActions)}
           onRow={record => ({
             onClick: () => setDrawerState({ mode: 'edit', id: record.id }),
             style: { cursor: 'pointer' },

@@ -21,6 +21,7 @@ function log(processId: string, ok: number, rejected: number, bypassed = 0): Pro
     okQty: ok,
     rejectedQty: rejected,
     bypassedQty: bypassed,
+    isRework: false,
   }
 }
 
@@ -29,6 +30,7 @@ function movement(
   toProcessId: string,
   movedQty: number,
   accepted: { acceptedQty: number; shortQty?: number }[] = [],
+  reworkReviewId: string | null = null,
 ): JobCardMovement {
   return {
     id: `mv-${fromProcessId}-${toProcessId}-${movedQty}`,
@@ -36,6 +38,8 @@ function movement(
     fromProcessName: '',
     toProcessId,
     toProcessName: '',
+    reworkReviewId,
+    isRework: reworkReviewId !== null,
     movedQty,
     movedAt: '2026-09-12',
     acceptances: accepted.map((entry, index) => ({
@@ -148,6 +152,32 @@ describe('computeStepProgress', () => {
     expect(inspection.isLast).toBe(true)
     expect(inspection.okQty).toBe(20)
     expect(inspection.readyToMoveQty).toBe(0)
+  })
+
+  it('keeps a rework movement out of the first pass numbers', () => {
+    // ERP-BE auto-creates a tagged movement back to the rework step when a Rework
+    // review is approved. It belongs to the redo, not to the first pass, so none of
+    // its qty may surface in the regular row — the leak this split exists to stop.
+    const firstPassOnly = computeStepProgress(
+      routes,
+      [log('10', 20, 0)],
+      [movement('10', '20', 20, [{ acceptedQty: 20 }])],
+      20,
+    )
+    const withRework = computeStepProgress(
+      routes,
+      [log('10', 20, 0)],
+      [
+        movement('10', '20', 20, [{ acceptedQty: 20 }]),
+        // Machining sent 5 back to Cutting for a redo.
+        movement('20', '10', 5, [], 'review-1'),
+      ],
+      20,
+    )
+
+    expect(withRework).toEqual(firstPassOnly)
+    expect(withRework[0].unacceptedQty).toBe(0)
+    expect(withRework[0].availableQty).toBe(20)
   })
 
   it('marks no step as current once every step is fully produced', () => {

@@ -214,6 +214,9 @@ export interface ApiProcessLog {
   rejected_qty: number
   bypassed_qty: number
   inbound_challan_item_id: number | null
+  // Set when this log re-processes qty an approved Rework review sent back.
+  inbound_rework_review_id: number | null
+  is_rework: boolean
   weight_kg: number | null
   finished_weight_kg: number | null
   conversion_ratio: number | null
@@ -239,6 +242,8 @@ export interface ApiJobCardMovement {
   from_process_name: string | null
   to_process_id: number
   to_process_name: string | null
+  rejection_review_id: number | null
+  is_rework: boolean
   moved_qty: number
   moved_at: string | null
   moved_by: number | null
@@ -273,6 +278,7 @@ export interface CreateProcessLogPayload {
   rejected_qty?: number
   bypassed_qty?: number
   inbound_challan_item_id?: number | null
+  inbound_rework_review_id?: number | null
   production_seconds?: number | null
   downtime_seconds?: number | null
   remark?: string | null

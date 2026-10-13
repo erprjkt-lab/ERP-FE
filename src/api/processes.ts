@@ -2,8 +2,8 @@ import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type { ApiProcess, CreateProcessPayload, UpdateProcessPayload } from '@/types/api/production'
 
-export function listProcesses(): Promise<PaginatedEnvelope<ApiProcess>> {
-  return apiRequest('/api/v1/processes', { query: { per_page: 200 } })
+export function listProcesses(page = 1, perPage = 200): Promise<PaginatedEnvelope<ApiProcess>> {
+  return apiRequest('/api/v1/processes', { query: { page, per_page: perPage } })
 }
 
 export function getProcess(id: number): Promise<ApiEnvelope<ApiProcess>> {

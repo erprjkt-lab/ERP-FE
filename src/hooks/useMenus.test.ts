@@ -35,14 +35,20 @@ describe('useMenus hooks', () => {
   })
 
   it('useSidebarMenu returns the raw sidebar tree', async () => {
-    vi.mocked(getSidebarMenu).mockResolvedValue({
-      status: 'success',
-      message: 'ok',
-      data: [apiMenu],
-    })
+    const node = {
+      id: 1,
+      name: 'Customers',
+      icon: 'user-check',
+      route: 'customers',
+      module_key: 'customers',
+      sequence: 20,
+      can: { read: true, write: false, modify: false, delete: false, approve: false },
+      children: [],
+    }
+    vi.mocked(getSidebarMenu).mockResolvedValue({ status: 'success', message: 'ok', data: [node] })
     const { result } = renderHook(() => useSidebarMenu(), { wrapper: createQueryWrapper() })
     await waitFor(() => expect(result.current.data).toBeDefined())
-    expect(result.current.data).toEqual([apiMenu])
+    expect(result.current.data).toEqual([node])
   })
 
   it('useMenus returns the flat menu list', async () => {

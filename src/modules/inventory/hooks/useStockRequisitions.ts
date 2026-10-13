@@ -8,8 +8,8 @@ import {
   getStockRequisition,
   listStockRequisitions,
   rejectStockRequisition,
-  submitStockRequisition,
   updateStockRequisition,
+  type StockRequisitionListParams,
 } from '@/api/stockRequisitions'
 import type {
   ApiStockRequisition,
@@ -122,10 +122,10 @@ function toUpdatePayload(input: Partial<StockRequisitionInput>): UpdateStockRequ
   }
 }
 
-export function useStockRequisitions() {
+export function useStockRequisitions(params: StockRequisitionListParams = {}) {
   const query = useQuery({
-    queryKey: ['stock-requisitions'],
-    queryFn: async () => (await listStockRequisitions()).data,
+    queryKey: ['stock-requisitions', params],
+    queryFn: async () => (await listStockRequisitions(params)).data,
   })
   return { data: (query.data ?? []).map(toStockRequisition), isLoading: query.isLoading }
 }
@@ -176,15 +176,6 @@ export function useUpdateStockRequisition() {
 function invalidateOne(queryClient: ReturnType<typeof useQueryClient>, id: string) {
   queryClient.invalidateQueries({ queryKey: ['stock-requisitions'] })
   queryClient.invalidateQueries({ queryKey: ['stock-requisitions', id] })
-}
-
-export function useSubmitStockRequisition() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string) =>
-      toStockRequisition((await submitStockRequisition(Number(id))).data),
-    onSuccess: (_result, id) => invalidateOne(queryClient, id),
-  })
 }
 
 export function useApproveStockRequisition() {

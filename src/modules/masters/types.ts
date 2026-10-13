@@ -1,1 +1,1 @@
-export type { Customer, Supplier, Vendor, CustomerType, GstType, VendorType } from '@/types/masters'
+export type { Customer, Supplier, Vendor, GstType } from '@/types/masters'

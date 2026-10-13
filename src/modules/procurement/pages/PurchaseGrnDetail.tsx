@@ -98,6 +98,13 @@ export const PurchaseGrnDetail: FC = () => {
     },
     { title: 'Received Qty', dataIndex: 'receivedQty', key: 'receivedQty' },
     {
+      title: 'Rate',
+      dataIndex: 'rate',
+      key: 'rate',
+      align: 'right' as const,
+      render: (v: number | null) => (v != null ? `₹${v.toFixed(2)}` : '—'),
+    },
+    {
       title: 'Batch / Heat / Serial',
       key: 'tracking',
       render: (_: unknown, r: GrnItem) => (

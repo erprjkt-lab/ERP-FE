@@ -4,16 +4,23 @@ import {
   createDeliveryChallan,
   getDeliveryChallan,
   getDeliveryChallansForOrder,
-  listDeliveryChallans,
+  listDeliveryChallanItems,
 } from '@/api/deliveryChallans'
-import type { DeliveryChallanListParams } from '@/api/deliveryChallans'
+import type { ItemListParams } from '@/types/api'
 import type {
   ApiDeliveryChallan,
+  ApiDeliveryChallanItemRow,
   ApiDeliveryChallanItem,
   ApiDeliveryChallanItemStock,
   DeliveryChallanPayload,
 } from '@/types/api/sales'
-import type { DeliveryChallan, DeliveryChallanItem, DeliveryChallanItemStock } from '@/types/sales'
+import type {
+  DeliveryChallan,
+  DeliveryChallanItem,
+  DeliveryChallanItemRow,
+  DeliveryChallanItemStock,
+  DeliveryChallanStatus,
+} from '@/types/sales'
 
 function toStock(api: ApiDeliveryChallanItemStock): DeliveryChallanItemStock {
   return {
@@ -73,21 +80,6 @@ export function toDeliveryChallan(api: ApiDeliveryChallan): DeliveryChallan {
     createdBy: api.created_by != null ? String(api.created_by) : '—',
     createdAt: api.created_at ?? '',
     updatedAt: api.created_at ?? '',
-  }
-}
-
-export function useDeliveryChallans(params: DeliveryChallanListParams = {}) {
-  const query = useQuery({
-    queryKey: ['delivery-challans', params],
-    queryFn: () => listDeliveryChallans(params),
-    placeholderData: keepPreviousData,
-  })
-
-  return {
-    data: (query.data?.data ?? []).map(toDeliveryChallan),
-    meta: query.data?.meta,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
   }
 }
 
@@ -156,4 +148,39 @@ export function useCancelDeliveryChallan() {
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
     },
   })
+}
+
+function toDeliveryChallanItemRow(api: ApiDeliveryChallanItemRow): DeliveryChallanItemRow {
+  return {
+    id: String(api.id),
+    deliveryChallanId: String(api.delivery_challan_id),
+    challanNumber: api.challan_number,
+    challanDate: api.challan_date,
+    status: api.challan_status as DeliveryChallanStatus,
+    partyId: String(api.party_id),
+    partyName: api.party_name ?? undefined,
+    itemId: String(api.item_id),
+    itemCode: api.item_code ?? undefined,
+    itemName: api.item_name ?? undefined,
+    uomName: api.uom_name ?? undefined,
+    dispatchQty: Number(api.dispatch_qty),
+    rate: Number(api.rate),
+    lineTotal: Number(api.line_total),
+    billedQty: Number(api.billed_qty ?? 0),
+  }
+}
+
+// Item-wise (one row per line) listing — server-side paginated.
+export function useDeliveryChallanItems(params: ItemListParams = {}) {
+  const query = useQuery({
+    queryKey: ['delivery-challans', 'items', params],
+    queryFn: () => listDeliveryChallanItems(params),
+    placeholderData: keepPreviousData,
+  })
+  return {
+    data: (query.data?.data ?? []).map(toDeliveryChallanItemRow),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+  }
 }

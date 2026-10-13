@@ -74,12 +74,7 @@ export const StockRequisitionForm: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, requisition?.id, form])
 
-  if (
-    isEdit &&
-    requisition &&
-    requisition.status !== 'DRAFT' &&
-    requisition.status !== 'PENDING_APPROVAL'
-  ) {
+  if (isEdit && requisition && requisition.status !== 'PENDING_APPROVAL') {
     return (
       <div>
         <PageHeader
@@ -91,7 +86,7 @@ export const StockRequisitionForm: FC = () => {
         />
         <Card>
           <Typography.Text>
-            Only DRAFT and PENDING APPROVAL requisitions can be edited. This requisition is{' '}
+            Only requisitions pending approval can be edited. This requisition is{' '}
             {requisition.status}.
           </Typography.Text>
         </Card>

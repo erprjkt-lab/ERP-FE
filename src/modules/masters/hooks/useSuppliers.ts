@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createSupplier,
   deleteSupplier,
@@ -68,15 +68,17 @@ function toCreatePayload(input: SupplierInput): CreatePartyPayload {
   return { ...buildPartyFields(input), party_name: input.name, mobile: input.mobile }
 }
 
-export function useSuppliers() {
+export function useSuppliers(page = 1, perPage = 100) {
   const query = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: async () => (await listSuppliers()).data,
+    queryKey: ['suppliers', page, perPage],
+    queryFn: () => listSuppliers(page, perPage),
+    // Keeps the current page on screen while the next one loads.
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(toSupplier)
+  const data = query.data?.data.map(toSupplier)
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useSupplier(id: string | undefined) {

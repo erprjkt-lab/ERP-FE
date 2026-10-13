@@ -79,9 +79,6 @@ export const CustomerDetail: FC = () => {
                   children: (
                     <Descriptions column={2} size="small" bordered>
                       <Descriptions.Item label="Customer Code">{customer.code}</Descriptions.Item>
-                      <Descriptions.Item label="Type" style={{ textTransform: 'capitalize' }}>
-                        {customer.customerType ?? '—'}
-                      </Descriptions.Item>
                       <Descriptions.Item label="Contact Person">
                         {customer.contactPerson}
                       </Descriptions.Item>

@@ -1,21 +1,3 @@
-// Placeholder business values, same as HR's original BRANCH_OPTIONS/ROLE_OPTIONS —
-// easy to edit once real business rules are confirmed.
-export const CUSTOMER_TYPE_OPTIONS = [
-  { label: 'Retail', value: 'retail' },
-  { label: 'Wholesale', value: 'wholesale' },
-  { label: 'Distributor', value: 'distributor' },
-  { label: 'Corporate', value: 'corporate' },
-  { label: 'Government', value: 'government' },
-]
-
-export const VENDOR_TYPE_OPTIONS = [
-  { label: 'Service Provider', value: 'service' },
-  { label: 'Contractor', value: 'contractor' },
-  { label: 'Consultant', value: 'consultant' },
-  { label: 'Transporter', value: 'transporter' },
-  { label: 'Other', value: 'other' },
-]
-
 export const GST_TYPE_OPTIONS = [
   { label: 'Regular', value: 'regular' },
   { label: 'Composition', value: 'composition' },

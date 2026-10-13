@@ -1,0 +1,360 @@
+/* ==========================================================================
+   CoreFlow Tech — Production Outsource Challans Styling
+   Clean, Executive, High-Legibility Document Cards & Ledger
+   ========================================================================== */
+
+.cf-outsource-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+/* --------------------------------------------------------------------------
+   2. MAIN CONTENT CARD & FILTER BAR
+   -------------------------------------------------------------------------- */
+.cf-outsource-main-card {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+.cf-outsource-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.cf-filter-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.cf-filter-search {
+  max-width: 320px;
+  min-width: 220px;
+}
+
+.cf-filter-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   3. ENTERPRISE CHALLAN DOCUMENT CARDS
+   -------------------------------------------------------------------------- */
+.cf-challans-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cf-challan-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cf-challan-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 20px -3px rgba(15, 23, 42, 0.07);
+}
+
+/* Card Header */
+.cf-challan-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #ffffff;
+}
+
+.cf-challan-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cf-challan-pill {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0289c3;
+  background: #e0f2fe;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid #bae6fd;
+  letter-spacing: -0.01em;
+}
+
+.cf-challan-vendor-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cf-vendor-ico {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.cf-challan-date-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.cf-challan-actions-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Card Summary Metrics Strip */
+.cf-challan-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 18px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.cf-challan-metric-items {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.cf-mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cf-mini-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cf-mini-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cf-val-green {
+  color: #16a34a;
+}
+
+.cf-val-amber {
+  color: #d97706;
+}
+
+.cf-val-highlight {
+  color: #0289c3;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.cf-challan-progress-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.cf-progress-text-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Items List Section */
+.cf-challan-items-wrap {
+  padding: 12px 18px 16px;
+  background: #ffffff;
+}
+
+.cf-items-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cf-challan-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.15s ease;
+}
+
+.cf-challan-item-row:last-child {
+  margin-bottom: 0;
+}
+
+.cf-challan-item-row:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.cf-item-col-jobcard {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1.5;
+  min-width: 200px;
+}
+
+.cf-item-jobcard-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.cf-item-process-tag {
+  width: fit-content;
+}
+
+.cf-item-col-quantities {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 2;
+  justify-content: center;
+}
+
+.cf-qty-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  min-width: 72px;
+}
+
+.cf-qty-pill-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.03em;
+}
+
+.cf-qty-pill-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cf-qty-pill-received {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+.cf-qty-pill-received .cf-qty-pill-num {
+  color: #16a34a;
+}
+
+.cf-qty-pill-pending {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.cf-qty-pill-pending .cf-qty-pill-num {
+  color: #d97706;
+}
+
+.cf-item-col-commercials {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 100px;
+}
+
+.cf-rate-text {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.cf-amount-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cf-item-col-action {
+  min-width: 120px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --------------------------------------------------------------------------
+   4. RESPONSIVE DESIGN
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .cf-challan-item-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cf-item-col-quantities {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .cf-item-col-action {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

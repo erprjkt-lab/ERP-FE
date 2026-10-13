@@ -1,7 +1,6 @@
 import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
-import { UploadField } from '@/components/ui/UploadField'
 import type { Consumable } from '@/types/masters'
 import { MASTER_STATUS_OPTIONS } from '../../constants'
 import {
@@ -11,6 +10,7 @@ import {
   useUpdateConsumable,
 } from '../../hooks/useConsumables'
 import { useItemCategories } from '../../hooks/useItemCategories'
+import { useHsnCodes } from '../../hooks/useHsnCodes'
 import { useUoms } from '../../hooks/useUoms'
 
 export const ConsumableList: FC = () => {
@@ -20,9 +20,11 @@ export const ConsumableList: FC = () => {
   const { mutateAsync: deleteConsumable } = useDeleteConsumable()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { data: hsnCodes = [] } = useHsnCodes()
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
+  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
 
   return (
     <SimpleMasterList<Consumable>
@@ -70,7 +72,12 @@ export const ConsumableList: FC = () => {
               fieldType="select"
               options={uomOptions}
             />
-            <FormField label="HSN Code" name="hsnCode" />
+            <FormField
+              label="HSN Code"
+              name="hsnCode"
+              fieldType="select"
+              options={hsnCodeOptions}
+            />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField label="Price" name="price" fieldType="number" />
             <FormField
@@ -82,9 +89,6 @@ export const ConsumableList: FC = () => {
             />
           </div>
           <FormField label="Description" name="description" fieldType="textarea" />
-          <FormField label="Image" name="imageUrl">
-            <UploadField mode="image" accept="image/*" />
-          </FormField>
         </>
       )}
       onSubmit={async (values, editing) => {
@@ -100,7 +104,6 @@ export const ConsumableList: FC = () => {
           gstPercent: values.gstPercent as number | undefined,
           description: values.description as string | undefined,
           status: (values.status as 'active' | 'inactive') ?? 'active',
-          imageUrl: values.imageUrl as string | undefined,
           price: values.price as number | undefined,
         }
         if (editing) {

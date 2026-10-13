@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from 'antd'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -25,7 +25,11 @@ function buttonByText(text: string): HTMLElement {
   return el as HTMLElement
 }
 
-function iconButton(iconName: 'edit' | 'delete'): HTMLElement {
+function iconButton(iconName: 'edit' | 'delete', rowIndex = 0): HTMLElement {
+  const row = document.querySelectorAll('.ant-table-row')[rowIndex]
+  if (row) {
+    fireEvent.mouseEnter(row)
+  }
   const icon = document.querySelector(`.anticon-${iconName}`)
   const el = icon?.closest('button')
   if (!el) throw new Error(`No <button> ancestor found for icon "${iconName}"`)

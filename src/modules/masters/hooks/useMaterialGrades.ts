@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createMaterialGrade,
   deleteMaterialGrade,
@@ -12,13 +12,15 @@ import type {
 } from '@/types/api/masters'
 import type { MaterialGrade } from '@/types/masters'
 
-export function useMaterialGrades() {
+/** No-arg calls keep the old single-fetch behaviour for dropdowns. */
+export function useMaterialGrades(page = 1, perPage = 200) {
   const { data, isLoading } = useQuery({
-    queryKey: ['masters', 'materialGrades'],
-    queryFn: listMaterialGrades,
+    queryKey: ['masters', 'materialGrades', page, perPage],
+    queryFn: () => listMaterialGrades(page, perPage),
     staleTime: Infinity,
+    placeholderData: keepPreviousData,
   })
-  return { data: data?.data ?? [], isLoading }
+  return { data: data?.data ?? [], meta: data?.meta, isLoading }
 }
 
 function toMaterialGrade(api: ApiMaterialGrade): MaterialGrade {
@@ -37,9 +39,9 @@ function toMaterialGrade(api: ApiMaterialGrade): MaterialGrade {
 // Mapped-to-FE-shape list for the Material Grade master screen, distinct from
 // the raw `useMaterialGrades()` above which dropdown consumers (Raw Material/
 // Finished Good forms etc.) already depend on for its ApiMaterialGrade shape.
-export function useMaterialGradeList() {
-  const { data: materialGrades, isLoading } = useMaterialGrades()
-  return { data: materialGrades.map(toMaterialGrade), isLoading }
+export function useMaterialGradeList(page = 1, perPage = 200) {
+  const { data: materialGrades, meta, isLoading } = useMaterialGrades(page, perPage)
+  return { data: materialGrades.map(toMaterialGrade), meta, isLoading }
 }
 
 export function useCreateMaterialGrade() {

@@ -1,15 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createPurchaseEnquiryFromRequisitions,
   createPurchaseEnquiryManual,
   getPurchaseEnquiry,
   getQuotationComparison,
   listPurchaseEnquiries,
-  sendPurchaseEnquiry,
+  listPurchaseEnquiryItems,
   updatePurchaseEnquiry,
 } from '@/api/purchaseEnquiries'
+import type { ItemListParams } from '@/types/api'
 import type {
   ApiPurchaseEnquiry,
+  ApiPurchaseEnquiryItemRow,
   ApiPurchaseEnquiryItem,
   ApiPurchaseEnquirySupplier,
   ApiQuotationComparisonRow,
@@ -21,6 +23,7 @@ import type {
 import type {
   PurchaseEnquiry,
   PurchaseEnquiryItem,
+  PurchaseEnquiryItemRow,
   PurchaseEnquirySupplier,
   PurchaseEnquirySupplierStatus,
   PurchaseEnquiryStatus,
@@ -274,18 +277,6 @@ export function useRemoveSupplierFromEnquiry() {
   })
 }
 
-export function useSendPurchaseEnquiry() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string) =>
-      toPurchaseEnquiry((await sendPurchaseEnquiry(Number(id))).data),
-    onSuccess: (_result, id) => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-enquiries'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-enquiries', id] })
-    },
-  })
-}
-
 export interface QuotationComparisonQuote {
   supplierQuotationId: string
   supplierId: string
@@ -353,4 +344,37 @@ export function useQuotationComparison(enquiryId: string | undefined) {
     enabled: !!enquiryId,
   })
   return { data: (query.data ?? []).map(toComparisonRow), isLoading: query.isLoading }
+}
+
+function toPurchaseEnquiryItemRow(api: ApiPurchaseEnquiryItemRow): PurchaseEnquiryItemRow {
+  return {
+    id: String(api.id),
+    purchaseEnquiryId: String(api.purchase_enquiry_id),
+    enquiryNumber: api.enquiry_number,
+    enquiryDate: api.enquiry_date,
+    enquiryDueDate: api.enquiry_due_date ?? undefined,
+    priority: api.priority as Priority,
+    status: api.enquiry_status as PurchaseEnquiryStatus,
+    itemId: String(api.item_id),
+    itemCode: api.item_code ?? undefined,
+    itemName: api.item_name ?? undefined,
+    requiredQty: Number(api.required_qty),
+    uomName: api.uom_name ?? undefined,
+    requiredDate: api.required_date ?? undefined,
+  }
+}
+
+// Item-wise (one row per line) listing — server-side paginated.
+export function usePurchaseEnquiryItems(params: ItemListParams = {}) {
+  const query = useQuery({
+    queryKey: ['purchase-enquiries', 'items', params],
+    queryFn: () => listPurchaseEnquiryItems(params),
+    placeholderData: keepPreviousData,
+  })
+  return {
+    data: (query.data?.data ?? []).map(toPurchaseEnquiryItemRow),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+  }
 }

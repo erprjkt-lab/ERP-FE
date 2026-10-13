@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   approveStockAdjustment,
-  cancelStockAdjustment,
   createStockAdjustment,
   deleteStockAdjustment,
   getStockAdjustment,
   listStockAdjustments,
   updateStockAdjustment,
+  type StockAdjustmentListParams,
 } from '@/api/stockAdjustments'
 import type {
   ApiStockAdjustment,
@@ -109,10 +109,10 @@ function toUpdatePayload(
   }
 }
 
-export function useStockAdjustments() {
+export function useStockAdjustments(params: StockAdjustmentListParams = {}) {
   const query = useQuery({
-    queryKey: ['stock-adjustments'],
-    queryFn: async () => (await listStockAdjustments()).data,
+    queryKey: ['stock-adjustments', params],
+    queryFn: async () => (await listStockAdjustments(params)).data,
   })
   return { data: (query.data ?? []).map(toStockAdjustment), isLoading: query.isLoading }
 }
@@ -162,15 +162,6 @@ export function useApproveStockAdjustment() {
     mutationFn: async (id: string) =>
       toStockAdjustment((await approveStockAdjustment(Number(id))).data),
     onSuccess: (_result, id) => invalidateOne(queryClient, id),
-  })
-}
-
-export function useCancelStockAdjustment() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, remarks }: { id: string; remarks?: string }) =>
-      toStockAdjustment((await cancelStockAdjustment(Number(id), remarks)).data),
-    onSuccess: (_result, variables) => invalidateOne(queryClient, variables.id),
   })
 }
 
