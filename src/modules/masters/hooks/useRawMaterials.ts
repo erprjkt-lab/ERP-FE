@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { rawMaterialsApi } from '@/api/items'
 import type { ApiItemCategory, ApiItemMaster, ApiMaterialGrade, ApiUom } from '@/types/api/masters'
 import type { RawMaterial } from '@/types/masters'
@@ -93,18 +93,19 @@ function useLookupMaps() {
   }
 }
 
-export function useRawMaterials() {
+export function useRawMaterials(page = 1, perPage = 100) {
   const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
   const query = useQuery({
-    queryKey: ['rawMaterials'],
-    queryFn: async () => (await rawMaterialsApi.list()).data,
+    queryKey: ['rawMaterials', page, perPage],
+    queryFn: () => rawMaterialsApi.list(page, perPage),
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(api =>
+  const data = query.data?.data.map(api =>
     toRawMaterial(api, categoriesById, uomsById, materialGradesById),
   )
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useRawMaterial(id: string | undefined) {

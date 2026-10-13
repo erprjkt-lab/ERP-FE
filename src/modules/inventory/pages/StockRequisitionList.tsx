@@ -170,13 +170,13 @@ const getRequisitionActions = (record: StockRequisition, a: RowActions): TableAc
 export const StockRequisitionList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
-  const { data: requisitions, isLoading } = useStockRequisitions()
+  const filters = useInventoryFilters('requisition')
+  const { data: requisitions, isLoading } = useStockRequisitions({ status: filters.status })
   const { mutateAsync: deleteRequisition } = useDeleteStockRequisition()
   const { mutateAsync: approve } = useApproveStockRequisition()
   const { mutateAsync: reject } = useRejectStockRequisition()
   const { mutateAsync: close } = useCloseStockRequisition()
   const { mutateAsync: cancel } = useCancelStockRequisition()
-  const filters = useInventoryFilters('requisition')
   const setFilter = useInventoryStore(s => s.setFilter)
   const resetFilters = useInventoryStore(s => s.resetFilter)
 
@@ -294,16 +294,12 @@ export const StockRequisitionList: FC = () => {
     onDelete: handleDelete,
   }
 
-  const filtered = requisitions.filter(sr => {
-    if (
-      filters.search &&
-      !sr.requisitionNumber.toLowerCase().includes(filters.search.toLowerCase())
-    ) {
-      return false
-    }
-    if (filters.status && sr.status !== filters.status) return false
-    return true
-  })
+  // Status is filtered by ERP-BE (see StockRequisitionListParams); only the
+  // number match stays here, since that endpoint takes no `search` param.
+  const filtered = requisitions.filter(
+    sr =>
+      !filters.search || sr.requisitionNumber.toLowerCase().includes(filters.search.toLowerCase()),
+  )
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

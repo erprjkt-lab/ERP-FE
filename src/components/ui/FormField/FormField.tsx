@@ -1,6 +1,7 @@
-import { Form, Input, InputNumber, Select, Switch, DatePicker, TimePicker } from 'antd'
+import { DatePicker, Form, Input, InputNumber, Select, Switch, TimePicker } from 'antd'
 import type { FormItemProps } from 'antd'
 import type { FC, ReactNode } from 'react'
+import { loadMoreRender } from '../loadMoreRender'
 
 type FieldType =
   'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'switch' | 'date' | 'time' | 'custom'
@@ -15,6 +16,11 @@ export interface FormFieldProps extends Omit<FormItemProps, 'children'> {
   placeholder?: string
   options?: SelectOption[]
   disabled?: boolean
+  /** Set when the lookup behind `options` has more rows than were fetched —
+   *  adds a "Load more" footer to the dropdown. See useLookupPaging. */
+  hasMore?: boolean
+  onLoadMore?: () => void
+  loadingMore?: boolean
   children?: ReactNode
 }
 
@@ -23,9 +29,16 @@ export const FormField: FC<FormFieldProps> = ({
   placeholder,
   options = [],
   disabled,
+  hasMore,
+  onLoadMore,
+  loadingMore,
   children,
   ...formItemProps
 }) => {
+  const popupRender = onLoadMore
+    ? loadMoreRender(Boolean(hasMore), onLoadMore, loadingMore)
+    : undefined
+
   const renderControl = () => {
     if (children) return children
 
@@ -43,6 +56,7 @@ export const FormField: FC<FormFieldProps> = ({
             disabled={disabled}
             options={options}
             showSearch
+            popupRender={popupRender}
             filterOption={(input, option) =>
               String(option?.label ?? '')
                 .toLowerCase()
@@ -59,6 +73,7 @@ export const FormField: FC<FormFieldProps> = ({
             options={options}
             allowClear
             showSearch
+            popupRender={popupRender}
             filterOption={(input, option) =>
               String(option?.label ?? '')
                 .toLowerCase()

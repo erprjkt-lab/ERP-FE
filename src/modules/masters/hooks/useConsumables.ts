@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { consumablesApi } from '@/api/items'
 import type { ApiItemCategory, ApiItemMaster, ApiUom } from '@/types/api/masters'
 import type { Consumable } from '@/types/masters'
@@ -65,16 +65,17 @@ function useLookupMaps() {
   }
 }
 
-export function useConsumables() {
+export function useConsumables(page = 1, perPage = 100) {
   const { categoriesById, uomsById } = useLookupMaps()
   const query = useQuery({
-    queryKey: ['consumables'],
-    queryFn: async () => (await consumablesApi.list()).data,
+    queryKey: ['consumables', page, perPage],
+    queryFn: () => consumablesApi.list(page, perPage),
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(api => toConsumable(api, categoriesById, uomsById))
+  const data = query.data?.data.map(api => toConsumable(api, categoriesById, uomsById))
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useCreateConsumable() {

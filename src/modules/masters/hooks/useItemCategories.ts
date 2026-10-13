@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createItemCategory,
   deleteItemCategory,
@@ -12,13 +12,15 @@ import type {
 } from '@/types/api/masters'
 import type { ItemCategory } from '@/types/masters'
 
-export function useItemCategories() {
+/** No-arg calls keep the old single-fetch behaviour for dropdowns. */
+export function useItemCategories(page = 1, perPage = 200) {
   const { data, isLoading } = useQuery({
-    queryKey: ['masters', 'itemCategories'],
-    queryFn: listItemCategories,
+    queryKey: ['masters', 'itemCategories', page, perPage],
+    queryFn: () => listItemCategories(page, perPage),
     staleTime: Infinity,
+    placeholderData: keepPreviousData,
   })
-  return { data: data?.data ?? [], isLoading }
+  return { data: data?.data ?? [], meta: data?.meta, isLoading }
 }
 
 function toItemCategory(api: ApiItemCategory, byId: Map<number, ApiItemCategory>): ItemCategory {
@@ -38,6 +40,10 @@ function toItemCategory(api: ApiItemCategory, byId: Map<number, ApiItemCategory>
 // Mapped-to-FE-shape list for the Item Category master screen, distinct from
 // the raw `useItemCategories()` above which dropdown consumers (Raw Material/
 // Finished Good forms etc.) already depend on for its ApiItemCategory shape.
+/** Deliberately unpaged: each row shows its parent's *name*, resolved from the
+ *  rows in hand (ERP-BE's ItemCategoryResource returns parent_id only). Paging
+ *  would blank the parent of any category whose parent sits on another page.
+ *  Page it once that resource carries parent_name. */
 export function useItemCategoryList() {
   const { data: categories, isLoading } = useItemCategories()
   const byId = new Map(categories.map(c => [c.id, c]))

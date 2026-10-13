@@ -1,5 +1,6 @@
 import { Card } from 'antd'
 import type { FC } from 'react'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -9,7 +10,8 @@ import { useUoms } from '../hooks/useUoms'
 // Read-only by request: uom-master has no create/update/delete exposed to the
 // UI yet, so this just lists what the API returns.
 export const UomList: FC = () => {
-  const { data: uoms, isLoading } = useUoms()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: uoms, meta, isLoading } = useUoms(page, pageSize)
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -36,6 +38,7 @@ export const UomList: FC = () => {
             },
           ]}
           dataSource={uoms}
+          pagination={paginationProps(meta?.total)}
           rowKey="id"
           loading={isLoading}
           totalLabel="units"

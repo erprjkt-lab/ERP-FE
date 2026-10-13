@@ -1,4 +1,10 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   approvePurchaseRequisition,
   createPurchaseRequisition,
@@ -139,12 +145,17 @@ export function useFetchPurchaseRequisition() {
     toPurchaseRequisition(await queryClient.fetchQuery(requisitionQuery(id)))
 }
 
-export function usePurchaseRequisitions() {
+export function usePurchaseRequisitions(page = 1, perPage = 100) {
   const query = useQuery({
-    queryKey: ['purchase-requisitions'],
-    queryFn: async () => (await listPurchaseRequisitions()).data,
+    queryKey: ['purchase-requisitions', page, perPage],
+    queryFn: () => listPurchaseRequisitions(page, perPage),
+    placeholderData: keepPreviousData,
   })
-  return { data: (query.data ?? []).map(toPurchaseRequisition), isLoading: query.isLoading }
+  return {
+    data: (query.data?.data ?? []).map(toPurchaseRequisition),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+  }
 }
 
 export function usePurchaseRequisition(id: string | undefined) {

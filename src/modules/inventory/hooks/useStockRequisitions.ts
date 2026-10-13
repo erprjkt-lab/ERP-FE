@@ -9,6 +9,7 @@ import {
   listStockRequisitions,
   rejectStockRequisition,
   updateStockRequisition,
+  type StockRequisitionListParams,
 } from '@/api/stockRequisitions'
 import type {
   ApiStockRequisition,
@@ -121,10 +122,10 @@ function toUpdatePayload(input: Partial<StockRequisitionInput>): UpdateStockRequ
   }
 }
 
-export function useStockRequisitions() {
+export function useStockRequisitions(params: StockRequisitionListParams = {}) {
   const query = useQuery({
-    queryKey: ['stock-requisitions'],
-    queryFn: async () => (await listStockRequisitions()).data,
+    queryKey: ['stock-requisitions', params],
+    queryFn: async () => (await listStockRequisitions(params)).data,
   })
   return { data: (query.data ?? []).map(toStockRequisition), isLoading: query.isLoading }
 }

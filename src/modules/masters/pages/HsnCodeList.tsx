@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -12,7 +13,8 @@ import {
 } from '../hooks/useHsnCodes'
 
 export const HsnCodeList: FC = () => {
-  const { data: hsnCodes = [], isLoading } = useHsnCodes()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: hsnCodes = [], meta, isLoading } = useHsnCodes(page, pageSize)
   const { mutateAsync: createHsnCode } = useCreateHsnCode()
   const { mutateAsync: updateHsnCode } = useUpdateHsnCode()
   const { mutateAsync: deleteHsnCode } = useDeleteHsnCode()
@@ -26,6 +28,7 @@ export const HsnCodeList: FC = () => {
       addButtonLabel="Add HSN Code"
       modalWidth={640}
       data={hsnCodes}
+      pagination={paginationProps(meta?.total)}
       loading={isLoading}
       columns={[
         { title: 'HSN Code', dataIndex: 'hsn', key: 'hsn', width: 120 },

@@ -10,6 +10,7 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import type { ReactNode } from 'react'
+import { REPORTS } from '@/modules/reports/reportRegistry'
 import type { ApiSidebarNode } from '@/types/api/rbac'
 
 // Shaped to drop straight into antd's Menu `items`, whose own union keeps leaves and
@@ -106,19 +107,26 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
     { path: '/production/entries', label: 'Production Entry' },
   ],
 
+  'inspection-parameters': [
+    { path: '/quality/inspection-parameters', label: 'Inspection Parameters' },
+  ],
+
+  'customer-complaints': [{ path: '/quality/customer-complaints', label: 'Customer Complaints' }],
+
   'inspection-reports': [
     { path: '/quality/ipr', label: 'IPR' },
     { path: '/quality/fir', label: 'FIR' },
     { path: '/quality/iir', label: 'IIR' },
   ],
 
-  // BE groups the reports into five `reports-<area>` modules, all of which land on
-  // the same cards page — the per-report routes hang off /reports/:slug from there.
+  // Reports are never listed individually in the sidebar — see isReportsFolder.
+  // Mapping the module keys anyway gives /reports its entry in the route-level
+  // permission map, and covers both key shapes ERP-BE has shipped.
   ...Object.fromEntries(
-    ['sales', 'purchase', 'inventory', 'hr', 'production'].map(area => [
-      `reports-${area}`,
-      [{ path: '/reports', label: 'Reports' }],
-    ]),
+    [
+      ...['sales', 'purchase', 'inventory', 'hr', 'production'].map(a => `reports-${a}`),
+      ...REPORTS.map(report => `report-${report.slug}`),
+    ].map(key => [key, [{ path: '/reports', label: 'Reports' }]]),
   ),
 }
 
@@ -138,11 +146,17 @@ const ICONS: Record<string, ReactNode> = {
 
 export const pendingPath = (moduleKey: string) => `/pending/${moduleKey}`
 
-/** Reports are many and uniform, so they get a landing page of cards instead of a
- * submenu — nineteen leaves would push the rest of the sidebar off screen. Matched
- * on the children's module keys rather than the folder's label, which BE can rename. */
+/** Reports never expand in the sidebar: the folder collapses to a single link to
+ * the /reports landing page, which lists every report the user may open. The
+ * folder itself still disappears when the employee has no report permission,
+ * because ERP-BE sends no children in that case.
+ *
+ * Matched on the children's module keys rather than the folder's label, which BE
+ * can rename. The prefix is `report` — not `report-` or `reports-` — because
+ * ERP-BE has shipped both: one module per report (`report-<slug>`) and one per
+ * area (`reports-<area>`). A deployment can be on either. */
 const isReportsFolder = (node: ApiSidebarNode) =>
-  node.children.length > 0 && node.children.every(child => child.module_key?.startsWith('reports-'))
+  node.children.length > 0 && node.children.every(child => child.module_key?.startsWith('report'))
 
 /**
  * Turns the BE's permission-filtered menu tree into antd Menu items. Only the top

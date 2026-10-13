@@ -27,6 +27,7 @@ import {
 } from '../hooks/useSalesEnquiries'
 import type { SalesEnquiryItemInput } from '../hooks/useSalesEnquiries'
 import { getErrorMessage } from '@/api/client'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 
 interface ItemRowValues {
   itemId: string
@@ -50,7 +51,7 @@ export const SalesEnquiryForm: FC = () => {
   const [form] = Form.useForm<EnquiryFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: existing, isLoading } = useSalesEnquiry(id)
   const { mutateAsync: create, isPending: creating } = useCreateSalesEnquiry()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesEnquiry()
@@ -210,6 +211,7 @@ export const SalesEnquiryForm: FC = () => {
                             <Select
                               placeholder="Select item"
                               options={itemOptions}
+                              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                               showSearch
                               filterOption={(input, option) =>
                                 String(option?.label ?? '')

@@ -67,16 +67,21 @@ describe('buildSidebarItems', () => {
     expect(buildSidebarItems([node({ id: 1, name: 'Administration' })])).toEqual([])
   })
 
-  it('collapses the reports folder into one link to the landing page', () => {
+  // ERP-BE has shipped two key shapes for reports — one module per area and one
+  // per report — and a deployment can be on either. Neither may expand in the
+  // sidebar: both collapse to a single link to the landing page.
+  it.each([
+    ['one module per area', ['reports-inventory', 'reports-purchase']],
+    ['one module per report', ['report-stock-ledger', 'report-grn-register']],
+  ])('collapses the reports folder into one link (%s)', (_label, moduleKeys) => {
     const [group] = buildSidebarItems([
       node({
         id: 9,
         name: 'Reports',
         icon: 'bar-chart-2',
-        children: [
-          node({ id: 90, name: 'Inventory', module_key: 'reports-inventory' }),
-          node({ id: 91, name: 'Purchase', module_key: 'reports-purchase' }),
-        ],
+        children: moduleKeys.map((module_key, index) =>
+          node({ id: 90 + index, name: `Report ${index}`, module_key }),
+        ),
       }),
     ])
 

@@ -70,12 +70,13 @@ function useLookups() {
   }
 }
 
-export function useEmployees() {
+export function useEmployees(search?: string | null) {
   const employeeExtras = useHRLocalStore(state => state.employeeExtras)
   const { departmentsById, designationsById, shiftsById, isLoading: lookupsLoading } = useLookups()
   const query = useQuery({
-    queryKey: ['employees'],
-    queryFn: async () => (await listEmployees()).data,
+    queryKey: ['employees', search ?? ''],
+    queryFn: async () => (await listEmployees(1, search)).data,
+    placeholderData: previous => previous,
   })
 
   const data = query.data?.map(api =>

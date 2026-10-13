@@ -119,10 +119,10 @@ const getAdjustmentActions = (record: StockAdjustment, a: RowActions): TableActi
 export const StockAdjustmentList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
-  const { data: adjustments, isLoading } = useStockAdjustments()
+  const filters = useInventoryFilters('adjustment')
+  const { data: adjustments, isLoading } = useStockAdjustments({ status: filters.status })
   const { mutateAsync: deleteAdjustment } = useDeleteStockAdjustment()
   const { mutateAsync: approve } = useApproveStockAdjustment()
-  const filters = useInventoryFilters('adjustment')
   const setFilter = useInventoryStore(s => s.setFilter)
   const resetFilters = useInventoryStore(s => s.resetFilter)
 
@@ -171,16 +171,11 @@ export const StockAdjustmentList: FC = () => {
     onDelete: handleDelete,
   }
 
-  const filtered = adjustments.filter(adj => {
-    if (
-      filters.search &&
-      !adj.adjustmentNumber.toLowerCase().includes(filters.search.toLowerCase())
-    ) {
-      return false
-    }
-    if (filters.status && adj.status !== filters.status) return false
-    return true
-  })
+  // Status comes filtered from ERP-BE; only the number match stays local.
+  const filtered = adjustments.filter(
+    adj =>
+      !filters.search || adj.adjustmentNumber.toLowerCase().includes(filters.search.toLowerCase()),
+  )
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

@@ -1,6 +1,8 @@
 export { IprList } from './pages/IprList'
 export { FirList } from './pages/FirList'
 export { IirList } from './pages/IirList'
+export { CustomerComplaintList } from './pages/CustomerComplaintList'
+export { CustomerComplaintDetail } from './pages/CustomerComplaintDetail'
 
 export { IncomingInspectionDrawer } from './components/IncomingInspectionDrawer'
 export { JobCardInspectionDrawer } from './components/JobCardInspectionDrawer'

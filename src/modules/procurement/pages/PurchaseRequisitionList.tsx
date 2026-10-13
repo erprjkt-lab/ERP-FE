@@ -12,6 +12,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -170,7 +171,8 @@ export const PurchaseRequisitionList: FC = () => {
   const { modal, message } = App.useApp()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [createEnquiryFromPrId, setCreateEnquiryFromPrId] = useState<string>()
-  const { data: requisitions, isLoading } = usePurchaseRequisitions()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: requisitions, meta, isLoading } = usePurchaseRequisitions(page, pageSize)
   const { mutateAsync: deleteRequisition } = useDeletePurchaseRequisition()
   const { mutateAsync: approve } = useApproveRequisition()
   const { mutateAsync: reject } = useRejectRequisition()
@@ -304,6 +306,7 @@ export const PurchaseRequisitionList: FC = () => {
           rowKey="id"
           loading={isLoading}
           totalLabel="requisitions"
+          pagination={paginationProps(meta?.total)}
           fillHeight
           rowActions={record => getRequisitionActions(record, rowActions)}
           onRow={record => ({

@@ -1,5 +1,6 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
@@ -44,7 +45,7 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
 
   const { data: order } = usePurchaseOrder(orderId)
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
   const { mutateAsync: updateOrder, isPending: updating } = useUpdatePurchaseOrder()
 
@@ -253,6 +254,7 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
                         <Select
                           placeholder="Select item"
                           options={itemOptions}
+                          popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                           showSearch
                           filterOption={(input, option) =>
                             String(option?.label ?? '')

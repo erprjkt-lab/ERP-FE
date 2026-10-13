@@ -9,8 +9,13 @@ import type {
   UpdateEmployeePayload,
 } from '@/types/api/hr'
 
-export function listEmployees(page = 1): Promise<PaginatedEnvelope<ApiEmployee>> {
-  return apiRequest('/api/v1/employees', { query: { page, per_page: 100 } })
+export function listEmployees(
+  page = 1,
+  search?: string | null,
+): Promise<PaginatedEnvelope<ApiEmployee>> {
+  return apiRequest('/api/v1/employees', {
+    query: { page, per_page: 100, ...(search ? { search } : {}) },
+  })
 }
 
 export function getEmployee(id: number): Promise<ApiEnvelope<ApiEmployee>> {

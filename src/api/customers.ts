@@ -2,8 +2,8 @@ import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type { ApiParty, CreatePartyPayload, UpdatePartyPayload } from '@/types/api/masters'
 
-export function listCustomers(page = 1): Promise<PaginatedEnvelope<ApiParty>> {
-  return apiRequest('/api/v1/customers', { query: { page, per_page: 100 } })
+export function listCustomers(page = 1, perPage = 100): Promise<PaginatedEnvelope<ApiParty>> {
+  return apiRequest('/api/v1/customers', { query: { page, per_page: perPage } })
 }
 
 export function getCustomer(id: number): Promise<ApiEnvelope<ApiParty>> {

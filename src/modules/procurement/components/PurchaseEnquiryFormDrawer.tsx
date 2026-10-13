@@ -1,5 +1,6 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, DatePicker, Form, Input, InputNumber, Radio, Select, Typography } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
@@ -85,7 +86,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
 
   const { data: enquiry } = usePurchaseEnquiry(enquiryId)
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: requisitions } = usePurchaseRequisitions()
   const { data: uoms = [] } = useUoms()
   const selectedReqIds = Form.useWatch('requisitionIds', form) as string[] | undefined
@@ -431,6 +432,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                             <Select
                               placeholder="Select item"
                               options={itemOptions}
+                              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                               showSearch
                               filterOption={(input, option) =>
                                 String(option?.label ?? '')

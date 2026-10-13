@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createProcess, deleteProcess, listProcesses, updateProcess } from '@/api/processes'
 import type { ApiProcess, CreateProcessPayload, UpdateProcessPayload } from '@/types/api/production'
 import type { Process } from '@/types/production'
@@ -16,12 +16,18 @@ function toProcess(api: ApiProcess): Process {
   }
 }
 
-export function useProcesses() {
+export function useProcesses(page = 1, perPage = 200) {
   const query = useQuery({
-    queryKey: ['production', 'processes'],
-    queryFn: async () => (await listProcesses()).data.map(toProcess),
+    queryKey: ['production', 'processes', page, perPage],
+    queryFn: () => listProcesses(page, perPage),
+    placeholderData: keepPreviousData,
   })
-  return { ...query, data: query.data ?? [], isLoading: query.isLoading }
+  return {
+    ...query,
+    data: query.data?.data.map(toProcess) ?? [],
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+  }
 }
 
 export function useCreateProcess() {

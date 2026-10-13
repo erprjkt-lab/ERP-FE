@@ -9,8 +9,8 @@ import type { ApiItemMaster, ItemMasterPayload } from '@/types/api/masters'
 // so a factory avoids 30 near-identical hand-written functions.
 function makeItemEndpoints(resourcePath: string) {
   return {
-    list: (page = 1): Promise<PaginatedEnvelope<ApiItemMaster>> =>
-      apiRequest(`/api/v1/${resourcePath}`, { query: { page, per_page: 100 } }),
+    list: (page = 1, perPage = 100): Promise<PaginatedEnvelope<ApiItemMaster>> =>
+      apiRequest(`/api/v1/${resourcePath}`, { query: { page, per_page: perPage } }),
     get: (id: number): Promise<ApiEnvelope<ApiItemMaster>> =>
       apiRequest(`/api/v1/${resourcePath}/${id}`),
     create: (payload: ItemMasterPayload): Promise<ApiEnvelope<ApiItemMaster>> =>

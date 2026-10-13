@@ -6,6 +6,7 @@ import {
   getStockAdjustment,
   listStockAdjustments,
   updateStockAdjustment,
+  type StockAdjustmentListParams,
 } from '@/api/stockAdjustments'
 import type {
   ApiStockAdjustment,
@@ -108,10 +109,10 @@ function toUpdatePayload(
   }
 }
 
-export function useStockAdjustments() {
+export function useStockAdjustments(params: StockAdjustmentListParams = {}) {
   const query = useQuery({
-    queryKey: ['stock-adjustments'],
-    queryFn: async () => (await listStockAdjustments()).data,
+    queryKey: ['stock-adjustments', params],
+    queryFn: async () => (await listStockAdjustments(params)).data,
   })
   return { data: (query.data ?? []).map(toStockAdjustment), isLoading: query.isLoading }
 }

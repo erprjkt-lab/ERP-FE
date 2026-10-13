@@ -14,8 +14,9 @@ import {
   Typography,
 } from 'antd'
 import type { FormInstance, FormListFieldData } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
-import type { FC } from 'react'
+import type { FC, ReactNode } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormSection } from '@/components/ui/FormSection'
@@ -50,7 +51,7 @@ export const PurchaseRequisitionForm: FC = () => {
 
   const { data: requisition } = usePurchaseRequisition(id)
   const { data: departments } = useDepartments()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createRequisition, isPending: creating } = useCreatePurchaseRequisition()
   const { mutateAsync: updateRequisition, isPending: updating } = useUpdatePurchaseRequisition()
 
@@ -222,6 +223,7 @@ export const PurchaseRequisitionForm: FC = () => {
                       field={field}
                       form={form}
                       itemOptions={itemOptions}
+                      itemsPopupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                       items={items}
                       onRemove={() => remove(field.name)}
                     />
@@ -249,6 +251,7 @@ interface RequisitionItemRowProps {
   field: FormListFieldData
   form: FormInstance
   itemOptions: { label: string; value: string }[]
+  itemsPopupRender?: (menu: ReactNode) => ReactNode
   items: ProcurementItemOption[]
   onRemove: () => void
 }
@@ -257,6 +260,7 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
   field,
   form,
   itemOptions,
+  itemsPopupRender,
   items,
   onRemove,
 }) => {
@@ -276,6 +280,7 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
         <Select
           placeholder="Select item"
           options={itemOptions}
+          popupRender={itemsPopupRender}
           showSearch
           filterOption={(input, option) =>
             String(option?.label ?? '')

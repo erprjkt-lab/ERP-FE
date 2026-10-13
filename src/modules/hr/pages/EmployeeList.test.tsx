@@ -143,24 +143,34 @@ describe('EmployeeList page', () => {
     expect(screen.getByText('Active')).toBeInTheDocument()
   })
 
-  it('filters rows by search text', async () => {
+  it('sends the search term to ERP-BE rather than filtering locally', async () => {
     const user = userEvent.setup()
+    const both = [
+      apiEmployee(),
+      apiEmployee({ id: 101, employee_code: 'EMP-0101', name: 'Beta Person' }),
+    ]
     vi.mocked(listEmployees).mockResolvedValue({
       status: 'success',
       message: 'ok',
-      data: [
-        apiEmployee(),
-        apiEmployee({ id: 101, employee_code: 'EMP-0101', name: 'Beta Person' }),
-      ],
+      data: both,
       meta: { current_page: 1, per_page: 100, total: 2, last_page: 1 },
     })
 
     renderPage(<EmployeeList />)
-
     expect(await screen.findByText('2 of 2 employees')).toBeInTheDocument()
+
+    // EmployeeService::list() matches name/email/username server-side, so the
+    // page re-queries instead of narrowing the rows it already holds.
+    vi.mocked(listEmployees).mockResolvedValue({
+      status: 'success',
+      message: 'ok',
+      data: [both[1]],
+      meta: { current_page: 1, per_page: 100, total: 1, last_page: 1 },
+    })
     await user.type(screen.getByPlaceholderText('Search by name or ID...'), 'Beta')
-    expect(await screen.findByText('1 of 2 employees')).toBeInTheDocument()
-    expect(screen.getByText('Beta Person')).toBeInTheDocument()
+
+    await waitFor(() => expect(listEmployees).toHaveBeenCalledWith(1, 'Beta'))
+    expect(await screen.findByText('Beta Person')).toBeInTheDocument()
     expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
   })
 
@@ -179,7 +189,7 @@ describe('EmployeeList page', () => {
     renderPage(<EmployeeList />)
 
     await user.type(await screen.findByPlaceholderText('Search by name or ID...'), 'Beta')
-    await screen.findByText('1 of 2 employees')
+    await waitFor(() => expect(listEmployees).toHaveBeenCalledWith(1, 'Beta'))
     await user.click(screen.getByText('Clear filters'))
     await waitFor(() => expect(screen.getByText('2 of 2 employees')).toBeInTheDocument())
   })

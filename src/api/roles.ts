@@ -7,8 +7,8 @@ import type {
   UpdateRolePayload,
 } from '@/types/api/rbac'
 
-export function listRoles(page = 1): Promise<PaginatedEnvelope<ApiRole>> {
-  return apiRequest('/api/v1/roles', { query: { page, per_page: 100 } })
+export function listRoles(page = 1, perPage = 100): Promise<PaginatedEnvelope<ApiRole>> {
+  return apiRequest('/api/v1/roles', { query: { page, per_page: perPage } })
 }
 
 export function getRole(id: number): Promise<ApiEnvelope<ApiRole>> {

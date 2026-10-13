@@ -72,6 +72,7 @@ import {
 import {
   BomList,
   ItemBomForm,
+  InspectionParameterList,
   ItemInspectionParameterForm,
   ItemProcessRouteForm,
   JobCardDetail,
@@ -84,7 +85,13 @@ import {
   RejectionReviewDetail,
   RejectionReviewList,
 } from '@/modules/production'
-import { FirList, IirList, IprList } from '@/modules/quality'
+import {
+  CustomerComplaintDetail,
+  CustomerComplaintList,
+  FirList,
+  IirList,
+  IprList,
+} from '@/modules/quality'
 import { ReportPage, ReportsLanding } from '@/modules/reports'
 import {
   DeliveryChallanDetail,
@@ -153,6 +160,8 @@ const IMPLEMENTED_PATHS = new Set([
   '/quality/ipr',
   '/quality/fir',
   '/quality/iir',
+  '/quality/customer-complaints',
+  '/quality/inspection-parameters',
 ])
 
 function App() {
@@ -314,6 +323,15 @@ function App() {
                 <Route path="/quality/ipr" element={<IprList />} />
                 <Route path="/quality/fir" element={<FirList />} />
                 <Route path="/quality/iir" element={<IirList />} />
+                <Route
+                  path="/quality/inspection-parameters"
+                  element={<InspectionParameterList />}
+                />
+                <Route path="/quality/customer-complaints" element={<CustomerComplaintList />} />
+                <Route
+                  path="/quality/customer-complaints/:id"
+                  element={<CustomerComplaintDetail />}
+                />
 
                 {/* One generic page serves every report; the slug picks its config. */}
                 <Route path="/reports" element={<ReportsLanding />} />

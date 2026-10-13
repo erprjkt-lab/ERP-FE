@@ -1,6 +1,6 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, Card, Form } from 'antd'
-import type { FormInstance, TableColumnsType } from 'antd'
+import type { FormInstance, TableColumnsType, TableProps } from 'antd'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
@@ -27,6 +27,9 @@ export interface SimpleMasterListProps<T extends { id: string }> {
   /** Reshapes a row's actions — drop the defaults, disable them, or add more.
    *  Left out, every row gets the usual Edit/Delete pair. */
   rowActions?: (record: T, defaults: TableActionItem[]) => TableActionItem[]
+  /** Server-side paging: pass DataTable's pagination config straight through.
+   *  Left out, the table pages through whatever rows it was given. */
+  pagination?: TableProps<T>['pagination']
   /** Drops the PageHeader/Card page chrome for use inside another drawer. */
   embedded?: boolean
 }
@@ -47,6 +50,7 @@ export function SimpleMasterList<T extends { id: string }>({
   onSubmit,
   onDelete,
   rowActions,
+  pagination,
   embedded = false,
 }: SimpleMasterListProps<T>) {
   const { modal, message } = App.useApp()
@@ -163,6 +167,7 @@ export function SimpleMasterList<T extends { id: string }>({
             rowKey="id"
             loading={loading}
             totalLabel={totalLabel}
+            pagination={pagination}
             rowActions={getMasterActions}
           />
         </Card>
@@ -196,6 +201,7 @@ export function SimpleMasterList<T extends { id: string }>({
           rowKey="id"
           loading={loading}
           totalLabel={totalLabel}
+          pagination={pagination}
           fillHeight
           rowActions={getMasterActions}
         />

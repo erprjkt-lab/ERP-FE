@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { finishedGoodsApi } from '@/api/items'
 import type { ApiItemCategory, ApiItemMaster, ApiMaterialGrade, ApiUom } from '@/types/api/masters'
 import type { FinishedGood } from '@/types/masters'
@@ -92,18 +92,19 @@ function useLookupMaps() {
   }
 }
 
-export function useFinishedGoods() {
+export function useFinishedGoods(page = 1, perPage = 100) {
   const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
   const query = useQuery({
-    queryKey: ['finishedGoods'],
-    queryFn: async () => (await finishedGoodsApi.list()).data,
+    queryKey: ['finishedGoods', page, perPage],
+    queryFn: () => finishedGoodsApi.list(page, perPage),
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(api =>
+  const data = query.data?.data.map(api =>
     toFinishedGood(api, categoriesById, uomsById, materialGradesById),
   )
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useFinishedGood(id: string | undefined) {

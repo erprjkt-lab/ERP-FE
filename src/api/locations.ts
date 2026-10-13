@@ -2,8 +2,8 @@ import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type { ApiLocation, CreateLocationPayload, UpdateLocationPayload } from '@/types/api/masters'
 
-export function listLocations(): Promise<PaginatedEnvelope<ApiLocation>> {
-  return apiRequest('/api/v1/locations', { query: { per_page: 100 } })
+export function listLocations(page = 1, perPage = 100): Promise<PaginatedEnvelope<ApiLocation>> {
+  return apiRequest('/api/v1/locations', { query: { page, per_page: perPage } })
 }
 
 export function getLocation(id: number): Promise<ApiEnvelope<ApiLocation>> {

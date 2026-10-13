@@ -13,6 +13,7 @@ import {
   Typography,
 } from 'antd'
 import type { TableColumnsType } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
@@ -71,7 +72,7 @@ export const SalesInvoiceDirectFormDrawer: FC<SalesInvoiceDirectFormDrawerProps>
   const [pendingItemId, setPendingItemId] = useState<string>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createInvoice, isPending } = useCreateSalesInvoice()
 
   const itemsById = useMemo(() => new Map(items.map(i => [i.id, i])), [items])
@@ -236,6 +237,7 @@ export const SalesInvoiceDirectFormDrawer: FC<SalesInvoiceDirectFormDrawerProps>
               value={pendingItemId}
               onChange={setPendingItemId}
               options={itemOptions}
+              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
               showSearch
               filterOption={(input, option) =>
                 String(option?.label ?? '')

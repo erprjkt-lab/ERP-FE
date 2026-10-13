@@ -29,6 +29,7 @@ import {
 } from '../hooks/useSalesQuotations'
 import type { SalesQuotationItemInput } from '../hooks/useSalesQuotations'
 import { getErrorMessage } from '@/api/client'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 
 interface ItemRowValues {
   salesEnquiryItemId?: string | null
@@ -76,7 +77,7 @@ export const SalesQuotationForm: FC = () => {
   const [form] = Form.useForm<QuotationFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: sourceEnquiry } = useSalesEnquiry(enquiryId ?? undefined)
   const { data: existing, isLoading } = useSalesQuotation(id)
   const { mutateAsync: create, isPending: creating } = useCreateSalesQuotation()
@@ -308,6 +309,7 @@ export const SalesQuotationForm: FC = () => {
                             <Select
                               placeholder="Select item"
                               options={itemOptions}
+                              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                               showSearch
                               filterOption={(input, option) =>
                                 String(option?.label ?? '')

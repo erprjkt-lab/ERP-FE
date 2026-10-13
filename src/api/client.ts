@@ -55,14 +55,18 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     throw new ApiRequestError('Unauthenticated', 401)
   }
 
+  // A FormData body goes out as-is: the browser has to set Content-Type itself
+  // so it can add the multipart boundary. Setting it here would break the upload.
+  const isFormData = body instanceof FormData
+
   const headers: Record<string, string> = { Accept: 'application/json' }
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
 
   const response = await fetch(buildUrl(path, query), {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
   })
 
   const isJson = response.headers.get('content-type')?.includes('application/json') ?? false
@@ -103,4 +107,17 @@ export function getErrorMessage(error: unknown, fallback = 'Something went wrong
   }
   if (error instanceof Error) return error.message
   return fallback
+}
+
+/** Resolves a file URL returned by ERP-BE against the API host.
+ *
+ * Storage URLs are built server-side as `env('APP_URL') . '/storage/...'`. When
+ * APP_URL is unset there, the path comes back relative and the browser resolves
+ * it against the frontend's own origin, where nothing is served. Anchoring it to
+ * the API base URL is correct either way: an absolute URL is returned untouched.
+ */
+export function resolveFileUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined
+  if (/^https?:\/\//i.test(url)) return url
+  return `${BASE_URL.replace(/\/$/, '')}/${url.replace(/^\//, '')}`
 }

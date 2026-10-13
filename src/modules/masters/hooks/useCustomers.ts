@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createCustomer,
   deleteCustomer,
@@ -99,15 +99,17 @@ function toCreatePayload(input: CustomerInput): CreatePartyPayload {
   return { ...buildPartyFields(input), party_name: input.name, mobile: input.mobile }
 }
 
-export function useCustomers() {
+export function useCustomers(page = 1, perPage = 100) {
   const query = useQuery({
-    queryKey: ['customers'],
-    queryFn: async () => (await listCustomers()).data,
+    queryKey: ['customers', page, perPage],
+    queryFn: () => listCustomers(page, perPage),
+    // Keeps the current page on screen while the next one loads.
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(toCustomer)
+  const data = query.data?.data.map(toCustomer)
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useCustomer(id: string | undefined) {

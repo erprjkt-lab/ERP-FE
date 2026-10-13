@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -72,7 +73,8 @@ export const SupplierList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-  const { data: suppliers = [], isLoading } = useSuppliers()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: suppliers = [], meta, isLoading } = useSuppliers(page, pageSize)
   const { mutateAsync: deleteSupplier } = useDeleteSupplier()
   const filters = useMastersStore(s => s.supplierFilters)
   const setFilter = useMastersStore(s => s.setSupplierFilter)
@@ -115,7 +117,7 @@ export const SupplierList: FC = () => {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Suppliers"
-        subtitle={`${filtered.length} of ${suppliers.length} suppliers`}
+        subtitle={`${filtered.length} of ${meta?.total ?? suppliers.length} suppliers`}
         breadcrumbs={[{ label: 'Masters', href: '/masters' }, { label: 'Suppliers' }]}
         actions={
           <Button
@@ -164,6 +166,7 @@ export const SupplierList: FC = () => {
           rowKey="id"
           loading={isLoading}
           totalLabel="suppliers"
+          pagination={paginationProps(meta?.total)}
           fillHeight
           rowActions={record => getSupplierActions(record, rowActions)}
           onRow={record => ({

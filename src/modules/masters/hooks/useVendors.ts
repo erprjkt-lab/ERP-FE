@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createVendor, deleteVendor, getVendor, listVendors, updateVendor } from '@/api/vendors'
 import type { ApiParty, CreatePartyPayload, PartyPayload } from '@/types/api/masters'
 import type { Vendor } from '@/types/masters'
@@ -58,15 +58,17 @@ function toCreatePayload(input: VendorInput): CreatePartyPayload {
   return { ...buildPartyFields(input), party_name: input.name, mobile: input.mobile }
 }
 
-export function useVendors() {
+export function useVendors(page = 1, perPage = 100) {
   const query = useQuery({
-    queryKey: ['vendors'],
-    queryFn: async () => (await listVendors()).data,
+    queryKey: ['vendors', page, perPage],
+    queryFn: () => listVendors(page, perPage),
+    // Keeps the current page on screen while the next one loads.
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(toVendor)
+  const data = query.data?.data.map(toVendor)
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useVendor(id: string | undefined) {

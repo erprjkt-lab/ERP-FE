@@ -28,14 +28,29 @@ const FREQ_UNIT_OPTIONS = [
 
 const CONTROL_METHOD_OPTIONS = ['IPR', 'FIR', 'IIR'].map(v => ({ label: v, value: v }))
 
-export const ItemInspectionParameterForm: FC = () => {
-  const { itemId } = useParams()
+export interface ItemInspectionParameterFormProps {
+  /** Supplied by the standalone page, which picks the item itself; left out on
+   *  the nested item routes, which read it from the URL. */
+  itemId?: string
+  breadcrumbParent?: { label: string; href?: string }
+  embedded?: boolean
+}
+
+export const ItemInspectionParameterForm: FC<ItemInspectionParameterFormProps> = ({
+  itemId: itemIdProp,
+  breadcrumbParent: breadcrumbParentProp,
+  embedded,
+}) => {
+  const params = useParams()
+  const itemId = itemIdProp ?? params.itemId
   const { pathname } = useLocation()
   const { data: items } = useProcurementItems()
   const item = items.find(i => i.id === itemId)
-  const breadcrumbParent = pathname.startsWith('/masters/raw-materials')
-    ? { label: 'Raw Materials', href: '/masters/raw-materials' }
-    : { label: 'BOM', href: '/production/bom' }
+  const breadcrumbParent =
+    breadcrumbParentProp ??
+    (pathname.startsWith('/masters/raw-materials')
+      ? { label: 'Raw Materials', href: '/masters/raw-materials' }
+      : { label: 'BOM', href: '/production/bom' })
   const { data: parameters = [], isLoading } = useInspectionParameters(itemId)
   const { data: routeSteps } = useItemProcessRoute(itemId)
   const { mutateAsync: createParameter } = useCreateInspectionParameter(itemId)
@@ -57,6 +72,7 @@ export const ItemInspectionParameterForm: FC = () => {
       totalLabel="parameters"
       addButtonLabel="Add Parameter"
       modalWidth={680}
+      embedded={embedded}
       data={parameters}
       loading={isLoading}
       columns={[

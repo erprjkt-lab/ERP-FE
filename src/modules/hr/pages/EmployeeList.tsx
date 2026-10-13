@@ -97,7 +97,7 @@ export const EmployeeList: FC = () => {
   const { token } = antTheme.useToken()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { employeeListFilters, setFilter, resetFilters } = useHRStore()
-  const { data: employees = [], isLoading } = useEmployees()
+  const { data: employees = [], isLoading } = useEmployees(employeeListFilters.search)
   const { mutateAsync: deleteEmployee } = useDeleteEmployee()
 
   const handleDelete = (record: Employee) => {
@@ -125,13 +125,9 @@ export const EmployeeList: FC = () => {
     onDelete: handleDelete,
   }
 
+  // Search is ERP-BE's (it matches name, email and username); status and
+  // department have no filter on that endpoint, so they stay here.
   const filtered = employees.filter(e => {
-    if (
-      employeeListFilters.search &&
-      !e.fullName.toLowerCase().includes(employeeListFilters.search.toLowerCase())
-    ) {
-      return false
-    }
     if (employeeListFilters.status && e.status !== employeeListFilters.status) return false
     if (employeeListFilters.departmentId && e.departmentId !== employeeListFilters.departmentId) {
       return false

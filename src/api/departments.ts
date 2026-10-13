@@ -6,8 +6,11 @@ import type {
   UpdateDepartmentPayload,
 } from '@/types/api/hr'
 
-export function listDepartments(page = 1): Promise<PaginatedEnvelope<ApiDepartment>> {
-  return apiRequest('/api/v1/departments', { query: { page, per_page: 100 } })
+export function listDepartments(
+  page = 1,
+  perPage = 100,
+): Promise<PaginatedEnvelope<ApiDepartment>> {
+  return apiRequest('/api/v1/departments', { query: { page, per_page: perPage } })
 }
 
 export function getDepartment(id: number): Promise<ApiEnvelope<ApiDepartment>> {

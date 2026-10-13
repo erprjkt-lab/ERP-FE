@@ -28,6 +28,7 @@ import {
   useUpdateSalesQuotation,
 } from '../hooks/useSalesQuotations'
 import type { SalesQuotationItemInput } from '../hooks/useSalesQuotations'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 
 interface ItemRowValues {
   salesEnquiryItemId?: string | null
@@ -74,7 +75,7 @@ export const SalesQuotationFormDrawer: FC<SalesQuotationFormDrawerProps> = ({
   const [form] = Form.useForm<QuotationFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: sourceEnquiry } = useSalesEnquiry(isEdit ? undefined : sourceEnquiryId)
   const { data: existing } = useSalesQuotation(quotationId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesQuotation()
@@ -323,6 +324,7 @@ export const SalesQuotationFormDrawer: FC<SalesQuotationFormDrawerProps> = ({
                                 <Select
                                   placeholder="Select item"
                                   options={itemOptions}
+                                  popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                                   showSearch
                                   filterOption={(input, option) =>
                                     String(option?.label ?? '')

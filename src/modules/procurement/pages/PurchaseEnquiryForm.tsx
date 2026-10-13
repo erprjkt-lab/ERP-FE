@@ -37,6 +37,7 @@ import {
   usePurchaseRequisitionsByIds,
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 
 type Mode = 'manual' | 'fromRequisitions'
 
@@ -58,7 +59,7 @@ export const PurchaseEnquiryForm: FC = () => {
   const [mode, setMode] = useState<Mode>(fromPr ? 'fromRequisitions' : 'manual')
 
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: requisitions } = usePurchaseRequisitions()
   const selectedReqIds = Form.useWatch('requisitionIds', form) as string[] | undefined
   const { mutateAsync: createManual, isPending: creatingManual } = useCreatePurchaseEnquiryManual()
@@ -295,6 +296,7 @@ export const PurchaseEnquiryForm: FC = () => {
                           <Select
                             placeholder="Select item"
                             options={itemOptions}
+                            popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
                             showSearch
                             filterOption={(input, option) =>
                               String(option?.label ?? '')
