@@ -1,9 +1,9 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
-import type { FormInstance, FormListFieldData } from 'antd'
+import type { FormInstance, FormListFieldData, SelectProps } from 'antd'
 import dayjs from 'dayjs'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormSection } from '@/components/ui/FormSection'
@@ -246,7 +246,7 @@ interface RequisitionItemRowProps {
   field: FormListFieldData
   form: FormInstance
   itemOptions: { label: string; value: string }[]
-  itemsPopupRender?: (menu: ReactNode) => ReactNode
+  itemsPopupRender?: SelectProps['popupRender']
   items: ProcurementItemOption[]
   onRemove: () => void
 }

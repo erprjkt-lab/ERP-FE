@@ -13,10 +13,10 @@ import {
   Space,
   Typography,
 } from 'antd'
-import type { FormInstance, FormListFieldData } from 'antd'
+import type { FormInstance, FormListFieldData, SelectProps } from 'antd'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormSection } from '@/components/ui/FormSection'
@@ -251,7 +251,7 @@ interface RequisitionItemRowProps {
   field: FormListFieldData
   form: FormInstance
   itemOptions: { label: string; value: string }[]
-  itemsPopupRender?: (menu: ReactNode) => ReactNode
+  itemsPopupRender?: SelectProps['popupRender']
   items: ProcurementItemOption[]
   onRemove: () => void
 }
