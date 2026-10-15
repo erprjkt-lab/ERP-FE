@@ -53,7 +53,7 @@ export const MachineList: FC = () => {
         amcExpiry: record.amcExpiry ? dayjs(record.amcExpiry, DATE_FORMAT) : undefined,
       })}
       renderFields={() => (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="Machine Name"
             name="name"

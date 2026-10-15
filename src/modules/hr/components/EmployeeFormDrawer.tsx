@@ -18,11 +18,6 @@ import { getErrorMessage } from '@/api/client'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
-// Two fields per row (instead of the full-page form's one/three-column
-// layout) so the whole form fits a wide drawer without the long single-column
-// scroll a default-width drawer would force.
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
-
 export interface EmployeeFormDrawerProps {
   open: boolean
   onClose: () => void
@@ -151,7 +146,7 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
     >
       <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
         <FormSection title="Personal Information">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Employee Name"
               name="fullName"
@@ -182,7 +177,7 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Employment Information">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Department" name="departmentId">
               <Select
                 placeholder="Select department"
@@ -236,7 +231,7 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Compensation & Account">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Salary (INR)" name="salary" fieldType="number" placeholder="0" />
             <FormField label="Location" name="location" placeholder="City / Office" />
             {isEdit && <FormField label="Employee Code" name="employeeCode" disabled />}

@@ -76,7 +76,7 @@ export const VendorDetail: FC = () => {
                   key: 'basic',
                   label: 'Basic Info',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Vendor Code">{vendor.code}</Descriptions.Item>
                       <Descriptions.Item label="Contact Person">
                         {vendor.contactPerson}
@@ -93,7 +93,7 @@ export const VendorDetail: FC = () => {
                   key: 'address',
                   label: 'Address',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Address" span={2}>
                         {vendor.address}
                       </Descriptions.Item>
@@ -110,7 +110,7 @@ export const VendorDetail: FC = () => {
                   key: 'tax',
                   label: 'Tax',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="GST Number">
                         {vendor.gstNumber ?? '—'}
                       </Descriptions.Item>
@@ -121,7 +121,7 @@ export const VendorDetail: FC = () => {
                   key: 'banking',
                   label: 'Banking',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Bank Name">
                         {vendor.bankName ?? '—'}
                       </Descriptions.Item>

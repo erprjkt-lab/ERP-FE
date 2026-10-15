@@ -217,17 +217,28 @@ export const PurchaseRequisitionForm: FC = () => {
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <RequisitionItemRow
-                      key={field.key}
-                      field={field}
-                      form={form}
-                      itemOptions={itemOptions}
-                      itemsPopupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
-                      items={items}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 700 }}>
+                      {fields.map(field => (
+                        <RequisitionItemRow
+                          key={field.key}
+                          field={field}
+                          form={form}
+                          itemOptions={itemOptions}
+                          itemsPopupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                          items={items}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"

@@ -26,6 +26,10 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL
 let last401Time = 0
 const LOGOUT_COOLDOWN = 1000 // Only logout once per second max
 
+export function _reset401Cooldown(): void {
+  last401Time = 0
+}
+
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   const url = new URL(`${BASE_URL}${path}`)
   if (query) {

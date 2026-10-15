@@ -284,8 +284,11 @@ export const Dashboard: FC = () => {
 
                         {/* Integrated Overdue Job Card Alert */}
                         {(widgets.overdueJobs?.length ?? 0) > 0 && (
-                          <div className="cf-overdue-banner">
-                            <div className="cf-overdue-info">
+                          <div className="cf-overdue-banner" style={{ flexWrap: 'wrap' }}>
+                            <div
+                              className="cf-overdue-info"
+                              style={{ flex: '1 1 auto', minWidth: 200 }}
+                            >
                               <ClockCircleOutlined className="cf-overdue-icon" />
                               <div>
                                 <div className="cf-overdue-text">
@@ -347,6 +350,7 @@ export const Dashboard: FC = () => {
                         justifyContent: 'space-between',
                         gap: 12,
                         marginBottom: 14,
+                        flexWrap: 'wrap',
                       }}
                     >
                       <Input
@@ -356,10 +360,13 @@ export const Dashboard: FC = () => {
                         value={stockSearch}
                         onChange={e => setStockSearch(e.target.value)}
                         allowClear
-                        style={{ maxWidth: 180, borderRadius: 8 }}
+                        style={{ maxWidth: 220, minWidth: 140, flex: '1 1 auto', borderRadius: 8 }}
                       />
 
-                      <div className="cf-stock-filter-bar" style={{ marginBottom: 0 }}>
+                      <div
+                        className="cf-stock-filter-bar"
+                        style={{ marginBottom: 0, flexWrap: 'wrap' }}
+                      >
                         <button
                           type="button"
                           className={`cf-stock-filter-pill ${stockFilter === 'all' ? 'active' : ''}`}
@@ -576,10 +583,13 @@ export const Dashboard: FC = () => {
                         {widgets.pendingDeliveries?.map(row => (
                           <div
                             key={row.id}
+                            className="cf-delivery-item-card"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
+                              flexWrap: 'wrap',
+                              gap: 10,
                               padding: '12px 16px',
                               background: '#F8FAFC',
                               borderRadius: 12,

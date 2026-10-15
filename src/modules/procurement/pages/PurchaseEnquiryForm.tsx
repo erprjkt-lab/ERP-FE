@@ -279,58 +279,76 @@ export const PurchaseEnquiryForm: FC = () => {
               >
                 {(fields, { add, remove }, { errors }) => (
                   <>
-                    {fields.map(field => (
-                      <div
-                        key={field.key}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '2fr 1fr 100px 130px 130px 1fr 32px',
-                          gap: '0 8px',
-                          alignItems: 'start',
-                        }}
-                      >
-                        <Form.Item
-                          name={[field.name, 'itemId']}
-                          rules={[{ required: true, message: 'Required' }]}
-                        >
-                          <Select
-                            placeholder="Select item"
-                            options={itemOptions}
-                            popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
-                            showSearch
-                            filterOption={(input, option) =>
-                              String(option?.label ?? '')
-                                .toLowerCase()
-                                .includes(input.toLowerCase())
-                            }
-                          />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'itemDescription']}>
-                          <Input placeholder="Description" />
-                        </Form.Item>
-                        <Form.Item
-                          name={[field.name, 'requiredQty']}
-                          rules={[{ required: true, message: 'Required' }]}
-                        >
-                          <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'requiredDate']}>
-                          <DatePicker placeholder="Required by" style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'preferredDeliveryDate']}>
-                          <DatePicker placeholder="Preferred delivery" style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'remarks']}>
-                          <Input placeholder="Remarks" />
-                        </Form.Item>
-                        <Button
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={() => remove(field.name)}
-                        />
+                    <div
+                      style={{
+                        overflowX: 'auto',
+                        maxWidth: '100%',
+                        WebkitOverflowScrolling: 'touch',
+                        paddingBottom: 4,
+                      }}
+                    >
+                      <div style={{ minWidth: 780 }}>
+                        {fields.map(field => (
+                          <div
+                            key={field.key}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '2fr 1fr 100px 130px 130px 1fr 32px',
+                              gap: '0 8px',
+                              alignItems: 'start',
+                            }}
+                          >
+                            <Form.Item
+                              name={[field.name, 'itemId']}
+                              rules={[{ required: true, message: 'Required' }]}
+                            >
+                              <Select
+                                placeholder="Select item"
+                                options={itemOptions}
+                                popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                                showSearch
+                                filterOption={(input, option) =>
+                                  String(option?.label ?? '')
+                                    .toLowerCase()
+                                    .includes(input.toLowerCase())
+                                }
+                              />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'itemDescription']}>
+                              <Input placeholder="Description" />
+                            </Form.Item>
+                            <Form.Item
+                              name={[field.name, 'requiredQty']}
+                              rules={[{ required: true, message: 'Required' }]}
+                            >
+                              <InputNumber
+                                placeholder="Qty"
+                                min={0.0001}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'requiredDate']}>
+                              <DatePicker placeholder="Required by" style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'preferredDeliveryDate']}>
+                              <DatePicker
+                                placeholder="Preferred delivery"
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'remarks']}>
+                              <Input placeholder="Remarks" />
+                            </Form.Item>
+                            <Button
+                              type="text"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() => remove(field.name)}
+                            />
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                     <Form.ErrorList errors={errors} />
                     <Button
                       type="dashed"

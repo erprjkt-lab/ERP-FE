@@ -168,15 +168,26 @@ export const StockAdjustmentForm: FC = () => {
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <AdjustmentItemRow
-                      key={field.key}
-                      field={field}
-                      items={items}
-                      locationId={locationId}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 700 }}>
+                      {fields.map(field => (
+                        <AdjustmentItemRow
+                          key={field.key}
+                          field={field}
+                          items={items}
+                          locationId={locationId}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"

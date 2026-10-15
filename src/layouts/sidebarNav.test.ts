@@ -126,3 +126,107 @@ describe('findActiveKeys', () => {
     expect(findActiveKeys(items, '/dashboard')).toEqual({ selectedKey: undefined, openKeys: [] })
   })
 })
+
+describe('quality module labels', () => {
+  // ERP-BE's registry labels `inspection-reports` "IIR" and
+  // `inspection-parameters` "IPR" (config/rbac_modules.php), which names each
+  // module after one of its own screens.
+  const qualityTree = [
+    {
+      id: 90,
+      name: 'Quality',
+      icon: 'check-circle',
+      route: null,
+      module_key: null,
+      sequence: 1,
+      children: [
+        {
+          id: 91,
+          name: 'IIR',
+          icon: 'clipboard',
+          route: 'inspection-reports',
+          module_key: 'inspection-reports',
+          sequence: 10,
+          children: [],
+        },
+        {
+          id: 92,
+          name: 'IPR',
+          icon: 'sliders',
+          route: null,
+          module_key: 'inspection-parameters',
+          sequence: 20,
+          children: [],
+        },
+      ],
+    },
+  ] as unknown as ApiSidebarNode[]
+
+  it('groups IPR, FIR and IIR under one correctly named submenu', () => {
+    const [quality] = buildSidebarItems(qualityTree)
+    const group = (quality as { children: { key: string; label: string }[] }).children[0]
+
+    expect(group.label).toBe('Inspection Reports')
+    expect((group as unknown as { children: { key: string }[] }).children.map(c => c.key)).toEqual([
+      '/quality/ipr',
+      '/quality/fir',
+      '/quality/iir',
+    ])
+  })
+
+  it('does not label the parameter master after a report', () => {
+    const [quality] = buildSidebarItems(qualityTree)
+    const leaf = (quality as { children: { key: string; label: string }[] }).children[1]
+
+    expect(leaf.label).toBe('Inspection Parameters')
+    expect(leaf.key).toBe('/quality/inspection-parameters')
+  })
+})
+
+describe('quality modules as separate backend keys', () => {
+  // The deployment this app points at sends ipr/fir/iir as three modules rather
+  // than one consolidated `inspection-reports`. Unmapped, each fell through to
+  // the /pending placeholder and the built screens looked unfinished.
+  const splitTree = [
+    {
+      id: 90,
+      name: 'Quality',
+      icon: 'check-circle',
+      route: null,
+      module_key: null,
+      sequence: 1,
+      children: [
+        { id: 93, name: 'IPR', module_key: 'ipr', sequence: 10, children: [] },
+        { id: 94, name: 'FIR', module_key: 'fir', sequence: 20, children: [] },
+        {
+          id: 92,
+          name: 'IPR',
+          module_key: 'inspection-parameters',
+          sequence: 30,
+          children: [],
+        },
+        { id: 95, name: 'IIR', module_key: 'iir', sequence: 40, children: [] },
+      ],
+    },
+  ] as unknown as ApiSidebarNode[]
+
+  it('routes each to its built page instead of the pending placeholder', () => {
+    const [quality] = buildSidebarItems(splitTree)
+    const leaves = (quality as { children: { key: string; label: string }[] }).children
+
+    expect(leaves.map(l => l.key)).toEqual([
+      '/quality/ipr',
+      '/quality/fir',
+      '/quality/inspection-parameters',
+      '/quality/iir',
+    ])
+    expect(leaves.every(l => !l.key.startsWith('/pending/'))).toBe(true)
+  })
+
+  it('does not leave two entries both labelled IPR', () => {
+    const [quality] = buildSidebarItems(splitTree)
+    const labels = (quality as { children: { label: string }[] }).children.map(l => l.label)
+
+    expect(labels).toEqual(['IPR', 'FIR', 'Inspection Parameters', 'IIR'])
+  })
+})

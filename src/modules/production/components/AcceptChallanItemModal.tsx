@@ -96,7 +96,7 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
       }}
       width={620}
     >
-      <Descriptions size="small" column={2} bordered style={{ marginBottom: 16 }}>
+      <Descriptions size="small" column={{ xs: 1, sm: 2 }} bordered style={{ marginBottom: 16 }}>
         <Descriptions.Item label="Job Card">{jobCardLabel}</Descriptions.Item>
         <Descriptions.Item label="Vendor">{challan?.destinationPartyName}</Descriptions.Item>
         <Descriptions.Item label="Dispatched">{item?.dispatchedQty}</Descriptions.Item>

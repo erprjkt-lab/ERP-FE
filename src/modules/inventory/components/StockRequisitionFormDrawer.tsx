@@ -232,14 +232,25 @@ export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = (
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <RequisitionItemRow
-                      key={field.key}
-                      field={field}
-                      items={items}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 640 }}>
+                      {fields.map(field => (
+                        <RequisitionItemRow
+                          key={field.key}
+                          field={field}
+                          items={items}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"

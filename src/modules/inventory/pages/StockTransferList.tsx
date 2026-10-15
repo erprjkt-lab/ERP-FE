@@ -1,5 +1,5 @@
 import { ArrowRightOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Space, Table, Tooltip, Typography } from 'antd'
+import { App, Button, Card, Space, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -131,7 +131,7 @@ export const StockTransferList: FC = () => {
           rowActions={record => getStockTransferActions(record, handleDelete)}
           expandable={{
             expandedRowRender: record => (
-              <Table<StockTransferItem>
+              <DataTable<StockTransferItem>
                 columns={ITEM_COLUMNS}
                 dataSource={record.items}
                 rowKey="id"

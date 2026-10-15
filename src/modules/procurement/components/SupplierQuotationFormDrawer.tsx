@@ -214,7 +214,7 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
           )}
           <Form form={form} layout="vertical">
             <FormSection title="Quotation Details">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+              <div className="erp-form-grid is-3col">
                 <Form.Item
                   label="Quotation Number"
                   name="quotationNumber"
@@ -236,7 +236,7 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
             </FormSection>
 
             <FormSection title="Terms & Charges">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <div className="erp-form-grid">
                 <Form.Item label="Payment Terms" name="paymentTerms">
                   <Input />
                 </Form.Item>
@@ -258,56 +258,67 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
             <FormSection title="Items">
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
-                  gap: '0 8px',
-                  fontSize: 12,
-                  color: 'rgba(0,0,0,0.45)',
-                  marginBottom: 4,
+                  overflowX: 'auto',
+                  maxWidth: '100%',
+                  WebkitOverflowScrolling: 'touch',
+                  paddingBottom: 4,
                 }}
               >
-                <div>Item</div>
-                <div>Qty</div>
-                <div>Rate</div>
-                <div>Disc %</div>
-                <div>Tax %</div>
-                <div>Delivery Date</div>
-                <div>Remarks</div>
-              </div>
-              {(enquiry?.items ?? []).map((peItem, index) => (
-                <div
-                  key={peItem.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
-                    gap: '0 8px',
-                    alignItems: 'start',
-                  }}
-                >
-                  <div style={{ paddingTop: 8 }}>
-                    {peItem.itemName}{' '}
-                    <span style={{ color: 'rgba(0,0,0,0.45)' }}>({peItem.uomName})</span>
+                <div style={{ minWidth: 750 }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
+                      gap: '0 8px',
+                      fontSize: 12,
+                      color: 'rgba(0,0,0,0.45)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    <div>Item</div>
+                    <div>Qty</div>
+                    <div>Rate</div>
+                    <div>Disc %</div>
+                    <div>Tax %</div>
+                    <div>Delivery Date</div>
+                    <div>Remarks</div>
                   </div>
-                  <Form.Item name={['items', index, 'quotedQty']} rules={[{ required: true }]}>
-                    <InputNumber min={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'rate']} rules={[{ required: true }]}>
-                    <InputNumber min={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'discountPercent']}>
-                    <InputNumber min={0} max={100} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'taxPercent']}>
-                    <InputNumber min={0} max={100} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'deliveryDate']}>
-                    <DatePicker style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'remarks']}>
-                    <Input />
-                  </Form.Item>
+                  {(enquiry?.items ?? []).map((peItem, index) => (
+                    <div
+                      key={peItem.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
+                        gap: '0 8px',
+                        alignItems: 'start',
+                      }}
+                    >
+                      <div style={{ paddingTop: 8 }}>
+                        {peItem.itemName}{' '}
+                        <span style={{ color: 'rgba(0,0,0,0.45)' }}>({peItem.uomName})</span>
+                      </div>
+                      <Form.Item name={['items', index, 'quotedQty']} rules={[{ required: true }]}>
+                        <InputNumber min={0} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'rate']} rules={[{ required: true }]}>
+                        <InputNumber min={0} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'discountPercent']}>
+                        <InputNumber min={0} max={100} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'taxPercent']}>
+                        <InputNumber min={0} max={100} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'deliveryDate']}>
+                        <DatePicker style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'remarks']}>
+                        <Input />
+                      </Form.Item>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </FormSection>
           </Form>
         </>

@@ -46,7 +46,7 @@ export const FormDrawer: FC<FormDrawerProps> = ({
     <Drawer
       title={
         status ? (
-          <Space>
+          <Space wrap style={{ maxWidth: '100%' }}>
             <span>{title}</span>
             <StatusBadge status={status} label={statusLabel} />
           </Space>
@@ -57,7 +57,16 @@ export const FormDrawer: FC<FormDrawerProps> = ({
       onClose={onClose}
       footer={
         hideFooter ? null : (
-          <Space style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              flexWrap: 'wrap',
+              gap: 8,
+              width: '100%',
+            }}
+          >
             {extraFooter}
             <Button onClick={onCancel ?? (onClose as MouseEventHandler<HTMLElement>)}>
               {cancelText}
@@ -70,7 +79,7 @@ export const FormDrawer: FC<FormDrawerProps> = ({
             >
               {submitText}
             </Button>
-          </Space>
+          </div>
         )
       }
       {...props}

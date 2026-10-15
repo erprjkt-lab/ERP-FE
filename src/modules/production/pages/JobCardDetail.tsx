@@ -15,7 +15,6 @@ import {
   Progress,
   Row,
   Space,
-  Table,
   Tabs,
   Tag,
   Tooltip,
@@ -351,7 +350,7 @@ export const JobCardDetail: FC = () => {
               key: 'process',
               label: 'Process Detail',
               children: (
-                <Table<StepProgress>
+                <DataTable<StepProgress>
                   columns={makeProcessColumns()}
                   dataSource={progress}
                   rowKey={record => record.step.id}
@@ -389,7 +388,7 @@ export const JobCardDetail: FC = () => {
                             {batch.finishedQty} finished
                           </Tag>
                         </Space>
-                        <Table<StepProgress>
+                        <DataTable<StepProgress>
                           columns={makeProcessColumns(batch.review.id)}
                           dataSource={batch.steps}
                           rowKey={record => record.step.id}

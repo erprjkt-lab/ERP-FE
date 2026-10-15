@@ -9,7 +9,12 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 30_000,
+      staleTime: 5 * 60_000,
+      // The hosted backend sits behind Hostinger's WAF, which hard-blocks a
+      // burst of ~50 requests from one IP with a plain HTML 403 (no CORS
+      // headers, so the browser reports it as a CORS error). Refetching every
+      // mounted query on every window focus was reliably tripping it.
+      refetchOnWindowFocus: false,
     },
   },
 })

@@ -1,6 +1,6 @@
 import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useQueryClient } from '@tanstack/react-query'
-import { Alert, App, Button, Card, Skeleton, Space, Table } from 'antd'
+import { Alert, App, Button, Card, Skeleton, Space } from 'antd'
 import { useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
@@ -82,7 +82,7 @@ function TableReportBody({
       expandable={
         expand && {
           expandedRowRender: row => (
-            <Table
+            <DataTable
               size="small"
               pagination={false}
               columns={expand.columns}

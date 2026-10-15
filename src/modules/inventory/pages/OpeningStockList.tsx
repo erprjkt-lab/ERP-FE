@@ -1,5 +1,5 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Table, Tooltip, Typography } from 'antd'
+import { App, Button, Card, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -129,7 +129,7 @@ export const OpeningStockList: FC = () => {
           rowActions={record => getOpeningStockActions(record, handleDelete)}
           expandable={{
             expandedRowRender: record => (
-              <Table<OpeningStockItem>
+              <DataTable<OpeningStockItem>
                 columns={ITEM_COLUMNS}
                 dataSource={record.items}
                 rowKey="id"

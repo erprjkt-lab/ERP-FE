@@ -1,10 +1,11 @@
 import { CheckOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Drawer, Empty, Space, Table, Typography } from 'antd'
+import { App, Button, Drawer, Empty, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { DataTable } from '@/components/ui/DataTable'
 import {
   DECISION_LABELS,
   REJECTION_REVIEW_STATUS_BADGE,
@@ -85,7 +86,7 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
   ) : reviews.length === 0 ? (
     <Empty description="No reviews yet" style={{ marginTop: 16 }} />
   ) : (
-    <Table<RejectionReview>
+    <DataTable<RejectionReview>
       columns={columns}
       dataSource={reviews}
       rowKey="id"

@@ -113,6 +113,15 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
 
   'customer-complaints': [{ path: '/quality/customer-complaints', label: 'Customer Complaints' }],
 
+  // Two key shapes, both live. Deployments running the current registry send one
+  // consolidated `inspection-reports` module; the one this app is pointed at
+  // sends `ipr`/`fir`/`iir` as three separate modules (confirmed: its menu drove
+  // the sidebar to /pending/ipr). Mapping both means either backend reaches the
+  // same three screens — the same approach the report modules below take.
+  ipr: [{ path: '/quality/ipr', label: 'IPR' }],
+  fir: [{ path: '/quality/fir', label: 'FIR' }],
+  iir: [{ path: '/quality/iir', label: 'IIR' }],
+
   'inspection-reports': [
     { path: '/quality/ipr', label: 'IPR' },
     { path: '/quality/fir', label: 'FIR' },
@@ -128,6 +137,24 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
       ...REPORTS.map(report => `report-${report.slug}`),
     ].map(key => [key, [{ path: '/reports', label: 'Reports' }]]),
   ),
+}
+
+/**
+ * Sidebar label override for modules ERP-BE's registry names after one of their
+ * own screens. `config/rbac_modules.php` labels `inspection-reports` "IIR" even
+ * though that one module backs IPR, FIR *and* IIR here, and labels
+ * `inspection-parameters` "IPR" — which is the name of a different report. Taken
+ * literally, Quality renders an "IIR" group containing IPR/FIR/IIR next to a
+ * separate "IPR" entry that opens the parameter master, so the real reports look
+ * missing.
+ *
+ * Deliberately a short, explicit list rather than "always prefer the FE label":
+ * every other module's wording is ERP-BE's to own and rename. The proper fix is
+ * in the BE registry; remove the entry here once its label is corrected.
+ */
+const MODULE_LABEL_OVERRIDES: Record<string, string> = {
+  'inspection-reports': 'Inspection Reports',
+  'inspection-parameters': 'Inspection Parameters',
 }
 
 // BE icon names (feather-style, from the module registry) → the antd icon we render.
@@ -184,13 +211,14 @@ export function buildSidebarItems(nodes: ApiSidebarNode[], depth = 0): SidebarIt
     const pages = MODULE_PAGES[node.module_key] ?? []
     const pageItems = pages.map(page => ({ key: page.path, label: page.label }))
     const children = [...pageItems, ...childItems]
+    const label = MODULE_LABEL_OVERRIDES[node.module_key] ?? node.name
 
     if (children.length > 1) {
-      items.push({ key: `module-${node.id}`, label: node.name, icon, children })
+      items.push({ key: `module-${node.id}`, label, icon, children })
     } else {
       items.push({
         key: children[0]?.key ?? pendingPath(node.module_key),
-        label: node.name,
+        label,
         icon,
       })
     }

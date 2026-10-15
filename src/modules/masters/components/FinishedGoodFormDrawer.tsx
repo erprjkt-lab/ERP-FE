@@ -19,8 +19,6 @@ import { useUoms } from '../hooks/useUoms'
 import type { FinishedGoodInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
-
 export interface FinishedGoodFormDrawerProps {
   open: boolean
   onClose: () => void
@@ -152,7 +150,7 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
       <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Item Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Item Name"
               name="name"
@@ -200,7 +198,7 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
         </FormSection>
 
         <FormSection title="Customer & Drawing">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Customer"
               name="customerId"
@@ -217,7 +215,7 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
         </FormSection>
 
         <FormSection title="Specs">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Material Grade"
               name="materialGradeId"

@@ -23,10 +23,6 @@ import { useStates } from '../hooks/useStates'
 import type { CustomerInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-// Two fields per row instead of the full-page form's one/three-column layout,
-// so this long form fits a wide drawer without a long single-column scroll.
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
-
 export interface CustomerFormDrawerProps {
   open: boolean
   onClose: () => void
@@ -167,7 +163,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
       <Form form={form} layout="vertical">
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Customer Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Customer Name"
               name="name"
@@ -209,7 +205,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
             fieldType="textarea"
             rules={[{ required: true, message: 'Address is required' }]}
           />
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <Form.Item
               label="Country"
               name="countryId"
@@ -265,7 +261,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Tax & Compliance">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="GST Number"
               name="gstNumber"
@@ -286,7 +282,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Financial Terms">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Credit Limit" name="creditLimit" fieldType="number" />
             <FormField label="Credit Days" name="creditDays" fieldType="number" />
             <FormField label="Opening Balance" name="openingBalance" fieldType="number" />
@@ -300,7 +296,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Banking">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Bank Name" name="bankName" />
             <FormField label="Branch" name="bankBranch" />
             <FormField label="Account Holder" name="accountHolder" />

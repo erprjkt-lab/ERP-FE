@@ -145,7 +145,12 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
     >
       {report && (
         <>
-          <Descriptions column={2} size="small" bordered style={{ marginBottom: 16 }}>
+          <Descriptions
+            column={{ xs: 1, sm: 2 }}
+            size="small"
+            bordered
+            style={{ marginBottom: 16 }}
+          >
             <Descriptions.Item label="Status">
               <StatusBadge
                 status={REPORT_STATUS_BADGE[report.status]}

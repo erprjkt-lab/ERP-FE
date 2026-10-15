@@ -59,7 +59,7 @@ export const ItemBomForm: FC = () => {
         },
       ]}
       renderFields={() => (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="Component Item"
             name="componentItemId"

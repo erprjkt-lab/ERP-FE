@@ -169,7 +169,7 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
           initialValues={{ requisitionDate: dayjs(), priority: 'NORMAL', items: [{}] }}
         >
           <FormSection title="Requisition Details">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+            <div className="erp-form-grid is-3col">
               <Form.Item
                 label="Requisition Date"
                 name="requisitionDate"
@@ -212,17 +212,28 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <RequisitionItemRow
-                      key={field.key}
-                      field={field}
-                      form={form}
-                      itemOptions={itemOptions}
-                      itemsPopupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
-                      items={items}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 700 }}>
+                      {fields.map(field => (
+                        <RequisitionItemRow
+                          key={field.key}
+                          field={field}
+                          form={form}
+                          itemOptions={itemOptions}
+                          itemsPopupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                          items={items}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"

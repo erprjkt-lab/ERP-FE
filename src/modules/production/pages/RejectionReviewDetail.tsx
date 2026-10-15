@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Table, Tag, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -253,7 +253,7 @@ export const RejectionReviewDetail: FC = () => {
       </Card>
 
       <Card title="Process Detail" style={{ marginBottom: 16 }} styles={{ body: { padding: 0 } }}>
-        <Table<StepProgress>
+        <DataTable<StepProgress>
           columns={PROCESS_COLUMNS}
           dataSource={progress}
           rowKey={record => record.step.id}

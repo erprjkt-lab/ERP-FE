@@ -189,3 +189,36 @@
 .ant-table-thead > tr > th.erp-table-actions-cell {
   border-bottom: 1px solid #f0f0f0;
 }
+
+/* Touch device & mobile/tablet support: ensure actions are always visible and interactive */
+@media (hover: none), (max-width: 768px) {
+  .erp-table-action-bar {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
+
+  .erp-floating-row-action-popover {
+    right: 4px;
+    padding: 3px 4px;
+  }
+}
+
+@media (max-width: 576px) {
+  .erp-table-action-bar {
+    gap: 2px;
+  }
+
+  .erp-table-action-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    font-size: 14px;
+  }
+
+  .ant-table-cell.erp-table-actions-cell {
+    padding-right: 6px !important;
+    padding-left: 6px !important;
+  }
+}

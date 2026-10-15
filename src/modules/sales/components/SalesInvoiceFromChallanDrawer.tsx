@@ -163,7 +163,7 @@ export const SalesInvoiceFromChallanDrawer: FC<SalesInvoiceFromChallanDrawerProp
     >
       <Form form={form} layout="vertical" initialValues={{ invoiceDate: dayjs() }}>
         <FormSection title="Invoice Details">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0 16px' }}>
+          <div className="erp-form-grid">
             <Form.Item
               label="Invoice Date"
               name="invoiceDate"

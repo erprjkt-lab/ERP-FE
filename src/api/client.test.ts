@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/store/authStore'
-import { apiRequest, ApiRequestError, getErrorMessage } from './client'
+import { apiRequest, ApiRequestError, getErrorMessage, _reset401Cooldown } from './client'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -28,7 +28,8 @@ function mockResponse({
 
 describe('apiRequest', () => {
   beforeEach(() => {
-    useAuthStore.getState().clear()
+    _reset401Cooldown()
+    useAuthStore.getState().setToken('test-token')
     vi.stubGlobal('fetch', vi.fn())
   })
 
@@ -86,11 +87,17 @@ describe('apiRequest', () => {
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer secret-token')
   })
 
-  it('omits the Authorization header when there is no token', async () => {
+  it('omits the Authorization header when there is no token on login endpoints', async () => {
+    useAuthStore.getState().clear()
     vi.mocked(fetch).mockResolvedValue(mockResponse({ json: {} }))
-    await apiRequest('/api/v1/me')
+    await apiRequest('/api/v1/auth/login')
     const init = vi.mocked(fetch).mock.calls[0][1] as RequestInit
     expect((init.headers as Record<string, string>).Authorization).toBeUndefined()
+  })
+
+  it('rejects unauthenticated requests to protected endpoints', async () => {
+    useAuthStore.getState().clear()
+    await expect(apiRequest('/api/v1/me')).rejects.toThrow('Unauthenticated')
   })
 
   it('returns the parsed JSON payload on success', async () => {

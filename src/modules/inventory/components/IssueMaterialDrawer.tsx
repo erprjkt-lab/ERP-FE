@@ -8,7 +8,6 @@ import {
   InputNumber,
   Row,
   Select,
-  Table,
   Typography,
 } from 'antd'
 import type { TableColumnsType } from 'antd'
@@ -18,6 +17,7 @@ import { useMemo, useState } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormSection } from '@/components/ui/FormSection'
+import { DataTable } from '@/components/ui/DataTable'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
 import { useStockBalance, type StockBalanceRow } from '@/modules/inventory/hooks/useStockBalance'
 import { useItemBom } from '@/modules/production/hooks/useItemBom'
@@ -227,7 +227,7 @@ export const IssueMaterialDrawer: FC<IssueMaterialDrawerProps> = ({
               Allocate quantity to issue from available warehouse batches/locations below:
             </Typography.Text>
 
-            <Table<StockBalanceRow>
+            <DataTable<StockBalanceRow>
               size="small"
               columns={columns}
               dataSource={issuableRows}

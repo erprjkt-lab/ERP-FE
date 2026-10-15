@@ -11,7 +11,6 @@ import {
   InputNumber,
   Row,
   Space,
-  Table,
   Tooltip,
   Typography,
 } from 'antd'
@@ -20,6 +19,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { Modal } from '@/components/ui/Modal'
+import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -219,7 +219,7 @@ export const PurchaseGrnDetail: FC = () => {
               </Typography.Title>
             }
           >
-            <Table
+            <DataTable
               columns={columns}
               dataSource={grn.items}
               rowKey="id"

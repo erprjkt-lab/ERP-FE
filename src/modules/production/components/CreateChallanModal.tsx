@@ -1,10 +1,11 @@
-import { App, Col, Form, InputNumber, Row, Table } from 'antd'
+import { App, Col, Form, InputNumber, Row } from 'antd'
 import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
+import { DataTable } from '@/components/ui/DataTable'
 import { useVendors } from '@/modules/masters/hooks/useVendors'
 import type { ChallanRequest } from '@/types/production'
 import { useCreateChallan } from '../hooks/useJobCardChallans'
@@ -160,7 +161,7 @@ export const CreateChallanModal: FC<CreateChallanModalProps> = ({
         </Row>
       </Form>
 
-      <Table<ChallanRequest>
+      <DataTable<ChallanRequest>
         columns={columns}
         dataSource={requests}
         rowKey="id"

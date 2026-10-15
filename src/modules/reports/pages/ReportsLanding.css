@@ -142,6 +142,18 @@
     position: static;
     flex-direction: row;
     overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .erp-reports-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .erp-reports-rail-item {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .erp-reports-rail-count {

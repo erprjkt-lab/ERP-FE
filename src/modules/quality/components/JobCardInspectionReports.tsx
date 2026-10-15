@@ -100,7 +100,7 @@ export const JobCardInspectionReports: FC<JobCardInspectionReportsProps> = ({
           <Select
             value={active.id}
             onChange={setActiveReportId}
-            style={{ width: 280, marginBottom: 16 }}
+            style={{ width: '100%', maxWidth: 280, marginBottom: 16 }}
             options={reports.map(r => ({
               label: `${r.reportNumber}${r.processName ? ` — ${r.processName}` : ''}`,
               value: r.id,

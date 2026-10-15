@@ -77,7 +77,7 @@ export const CustomerDetail: FC = () => {
                   key: 'basic',
                   label: 'Basic Info',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Customer Code">{customer.code}</Descriptions.Item>
                       <Descriptions.Item label="Contact Person">
                         {customer.contactPerson}
@@ -94,7 +94,7 @@ export const CustomerDetail: FC = () => {
                   key: 'address',
                   label: 'Address',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Address" span={2}>
                         {customer.address}
                       </Descriptions.Item>
@@ -113,7 +113,7 @@ export const CustomerDetail: FC = () => {
                   key: 'tax',
                   label: 'Tax & Compliance',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="GST Number">
                         {customer.gstNumber ?? '—'}
                       </Descriptions.Item>
@@ -130,7 +130,7 @@ export const CustomerDetail: FC = () => {
                   key: 'financial',
                   label: 'Financial Terms',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Credit Limit">
                         <span style={ledgerText}>
                           ₹{customer.creditLimit.toLocaleString('en-IN')}
@@ -154,7 +154,7 @@ export const CustomerDetail: FC = () => {
                   key: 'banking',
                   label: 'Banking',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Bank Name">
                         {customer.bankName ?? '—'}
                       </Descriptions.Item>

@@ -48,7 +48,7 @@ export function StockBalance() {
           showSearch
           allowClear
           placeholder="Select an item to view stock balance"
-          style={{ width: 360, marginBottom: 16 }}
+          style={{ width: '100%', maxWidth: 360, marginBottom: 16 }}
           loading={loadingItems}
           value={itemId}
           onChange={setItemId}

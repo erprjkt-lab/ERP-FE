@@ -21,8 +21,6 @@ import { useStates } from '../hooks/useStates'
 import type { SupplierInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
-
 export interface SupplierFormDrawerProps {
   open: boolean
   onClose: () => void
@@ -151,7 +149,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
       <Form form={form} layout="vertical">
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Supplier Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Supplier Name"
               name="name"
@@ -192,7 +190,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
             fieldType="textarea"
             rules={[{ required: true, message: 'Address is required' }]}
           />
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <Form.Item
               label="Country"
               name="countryId"
@@ -248,7 +246,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Tax & Terms">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="GST Number"
               name="gstNumber"
@@ -270,7 +268,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Banking">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Bank Name" name="bankName" />
             <FormField label="Account Number" name="accountNumber" />
             <FormField

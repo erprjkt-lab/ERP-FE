@@ -567,19 +567,48 @@
 /* --------------------------------------------------------------------------
    RESPONSIVENESS
    -------------------------------------------------------------------------- */
-@media (max-width: 1200px) {
+@media (max-width: 1100px) {
   .cf-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .cf-kpi-grid {
-    grid-template-columns: 1fr;
-  }
-
   .cf-donut-wrapper {
     flex-direction: column;
     align-items: center;
+  }
+  .cf-dash-card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .cf-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .cf-overdue-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .cf-overdue-banner button {
+    width: 100%;
+  }
+
+  .cf-stock-filter-bar {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .cf-qc-item-card,
+  .cf-delivery-item-card {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 }

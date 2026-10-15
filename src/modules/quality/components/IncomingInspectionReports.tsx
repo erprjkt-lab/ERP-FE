@@ -67,7 +67,7 @@ export const IncomingInspectionReports: FC<IncomingInspectionReportsProps> = ({
           <Select
             value={active.id}
             onChange={setActiveReportId}
-            style={{ width: 280, marginBottom: 16 }}
+            style={{ width: '100%', maxWidth: 280, marginBottom: 16 }}
             options={reports.map(r => ({ label: r.reportNumber, value: r.id }))}
           />
         )}

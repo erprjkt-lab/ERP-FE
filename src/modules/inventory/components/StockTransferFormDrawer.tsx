@@ -173,15 +173,26 @@ export const StockTransferFormDrawer: FC<StockTransferFormDrawerProps> = ({ open
           >
             {(fields, { add, remove }, { errors }) => (
               <>
-                {fields.map(field => (
-                  <TransferItemRow
-                    key={field.key}
-                    field={field}
-                    items={items}
-                    fromLocationId={fromLocationId}
-                    onRemove={() => remove(field.name)}
-                  />
-                ))}
+                <div
+                  style={{
+                    overflowX: 'auto',
+                    maxWidth: '100%',
+                    WebkitOverflowScrolling: 'touch',
+                    paddingBottom: 4,
+                  }}
+                >
+                  <div style={{ minWidth: 720 }}>
+                    {fields.map(field => (
+                      <TransferItemRow
+                        key={field.key}
+                        field={field}
+                        items={items}
+                        fromLocationId={fromLocationId}
+                        onRemove={() => remove(field.name)}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <Form.ErrorList errors={errors} />
                 <Button
                   type="dashed"

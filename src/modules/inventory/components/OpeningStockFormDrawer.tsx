@@ -133,15 +133,26 @@ export const OpeningStockFormDrawer: FC<OpeningStockFormDrawerProps> = ({ open, 
           >
             {(fields, { add, remove }, { errors }) => (
               <>
-                {fields.map(field => (
-                  <OpeningStockItemRow
-                    key={field.key}
-                    field={field}
-                    items={items}
-                    locationOptions={locationOptions}
-                    onRemove={() => remove(field.name)}
-                  />
-                ))}
+                <div
+                  style={{
+                    overflowX: 'auto',
+                    maxWidth: '100%',
+                    WebkitOverflowScrolling: 'touch',
+                    paddingBottom: 4,
+                  }}
+                >
+                  <div style={{ minWidth: 740 }}>
+                    {fields.map(field => (
+                      <OpeningStockItemRow
+                        key={field.key}
+                        field={field}
+                        items={items}
+                        locationOptions={locationOptions}
+                        onRemove={() => remove(field.name)}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <Form.ErrorList errors={errors} />
                 <Button
                   type="dashed"

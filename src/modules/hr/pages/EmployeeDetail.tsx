@@ -81,7 +81,7 @@ export const EmployeeDetail: FC = () => {
                   key: 'overview',
                   label: 'Overview',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Employee ID">
                         {employee.employeeId}
                       </Descriptions.Item>
@@ -121,7 +121,7 @@ export const EmployeeDetail: FC = () => {
                   key: 'payroll',
                   label: 'Payroll',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Monthly Salary">
                         <span style={ledgerText}>
                           ₹{(employee.salary ?? 0).toLocaleString('en-IN')}

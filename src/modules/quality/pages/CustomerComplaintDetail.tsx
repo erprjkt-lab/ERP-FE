@@ -124,7 +124,7 @@ export const CustomerComplaintDetail: FC = () => {
       )}
 
       <Card style={{ marginBottom: 16 }}>
-        <Descriptions column={2} size="small" bordered>
+        <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
           <Descriptions.Item label="Status">
             <StatusBadge
               status={COMPLAINT_STATUS_BADGE[complaint.status as ComplaintStatus]}

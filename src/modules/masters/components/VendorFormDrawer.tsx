@@ -19,8 +19,6 @@ import { useCreateVendor, useUpdateVendor, useVendor } from '../hooks/useVendors
 import type { VendorInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
-
 export interface VendorFormDrawerProps {
   open: boolean
   onClose: () => void
@@ -145,7 +143,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
       <Form form={form} layout="vertical">
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Vendor Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Vendor Name"
               name="name"
@@ -187,7 +185,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
             fieldType="textarea"
             rules={[{ required: true, message: 'Address is required' }]}
           />
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <Form.Item
               label="Country"
               name="countryId"
@@ -251,7 +249,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
         </FormSection>
 
         <FormSection title="Banking">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Bank Name" name="bankName" />
             <FormField label="Account Number" name="accountNumber" />
             <FormField

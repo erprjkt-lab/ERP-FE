@@ -9,7 +9,6 @@ import {
   Radio,
   Segmented,
   Space,
-  Table,
   Tabs,
   Tag,
   Tooltip,
@@ -852,7 +851,7 @@ export const OutsourceList = () => {
                 Outsourced Items & Acceptance
               </div>
 
-              <Table<ChallanItem>
+              <DataTable<ChallanItem>
                 dataSource={drawerChallan.items}
                 rowKey="id"
                 pagination={false}

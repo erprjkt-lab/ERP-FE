@@ -1,4 +1,4 @@
-import { Breadcrumb, Divider, Space, Typography } from 'antd'
+import { Breadcrumb, Divider, Typography } from 'antd'
 import type { FC, ReactNode } from 'react'
 
 interface BreadcrumbItem {
@@ -22,10 +22,16 @@ export const PageHeader: FC<PageHeaderProps> = ({
   children,
 }) => {
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 12, width: '100%', maxWidth: '100%' }}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumb
-          style={{ marginBottom: 4, fontSize: 13 }}
+          style={{
+            marginBottom: 4,
+            fontSize: 13,
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            maxWidth: '100%',
+          }}
           items={breadcrumbs.map(b => ({
             title: b.href ? <a href={b.href}>{b.label}</a> : b.label,
           }))}
@@ -35,31 +41,44 @@ export const PageHeader: FC<PageHeaderProps> = ({
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
+          gap: 10,
+          width: '100%',
         }}
       >
-        <div style={{ flex: '1 1 220px' }}>
-          <Typography.Title level={3} style={{ margin: 0, fontSize: 20 }}>
+        <div style={{ flex: '1 1 180px', minWidth: 160, maxWidth: '100%' }}>
+          <Typography.Title level={3} style={{ margin: 0, fontSize: 20, wordBreak: 'break-word' }}>
             {title}
           </Typography.Title>
           {subtitle && (
-            <Typography.Text type="secondary" style={{ display: 'block', marginTop: 2 }}>
+            <Typography.Text
+              type="secondary"
+              style={{ display: 'block', marginTop: 2, fontSize: 13 }}
+            >
               {subtitle}
             </Typography.Text>
           )}
         </div>
         {actions && (
-          <Space wrap style={{ flex: '0 0 auto' }}>
+          <div
+            className="erp-page-header-actions"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 8,
+              maxWidth: '100%',
+            }}
+          >
             {actions}
-          </Space>
+          </div>
         )}
       </div>
       {children && (
         <>
           <Divider style={{ margin: '10px 0' }} />
-          {children}
+          <div style={{ width: '100%', maxWidth: '100%' }}>{children}</div>
         </>
       )}
     </div>
