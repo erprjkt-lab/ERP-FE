@@ -18,6 +18,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
@@ -55,6 +56,7 @@ interface PoItemInfo {
 
 export const PurchaseGrnForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
@@ -137,9 +139,11 @@ export const PurchaseGrnForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/purchase/grn')}>Cancel</Button>
-            <Button type="primary" loading={creating} onClick={() => form.submit()}>
-              Save GRN
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating} onClick={() => form.submit()}>
+                Save GRN
+              </Button>
+            )}
           </Space>
         }
       />
@@ -419,6 +423,12 @@ const GrnItemRow: FC<GrnItemRowProps> = ({
         </div>
       </div>
 
+      {/* Each field is offered only when the item master tracks it, because
+          ERP-BE ignores the rest: GrnService stores 'GENERAL'/'NA' for an
+          untracked item whatever was sent, so an input there would record a
+          batch the user can never trace. Tracked fields are required for the
+          same reason in reverse — GrnService throws if one is missing, and
+          catching it here beats a 422 after the whole form is filled in. */}
       {(selectedItem?.batchTracking ||
         selectedItem?.heatTracking ||
         selectedItem?.serialTracking) && (

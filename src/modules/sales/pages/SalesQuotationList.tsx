@@ -12,6 +12,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -27,6 +29,7 @@ import {
   useSalesQuotations,
 } from '../hooks/useSalesQuotations'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(QUOTATION_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -45,11 +48,18 @@ interface RowActions {
   onRevise: (record: SalesQuotation) => void
   onDelete: (record: SalesQuotation) => void
   onCreateOrder: (record: SalesQuotation) => void
+  can: { modify: boolean; delete: boolean; approve: boolean; createOrder: boolean }
 }
 
 const getColumns = (): TableColumnsType<SalesQuotation> => [
   { title: 'Quotation #', dataIndex: 'quotationNumber', key: 'quotationNumber', width: 140 },
-  { title: 'Date', dataIndex: 'quotationDate', key: 'quotationDate', width: 120 },
+  {
+    title: 'Date',
+    dataIndex: 'quotationDate',
+    key: 'quotationDate',
+    width: 120,
+    render: formatDateTime,
+  },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   {
     title: 'Items',
@@ -114,6 +124,7 @@ const getQuotationActions = (
       label: 'Edit',
       icon: <EditOutlined />,
       variant: 'primary',
+      hidden: !a.can.modify,
       onClick: () => a.onEdit(record),
     })
   }
@@ -125,6 +136,7 @@ const getQuotationActions = (
         label: 'Accept',
         icon: <CheckOutlined />,
         variant: 'success',
+        hidden: !a.can.approve,
         onClick: () => a.onAccept(record),
       },
       {
@@ -133,6 +145,7 @@ const getQuotationActions = (
         icon: <CloseOutlined />,
         variant: 'danger',
         danger: true,
+        hidden: !a.can.approve,
         onClick: () => a.onReject(record),
       },
     )
@@ -147,6 +160,7 @@ const getQuotationActions = (
       label: 'Create Sales Order',
       icon: <FileDoneOutlined />,
       variant: 'success',
+      hidden: !a.can.createOrder,
       onClick: () => a.onCreateOrder(record),
     })
   }
@@ -158,6 +172,7 @@ const getQuotationActions = (
       icon: <DeleteOutlined />,
       variant: 'danger',
       danger: true,
+      hidden: !a.can.delete,
       onClick: () => a.onDelete(record),
     })
   }
@@ -168,6 +183,8 @@ const getQuotationActions = (
 export const SalesQuotationList: FC = () => {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
+  const { canWrite: canWriteOrders } = useModulePermission('sales-orders')
   const status = useSalesStatusFilter('quotation')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
@@ -270,6 +287,12 @@ export const SalesQuotationList: FC = () => {
   const columns = getColumns()
 
   const rowActions: RowActions = {
+    can: {
+      modify: canModify,
+      delete: canDelete,
+      approve: canApprove,
+      createOrder: canWriteOrders,
+    },
     onView: record => navigate(`/sales/quotations/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onAccept: record => handleAction(record, 'accept', 'Quotation accepted'),
@@ -286,13 +309,15 @@ export const SalesQuotationList: FC = () => {
         subtitle={`${meta?.total ?? 0} quotations`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Quotation' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Quotation
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Quotation
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

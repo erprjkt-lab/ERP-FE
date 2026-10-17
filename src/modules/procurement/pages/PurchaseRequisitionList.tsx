@@ -12,11 +12,13 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { TableActionItem } from '@/components/ui/TableActionBar'
+import { useModulePermission } from '@/store/permissionStore'
 import type { PurchaseRequisition } from '@/types/procurement'
 import { PurchaseEnquiryFormDrawer } from '../components/PurchaseEnquiryFormDrawer'
 import { PurchaseRequisitionFormDrawer } from '../components/PurchaseRequisitionFormDrawer'
@@ -33,6 +35,7 @@ import {
 } from '../hooks/usePurchaseRequisitions'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_TABS = Object.keys(REQUISITION_STATUS_LABELS) as RequisitionDisplayStatus[]
 
@@ -43,6 +46,13 @@ interface RowActions {
   onApprove: (record: PurchaseRequisition) => void
   onReject: (record: PurchaseRequisition) => void
   onCreateEnquiry: (record: PurchaseRequisition) => void
+  /** What the signed-in user may do here; drives which row actions render. */
+  can: {
+    modify: boolean
+    delete: boolean
+    approve: boolean
+    createEnquiry: boolean
+  }
 }
 
 const getRequisitionActions = (record: PurchaseRequisition, a: RowActions): TableActionItem[] => {
@@ -64,6 +74,7 @@ const getRequisitionActions = (record: PurchaseRequisition, a: RowActions): Tabl
         label: 'Edit',
         icon: <EditOutlined />,
         variant: 'primary',
+        hidden: !a.can.modify,
         onClick: () => a.onEdit(record),
       },
       {
@@ -71,6 +82,7 @@ const getRequisitionActions = (record: PurchaseRequisition, a: RowActions): Tabl
         label: 'Approve',
         icon: <CheckOutlined />,
         variant: 'success',
+        hidden: !a.can.approve,
         onClick: () => a.onApprove(record),
       },
       {
@@ -79,6 +91,7 @@ const getRequisitionActions = (record: PurchaseRequisition, a: RowActions): Tabl
         icon: <CloseOutlined />,
         variant: 'danger',
         danger: true,
+        hidden: !a.can.approve,
         onClick: () => a.onReject(record),
       },
       {
@@ -87,6 +100,7 @@ const getRequisitionActions = (record: PurchaseRequisition, a: RowActions): Tabl
         icon: <DeleteOutlined />,
         variant: 'danger',
         danger: true,
+        hidden: !a.can.delete,
         onClick: () => a.onDelete(record),
       },
     )
@@ -96,6 +110,7 @@ const getRequisitionActions = (record: PurchaseRequisition, a: RowActions): Tabl
       label: 'Create Enquiry',
       icon: <FileSearchOutlined />,
       variant: 'accent',
+      hidden: !a.can.createEnquiry,
       onClick: () => a.onCreateEnquiry(record),
     })
   }
@@ -111,7 +126,9 @@ const getColumns = (): TableColumnsType<PurchaseRequisition> => [
     render: (_, record) => (
       <div>
         <div style={{ fontWeight: 600 }}>{record.requisitionNumber}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.requisitionDate}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+          {formatDateTime(record.requisitionDate)}
+        </div>
       </div>
     ),
   },
@@ -169,6 +186,10 @@ const getColumns = (): TableColumnsType<PurchaseRequisition> => [
 export const PurchaseRequisitionList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
+  // "Create Enquiry" writes into the enquiry module, so it answers to that
+  // module's permission rather than this page's.
+  const { canWrite: canWriteEnquiries } = useModulePermission('purchase-enquiries')
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [createEnquiryFromPrId, setCreateEnquiryFromPrId] = useState<string>()
   const { page, pageSize, paginationProps } = useServerPagination()
@@ -200,6 +221,12 @@ export const PurchaseRequisitionList: FC = () => {
         okButtonProps: { danger: true },
         onOk: () => run(() => deleteRequisition(record.id), 'Purchase requisition deleted'),
       }),
+    can: {
+      modify: canModify,
+      delete: canDelete,
+      approve: canApprove,
+      createEnquiry: canWriteEnquiries,
+    },
     onApprove: record =>
       modal.confirm({
         title: `Approve ${record.requisitionNumber}?`,
@@ -262,13 +289,15 @@ export const PurchaseRequisitionList: FC = () => {
         subtitle={`${filtered.length} of ${requisitions.length} requisitions`}
         breadcrumbs={[{ label: 'Purchase', href: '/purchase' }, { label: 'Requisitions' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Requisition
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Requisition
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

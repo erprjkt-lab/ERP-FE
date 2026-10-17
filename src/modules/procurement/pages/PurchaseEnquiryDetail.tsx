@@ -8,10 +8,10 @@ import {
   ShoppingCartOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Row, Select, Space, Typography } from 'antd'
-import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { Modal } from '@/components/ui/Modal'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
@@ -44,8 +44,7 @@ import {
   useSelectSupplierForEnquiry,
 } from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
-
-const formatDateTime = (v?: string | null) => (v ? dayjs(v).format('DD-MM-YYYY HH:mm') : '—')
+import { formatDateTime } from '@/utils/date'
 
 // Same LOCKED_STATUSES as ERP-BE's PurchaseEnquiryService::updateEnquiry.
 const LOCKED_STATUSES: PurchaseEnquiry['status'][] = [
@@ -59,6 +58,10 @@ export const PurchaseEnquiryDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  // ERP-BE's PurchaseEnquiryController puts selectSupplier AND createPurchaseOrder
+  // behind `write purchase-enquiries` — the module declares no `approve` action,
+  // and the PO is created through this controller, not PurchaseOrderController.
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [editOpen, setEditOpen] = useState(false)
   const { data: enquiry, isLoading } = usePurchaseEnquiry(id)
   const { data: suppliers = [] } = useSuppliers()
@@ -173,7 +176,7 @@ export const PurchaseEnquiryDetail: FC = () => {
       title: 'Required Date',
       dataIndex: 'requiredDate',
       key: 'requiredDate',
-      render: (v: string) => v ?? '—',
+      render: formatDateTime,
     },
   ]
 
@@ -205,7 +208,7 @@ export const PurchaseEnquiryDetail: FC = () => {
       key: 'actions',
       render: (_: unknown, r: PurchaseEnquirySupplier) => (
         <Space size="small" wrap>
-          {!LOCKED_STATUSES.includes(enquiry.status) && (
+          {!LOCKED_STATUSES.includes(enquiry.status) && canModify && (
             <Button
               type="link"
               size="small"
@@ -219,7 +222,7 @@ export const PurchaseEnquiryDetail: FC = () => {
                 : 'Record Quotation'}
             </Button>
           )}
-          {r.supplierStatus === 'RESPONDED' && (
+          {r.supplierStatus === 'RESPONDED' && canWrite && (
             <Button
               type="primary"
               size="small"
@@ -229,7 +232,7 @@ export const PurchaseEnquiryDetail: FC = () => {
               Accept
             </Button>
           )}
-          {enquiry.status === 'SENT' && (
+          {enquiry.status === 'SENT' && canDelete && (
             <Button
               type="text"
               size="small"
@@ -260,7 +263,7 @@ export const PurchaseEnquiryDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/enquiries')}>
               Back
             </Button>
-            {!LOCKED_STATUSES.includes(enquiry.status) && (
+            {!LOCKED_STATUSES.includes(enquiry.status) && canModify && (
               <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
                 Edit
               </Button>
@@ -270,7 +273,7 @@ export const PurchaseEnquiryDetail: FC = () => {
                 Compare Quotations
               </Button>
             )}
-            {enquiry.status === 'SUPPLIER_SELECTED' && (
+            {enquiry.status === 'SUPPLIER_SELECTED' && canWrite && (
               <Button
                 type="primary"
                 icon={<ShoppingCartOutlined />}
@@ -299,9 +302,11 @@ export const PurchaseEnquiryDetail: FC = () => {
                   label={ENQUIRY_STATUS_LABELS[enquiry.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="Enquiry Date">{enquiry.enquiryDate}</Descriptions.Item>
+              <Descriptions.Item label="Enquiry Date">
+                {formatDateTime(enquiry.enquiryDate)}
+              </Descriptions.Item>
               <Descriptions.Item label="Due Date">
-                {enquiry.enquiryDueDate ?? '—'}
+                {formatDateTime(enquiry.enquiryDueDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Priority">{enquiry.priority}</Descriptions.Item>
               <Descriptions.Item label="Created By">{enquiry.createdBy}</Descriptions.Item>
@@ -334,7 +339,8 @@ export const PurchaseEnquiryDetail: FC = () => {
               </Typography.Title>
             }
             extra={
-              enquiry.status === 'SENT' && (
+              enquiry.status === 'SENT' &&
+              canModify && (
                 <Button
                   icon={<PlusOutlined />}
                   size="small"

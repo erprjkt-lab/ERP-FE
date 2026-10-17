@@ -3,16 +3,19 @@ import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as ant
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ledgerText } from '@/theme/typography'
 import { EmployeeFormDrawer } from '../components/EmployeeFormDrawer'
 import { useEmployee } from '../hooks/useEmployees'
 import { getDepartmentColor } from '../utils/departmentColor'
+import { formatDateTime } from '@/utils/date'
 
 export const EmployeeDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canModify } = usePagePermission()
   const { token } = antTheme.useToken()
   const [editOpen, setEditOpen] = useState(false)
   const { data: employee, isLoading } = useEmployee(id)
@@ -43,9 +46,11 @@ export const EmployeeDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/hr/employees')}>
               Back
             </Button>
-            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
+            {canModify && (
+              <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
           </Space>
         }
       />
@@ -102,10 +107,10 @@ export const EmployeeDetail: FC = () => {
                         {employee.shift?.name ?? '—'}
                       </Descriptions.Item>
                       <Descriptions.Item label="Join Date">
-                        {employee.joinDate ?? '—'}
+                        {formatDateTime(employee.joinDate)}
                       </Descriptions.Item>
                       <Descriptions.Item label="Date of Birth">
-                        {employee.dateOfBirth ?? '—'}
+                        {formatDateTime(employee.dateOfBirth)}
                       </Descriptions.Item>
                       <Descriptions.Item label="Location">
                         {employee.location ?? '—'}

@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -47,6 +48,7 @@ interface CustomerRowActions {
   onView: (record: Customer) => void
   onEdit: (record: Customer) => void
   onDelete: (record: Customer) => void
+  can: { modify: boolean; delete: boolean }
 }
 
 const getCustomerActions = (record: Customer, a: CustomerRowActions): TableActionItem[] => [
@@ -62,6 +64,7 @@ const getCustomerActions = (record: Customer, a: CustomerRowActions): TableActio
     label: 'Edit',
     icon: <EditOutlined />,
     variant: 'primary',
+    hidden: !a.can.modify,
     onClick: () => a.onEdit(record),
   },
   {
@@ -70,6 +73,7 @@ const getCustomerActions = (record: Customer, a: CustomerRowActions): TableActio
     icon: <DeleteOutlined />,
     variant: 'danger',
     danger: true,
+    hidden: !a.can.delete,
     onClick: () => a.onDelete(record),
   },
 ]
@@ -77,6 +81,7 @@ const getCustomerActions = (record: Customer, a: CustomerRowActions): TableActio
 export const CustomerList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { page, pageSize, paginationProps } = useServerPagination()
   const { data: customers = [], meta, isLoading } = useCustomers(page, pageSize)
@@ -105,6 +110,7 @@ export const CustomerList: FC = () => {
   const columns = getColumns()
 
   const rowActions: CustomerRowActions = {
+    can: { modify: canModify, delete: canDelete },
     onView: record => navigate(`/masters/customers/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: handleDelete,
@@ -125,13 +131,15 @@ export const CustomerList: FC = () => {
         subtitle={`${filtered.length} of ${meta?.total ?? customers.length} customers`}
         breadcrumbs={[{ label: 'Masters', href: '/masters' }, { label: 'Customers' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            Add Customer
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              Add Customer
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

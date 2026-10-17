@@ -1,6 +1,8 @@
 import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
@@ -18,11 +20,14 @@ import {
   useRejectRequisition,
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 export const PurchaseRequisitionDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canApprove } = usePagePermission()
+  const { canWrite: canWriteEnquiries } = useModulePermission('purchase-enquiries')
   const [editOpen, setEditOpen] = useState(false)
   const [createEnquiryOpen, setCreateEnquiryOpen] = useState(false)
   const { data: requisition, isLoading } = usePurchaseRequisition(id)
@@ -95,7 +100,7 @@ export const PurchaseRequisitionDetail: FC = () => {
       title: 'Required Date',
       dataIndex: 'requiredDate',
       key: 'requiredDate',
-      render: (v: string) => v ?? '—',
+      render: formatDateTime,
     },
     { title: 'Remarks', dataIndex: 'remarks', key: 'remarks', render: (v: string) => v ?? '—' },
   ]
@@ -117,23 +122,34 @@ export const PurchaseRequisitionDetail: FC = () => {
             </Button>
             {requisition.status === 'PENDING_APPROVAL' && (
               <>
-                <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-                  Edit
-                </Button>
-                <Button danger icon={<CloseOutlined />} loading={rejecting} onClick={handleReject}>
-                  Reject
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  loading={approving}
-                  onClick={handleApprove}
-                >
-                  Approve
-                </Button>
+                {canModify && (
+                  <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                    Edit
+                  </Button>
+                )}
+                {canApprove && (
+                  <>
+                    <Button
+                      danger
+                      icon={<CloseOutlined />}
+                      loading={rejecting}
+                      onClick={handleReject}
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<CheckOutlined />}
+                      loading={approving}
+                      onClick={handleApprove}
+                    >
+                      Approve
+                    </Button>
+                  </>
+                )}
               </>
             )}
-            {displayStatus === 'APPROVED' && (
+            {displayStatus === 'APPROVED' && canWriteEnquiries && (
               <Button type="primary" onClick={() => setCreateEnquiryOpen(true)}>
                 Create Enquiry
               </Button>
@@ -153,7 +169,7 @@ export const PurchaseRequisitionDetail: FC = () => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Requisition Date">
-                {requisition.requisitionDate}
+                {formatDateTime(requisition.requisitionDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Priority">{requisition.priority}</Descriptions.Item>
               <Descriptions.Item label="Department">

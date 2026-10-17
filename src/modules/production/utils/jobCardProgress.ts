@@ -118,3 +118,49 @@ export function computeStepProgress(
 
   return rows
 }
+
+export interface JobCardTotals {
+  /** OK qty at the final route step — what actually reached finished goods. */
+  completedQty: number
+  /** Rejected qty anywhere on the route, whatever became of it afterwards. */
+  rejectedQty: number
+  /** Still to be produced: neither finished nor written off. */
+  balanceQty: number
+  /** Share of the order that is settled — finished or scrapped. */
+  completionPercent: number
+}
+
+/** Job-card-level totals for the summary strip.
+ *
+ * Unlike computeStepProgress, which keeps the first pass and each rework redo
+ * apart so neither double-counts the other, this counts *every* log: a unit
+ * recovered by a redo is finished goods just the same, and leaving it out left
+ * "Completed" short and "Balance" permanently above zero after any rework.
+ *
+ * `scrappedQty` is the qty written off for good — the reviewed_qty of approved
+ * Reject reviews. It is deliberately not "everything ever rejected": a unit sent
+ * back for rework is still in play, and counting it as settled would show the
+ * order finished while the redo was still on the floor. Scrapped units can never
+ * be produced, so they close out the balance rather than leaving it stuck. */
+export function computeJobCardTotals(
+  routes: JobCardRouteStep[],
+  logs: ProcessLog[],
+  orderedQty = 0,
+  scrappedQty = 0,
+): JobCardTotals {
+  const sorted = [...routes].sort((a, b) => a.sequenceNo - b.sequenceNo)
+  const lastProcessId = sorted[sorted.length - 1]?.processId
+
+  const completedQty = logs
+    .filter(log => log.processId === lastProcessId)
+    .reduce((sum, log) => sum + log.okQty, 0)
+  const settledQty = completedQty + scrappedQty
+
+  return {
+    completedQty,
+    rejectedQty: logs.reduce((sum, log) => sum + log.rejectedQty, 0),
+    balanceQty: Math.max(orderedQty - settledQty, 0),
+    completionPercent:
+      orderedQty > 0 ? Math.min(Math.round((settledQty / orderedQty) * 100), 100) : 0,
+  }
+}

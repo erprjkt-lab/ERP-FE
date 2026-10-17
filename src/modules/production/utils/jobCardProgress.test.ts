@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { JobCardMovement, JobCardRouteStep, ProcessLog } from '@/types/production'
-import { computeStepProgress } from './jobCardProgress'
+import { computeJobCardTotals, computeStepProgress } from './jobCardProgress'
 
 const routes: JobCardRouteStep[] = [
   { id: '1', processId: '10', processName: 'Cutting', sequenceNo: 1 },
@@ -192,5 +192,51 @@ describe('computeStepProgress', () => {
     )
 
     expect(progress.every(row => !row.isCurrent)).toBe(true)
+  })
+})
+
+describe('computeJobCardTotals', () => {
+  it('counts OK qty at the final route step only', () => {
+    const totals = computeJobCardTotals(routes, [log('10', 10, 0), log('30', 8, 2)], 10)
+
+    expect(totals.completedQty).toBe(8)
+    expect(totals.rejectedQty).toBe(2)
+  })
+
+  it('counts qty recovered by a rework redo as completed', () => {
+    // The 2 rejected at Inspection come back through a redo and pass: the job
+    // card has produced all 10, so the summary must not stay stuck at 8.
+    const redo: ProcessLog = { ...log('30', 2, 0), id: 'redo', isRework: true }
+    const totals = computeJobCardTotals(routes, [log('30', 8, 2), redo], 10)
+
+    expect(totals.completedQty).toBe(10)
+    expect(totals.balanceQty).toBe(0)
+    expect(totals.completionPercent).toBe(100)
+  })
+
+  it('closes out the balance once rejected qty is scrapped for good', () => {
+    // 8 good, 2 written off by an approved Reject review. Nothing is left to
+    // produce, so Balance must read 0 rather than sticking at 2 forever.
+    const totals = computeJobCardTotals(routes, [log('30', 8, 2)], 10, 2)
+
+    expect(totals.completedQty).toBe(8)
+    expect(totals.balanceQty).toBe(0)
+    expect(totals.completionPercent).toBe(100)
+  })
+
+  it('keeps qty still under rework in the balance', () => {
+    // Same 8 + 2, but the 2 went back for rework instead of being scrapped —
+    // they are still in play, so the order is not finished.
+    const totals = computeJobCardTotals(routes, [log('30', 8, 2)], 10, 0)
+
+    expect(totals.balanceQty).toBe(2)
+    expect(totals.completionPercent).toBe(80)
+  })
+
+  it('returns zeroes for a job card with no route', () => {
+    const totals = computeJobCardTotals([], [log('30', 5, 0)], 10)
+
+    expect(totals.completedQty).toBe(0)
+    expect(totals.rejectedQty).toBe(0)
   })
 })

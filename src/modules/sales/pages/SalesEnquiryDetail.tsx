@@ -10,6 +10,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -31,6 +33,7 @@ import {
   useSalesEnquiry,
 } from '../hooks/useSalesEnquiries'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 const ITEM_COLUMNS: TableColumnsType<SalesEnquiryItem> = [
   {
@@ -91,6 +94,8 @@ export const SalesEnquiryDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canDelete } = usePagePermission()
+  const { canWrite: canWriteQuotations } = useModulePermission('sales-quotations')
   const { data: enquiry, isLoading } = useSalesEnquiry(id)
   const { mutateAsync: closeEnquiry, isPending: closing } = useCloseSalesEnquiry()
   const { mutateAsync: removeEnquiry, isPending: deleting } = useDeleteSalesEnquiry()
@@ -182,36 +187,44 @@ export const SalesEnquiryDetail: FC = () => {
               Back
             </Button>
             {/* The backend only allows edits while the enquiry is still OPEN. */}
-            <Button icon={<EditOutlined />} disabled={!isOpen} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
-            <Button
-              type="primary"
-              icon={<FileTextOutlined />}
-              disabled={isClosed}
-              onClick={handleCreateQuotation}
-            >
-              {isQuoted ? 'Create Another Quotation' : 'Create Quotation'}
-            </Button>
-            <Button
-              danger
-              icon={<StopOutlined />}
-              disabled={isClosed}
-              loading={closing}
-              onClick={handleClose}
-            >
-              Close
-            </Button>
+            {canModify && (
+              <Button icon={<EditOutlined />} disabled={!isOpen} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
+            {canWriteQuotations && (
+              <Button
+                type="primary"
+                icon={<FileTextOutlined />}
+                disabled={isClosed}
+                onClick={handleCreateQuotation}
+              >
+                {isQuoted ? 'Create Another Quotation' : 'Create Quotation'}
+              </Button>
+            )}
+            {canModify && (
+              <Button
+                danger
+                icon={<StopOutlined />}
+                disabled={isClosed}
+                loading={closing}
+                onClick={handleClose}
+              >
+                Close
+              </Button>
+            )}
             {/* Backend only permits deletion while the enquiry is still open. */}
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              disabled={!isOpen}
-              loading={deleting}
-              onClick={handleDelete}
-            >
-              Delete
-            </Button>
+            {canDelete && (
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                disabled={!isOpen}
+                loading={deleting}
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+            )}
           </Space>
         }
       />
@@ -226,7 +239,9 @@ export const SalesEnquiryDetail: FC = () => {
                   label={ENQUIRY_STATUS_LABELS[enquiry.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="Enquiry Date">{enquiry.enquiryDate}</Descriptions.Item>
+              <Descriptions.Item label="Enquiry Date">
+                {formatDateTime(enquiry.enquiryDate)}
+              </Descriptions.Item>
               <Descriptions.Item label="Customer">
                 {enquiry.partyName ?? enquiry.partyId}
               </Descriptions.Item>

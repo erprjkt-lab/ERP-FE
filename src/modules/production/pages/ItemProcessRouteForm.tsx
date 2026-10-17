@@ -7,6 +7,7 @@ import { App, Button, Card, Col, Form, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -104,6 +105,10 @@ const SortableStepRow: FC<SortableStepRowProps> = ({
 export const ItemProcessRouteForm: FC = () => {
   const { itemId } = useParams()
   const navigate = useNavigate()
+  // ERP-BE registers no rbac module for ItemProcessRouteController, so the
+  // closest governed owner of an item's production definition — item-bom, which
+  // also backs this screen's route — gates the save. Flagged as a BE gap.
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm<{ steps: StepFormValue[] }>()
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
@@ -166,9 +171,11 @@ export const ItemProcessRouteForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/production/bom')}>Cancel</Button>
-            <Button type="primary" loading={saving} onClick={() => form.submit()}>
-              Save Route
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={saving} onClick={() => form.submit()}>
+                Save Route
+              </Button>
+            )}
           </Space>
         }
       />

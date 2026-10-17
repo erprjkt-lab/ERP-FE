@@ -9,6 +9,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { downloadSalesInvoicePdf } from '@/api/salesInvoices'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
@@ -22,6 +23,7 @@ import {
   usePostSalesInvoice,
   useSalesInvoice,
 } from '../hooks/useSalesInvoices'
+import { formatDateTime } from '@/utils/date'
 
 const money = (value: number) => `₹${value.toFixed(2)}`
 
@@ -80,6 +82,7 @@ export const SalesInvoiceDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canApprove } = usePagePermission()
   const { data: invoice, isLoading } = useSalesInvoice(id)
   const { mutateAsync: runPost, isPending: posting } = usePostSalesInvoice()
   const { mutateAsync: runCancel, isPending: cancelling } = useCancelSalesInvoice()
@@ -152,24 +155,30 @@ export const SalesInvoiceDetail: FC = () => {
             <Button icon={<DownloadOutlined />} loading={downloading} onClick={handleDownload}>
               Download PDF
             </Button>
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              disabled={invoice.status !== 'DRAFT'}
-              loading={posting}
-              onClick={handlePost}
-            >
-              Post Invoice
-            </Button>
-            <Button
-              danger
-              icon={<StopOutlined />}
-              disabled={invoice.status !== 'POSTED'}
-              loading={cancelling}
-              onClick={handleCancel}
-            >
-              Cancel Invoice
-            </Button>
+            {/* Posting an invoice is ERP-BE's `post` action, which its own
+                action_overrides map onto `approve`. */}
+            {canApprove && (
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                disabled={invoice.status !== 'DRAFT'}
+                loading={posting}
+                onClick={handlePost}
+              >
+                Post Invoice
+              </Button>
+            )}
+            {canModify && (
+              <Button
+                danger
+                icon={<StopOutlined />}
+                disabled={invoice.status !== 'POSTED'}
+                loading={cancelling}
+                onClick={handleCancel}
+              >
+                Cancel Invoice
+              </Button>
+            )}
           </Space>
         }
       />
@@ -184,7 +193,9 @@ export const SalesInvoiceDetail: FC = () => {
                   label={INVOICE_STATUS_LABELS[invoice.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="Invoice Date">{invoice.invoiceDate}</Descriptions.Item>
+              <Descriptions.Item label="Invoice Date">
+                {formatDateTime(invoice.invoiceDate)}
+              </Descriptions.Item>
               <Descriptions.Item label="Customer">
                 {invoice.partyName ?? invoice.partyId}
               </Descriptions.Item>

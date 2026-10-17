@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
@@ -70,6 +71,9 @@ interface QuotationFormValues {
 export const SalesQuotationForm: FC = () => {
   const { id } = useParams()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
   const [searchParams] = useSearchParams()
   const enquiryId = searchParams.get('enquiryId')
   const navigate = useNavigate()
@@ -193,9 +197,11 @@ export const SalesQuotationForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/sales/quotations')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Save Changes' : 'Save Quotation'}
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Save Changes' : 'Save Quotation'}
+              </Button>
+            )}
           </Space>
         }
       />

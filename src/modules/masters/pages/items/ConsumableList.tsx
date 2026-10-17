@@ -1,3 +1,4 @@
+import { Form } from 'antd'
 import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
@@ -10,7 +11,7 @@ import {
   useUpdateConsumable,
 } from '../../hooks/useConsumables'
 import { useItemCategories } from '../../hooks/useItemCategories'
-import { useHsnCodes } from '../../hooks/useHsnCodes'
+import { useHsnGstAutofill } from '../../hooks/useHsnGstAutofill'
 import { useUoms } from '../../hooks/useUoms'
 
 export const ConsumableList: FC = () => {
@@ -20,11 +21,11 @@ export const ConsumableList: FC = () => {
   const { mutateAsync: deleteConsumable } = useDeleteConsumable()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
-  const { data: hsnCodes = [] } = useHsnCodes()
+  const [form] = Form.useForm()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
-  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
 
   return (
     <SimpleMasterList<Consumable>
@@ -34,6 +35,8 @@ export const ConsumableList: FC = () => {
       totalLabel="consumables"
       addButtonLabel="Add Consumable"
       modalWidth={720}
+      form={form}
+      onValuesChange={autofillGst}
       data={consumables}
       loading={isLoading}
       columns={[
@@ -87,6 +90,24 @@ export const ConsumableList: FC = () => {
               options={MASTER_STATUS_OPTIONS}
               initialValue="active"
             />
+            <FormField
+              label="Batch Tracking"
+              name="batchTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Heat Tracking"
+              name="heatTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Serial Tracking"
+              name="serialTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
           </div>
           <FormField label="Description" name="description" fieldType="textarea" />
         </>
@@ -104,6 +125,9 @@ export const ConsumableList: FC = () => {
           gstPercent: values.gstPercent as number | undefined,
           description: values.description as string | undefined,
           status: (values.status as 'active' | 'inactive') ?? 'active',
+          batchTracking: values.batchTracking as boolean | undefined,
+          heatTracking: values.heatTracking as boolean | undefined,
+          serialTracking: values.serialTracking as boolean | undefined,
           price: values.price as number | undefined,
         }
         if (editing) {

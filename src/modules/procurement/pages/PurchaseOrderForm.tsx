@@ -15,6 +15,7 @@ import {
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
@@ -36,6 +37,7 @@ interface ItemRowValues {
 
 export const PurchaseOrderForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
@@ -105,9 +107,11 @@ export const PurchaseOrderForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/purchase/orders')}>Cancel</Button>
-            <Button type="primary" loading={creating} onClick={() => form.submit()}>
-              Save Purchase Order
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating} onClick={() => form.submit()}>
+                Save Purchase Order
+              </Button>
+            )}
           </Space>
         }
       />

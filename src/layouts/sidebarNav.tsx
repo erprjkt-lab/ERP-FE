@@ -97,10 +97,7 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
   'stock-transfer': [{ path: '/inventory/transfers', label: 'Stock Transfer' }],
   locations: [{ path: '/inventory/locations', label: 'Store Locations' }],
 
-  'job-cards': [
-    { path: '/production/work-orders', label: 'Work Orders (Job Cards)' },
-    { path: '/inventory/issue-material', label: 'Issue Material' },
-  ],
+  'job-cards': [{ path: '/production/work-orders', label: 'Work Orders (Job Cards)' }],
   'job-card-challans': [{ path: '/production/outsource', label: 'Outsource' }],
   rejections: [
     { path: '/production/rejection-review', label: 'Rejection Review' },

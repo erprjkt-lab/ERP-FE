@@ -4,7 +4,6 @@ import { Drawer } from '@/components/ui/Drawer'
 import { FormField } from '@/components/ui/FormField'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useFinishedGood } from '@/modules/masters/hooks/useFinishedGoods'
-import { useUoms } from '@/modules/masters/hooks/useUoms'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import type { ItemBomLine } from '@/types/production'
 import { MASTER_STATUS_OPTIONS } from '../constants'
@@ -25,7 +24,6 @@ export const ItemBomDrawer: FC<ItemBomDrawerProps> = ({ open, onClose, itemId })
   const { data: finishedGood } = useFinishedGood(itemId)
   const { data: bomLines = [], isLoading } = useItemBom(itemId)
   const { data: componentItems = [] } = useProcurementItems()
-  const { data: uoms = [] } = useUoms()
   const { mutateAsync: createLine } = useCreateItemBomLine(itemId)
   const { mutateAsync: updateLine } = useUpdateItemBomLine(itemId)
   const { mutateAsync: deleteLine } = useDeleteItemBomLine(itemId)
@@ -33,7 +31,6 @@ export const ItemBomDrawer: FC<ItemBomDrawerProps> = ({ open, onClose, itemId })
   const componentOptions = componentItems
     .filter(item => item.id !== itemId)
     .map(item => ({ label: `${item.code} · ${item.name}`, value: item.id }))
-  const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
 
   return (
     <Drawer
@@ -43,6 +40,7 @@ export const ItemBomDrawer: FC<ItemBomDrawerProps> = ({ open, onClose, itemId })
       width={900}
     >
       <SimpleMasterList<ItemBomLine>
+        moduleKey="item-bom"
         embedded
         breadcrumbLabel="Item BOM"
         totalLabel="components"
@@ -78,13 +76,6 @@ export const ItemBomDrawer: FC<ItemBomDrawerProps> = ({ open, onClose, itemId })
               rules={[{ required: true, message: 'Component item is required' }]}
             />
             <FormField
-              label="UOM"
-              name="uomId"
-              fieldType="select"
-              options={uomOptions}
-              rules={[{ required: true, message: 'UOM is required' }]}
-            />
-            <FormField
               label="Quantity per Unit"
               name="quantityPerUnit"
               fieldType="number"
@@ -105,10 +96,15 @@ export const ItemBomDrawer: FC<ItemBomDrawerProps> = ({ open, onClose, itemId })
           </div>
         )}
         onSubmit={async (values, editing) => {
+          // No UOM picker: a component is consumed in its own item-master UOM,
+          // and ERP-BE requires uom_id on the line.
+          const uomId = componentItems.find(i => i.id === values.componentItemId)?.uomId
+          if (!uomId) throw new Error('This component has no UOM set in the item master')
+
           const payload = {
             component_item_id: Number(values.componentItemId),
             quantity_per_unit: values.quantityPerUnit as number,
-            uom_id: Number(values.uomId),
+            uom_id: Number(uomId),
             scrap_allowance_percent: values.scrapAllowancePercent as number | undefined,
             status: values.status === 'inactive' ? 0 : 1,
           }

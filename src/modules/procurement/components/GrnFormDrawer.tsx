@@ -498,6 +498,12 @@ const GrnItemRow: FC<GrnItemRowProps> = ({
             />
           </div>
 
+          {/* Each field is offered only when the item master tracks it, because
+              ERP-BE ignores the rest: GrnService stores 'GENERAL'/'NA' for an
+              untracked item whatever was sent, so an input there would record a
+              batch the user can never trace. Tracked fields are required for the
+              same reason in reverse — GrnService throws if one is missing, and
+              catching it here beats a 422 after the whole form is filled in. */}
           {(selectedItem?.batchTracking ||
             selectedItem?.heatTracking ||
             selectedItem?.serialTracking) && (

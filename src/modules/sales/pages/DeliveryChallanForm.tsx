@@ -14,6 +14,7 @@ import {
   Typography,
 } from 'antd'
 import type { TableColumnsType } from 'antd'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
@@ -70,6 +71,7 @@ interface HeaderFormValues {
 
 export const DeliveryChallanForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const [searchParams] = useSearchParams()
   const { message } = App.useApp()
   const [form] = Form.useForm<HeaderFormValues>()
@@ -245,9 +247,11 @@ export const DeliveryChallanForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/sales/delivery-challans')}>Cancel</Button>
-            <Button type="primary" loading={isPending} onClick={handleSubmit}>
-              Save Delivery Challan
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={isPending} onClick={handleSubmit}>
+                Save Delivery Challan
+              </Button>
+            )}
           </Space>
         }
       />

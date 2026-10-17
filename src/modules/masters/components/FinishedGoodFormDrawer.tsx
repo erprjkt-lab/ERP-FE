@@ -12,7 +12,7 @@ import {
   useFinishedGood,
   useUpdateFinishedGood,
 } from '../hooks/useFinishedGoods'
-import { useHsnCodes } from '../hooks/useHsnCodes'
+import { useHsnGstAutofill } from '../hooks/useHsnGstAutofill'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
 import { useUoms } from '../hooks/useUoms'
@@ -39,7 +39,7 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
   const { data: customers = [] } = useCustomers()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
-  const { data: hsnCodes = [] } = useHsnCodes()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
   const { data: materialGrades = [] } = useMaterialGrades()
   const { mutateAsync: createFinishedGood, isPending: creating } = useCreateFinishedGood()
   const { mutateAsync: updateFinishedGood, isPending: updating } = useUpdateFinishedGood()
@@ -47,7 +47,6 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
   const customerOptions = customers.map(c => ({ label: c.name, value: c.id }))
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
-  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
   const materialGradeOptions = materialGrades.map(m => ({
     label: m.material_grade,
     value: String(m.id),
@@ -67,6 +66,9 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
         gstPercent: finishedGood.gstPercent,
         description: finishedGood.description,
         status: finishedGood.status,
+        batchTracking: finishedGood.batchTracking,
+        heatTracking: finishedGood.heatTracking,
+        serialTracking: finishedGood.serialTracking,
         customerId: finishedGood.customerId ?? undefined,
         customerPartNo: finishedGood.customerPartNo,
         drawingNo: finishedGood.drawingNo,
@@ -111,6 +113,9 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
+      batchTracking: values.batchTracking as boolean | undefined,
+      heatTracking: values.heatTracking as boolean | undefined,
+      serialTracking: values.serialTracking as boolean | undefined,
       customerId: (values.customerId as string | undefined) ?? null,
       customerName: customerOptions.find(o => o.value === values.customerId)?.label,
       customerPartNo: values.customerPartNo as string | undefined,
@@ -147,7 +152,12 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
       submitting={creating || updating}
       submitText={isEdit ? 'Update Finished Good' : 'Save Finished Good'}
     >
-      <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ status: 'active' }}
+        onValuesChange={autofillGst}
+      >
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Item Code" name="code" disabled />}
           <div className="erp-form-grid">
@@ -189,6 +199,24 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
               name="status"
               fieldType="select"
               options={MASTER_STATUS_OPTIONS}
+            />
+            <FormField
+              label="Batch Tracking"
+              name="batchTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Heat Tracking"
+              name="heatTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Serial Tracking"
+              name="serialTracking"
+              fieldType="switch"
+              valuePropName="checked"
             />
           </div>
         </FormSection>

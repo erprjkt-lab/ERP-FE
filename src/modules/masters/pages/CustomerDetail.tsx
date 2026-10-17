@@ -3,6 +3,7 @@ import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as ant
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ledgerText } from '@/theme/typography'
@@ -12,6 +13,7 @@ import { useCustomer } from '../hooks/useCustomers'
 export const CustomerDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canModify } = usePagePermission()
   const { token } = antTheme.useToken()
   const [editOpen, setEditOpen] = useState(false)
   const { data: customer, isLoading } = useCustomer(id)
@@ -42,9 +44,11 @@ export const CustomerDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/customers')}>
               Back
             </Button>
-            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
+            {canModify && (
+              <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
           </Space>
         }
       />

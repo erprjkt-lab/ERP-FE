@@ -20,7 +20,10 @@ function toProcessLog(api: ApiProcessLog): ProcessLog {
       api.inbound_challan_item_id != null ? String(api.inbound_challan_item_id) : undefined,
     inboundReworkReviewId:
       api.inbound_rework_review_id != null ? String(api.inbound_rework_review_id) : undefined,
-    isRework: Boolean(api.inbound_rework_review_id),
+    // ERP-BE persists is_rework on the row itself now: a later hop of a redo
+    // carries the flag but no review id, so deriving it from the id would drop
+    // those logs back into the regular bucket.
+    isRework: api.is_rework,
     remark: api.remark ?? undefined,
   }
 }

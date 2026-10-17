@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -38,6 +39,7 @@ import {
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
+import { formatDateTime } from '@/utils/date'
 
 type Mode = 'manual' | 'fromRequisitions'
 
@@ -52,6 +54,7 @@ interface ManualItemRowValues {
 
 export const PurchaseEnquiryForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const [searchParams] = useSearchParams()
   const fromPr = searchParams.get('fromPr')
   const { message } = App.useApp()
@@ -150,13 +153,15 @@ export const PurchaseEnquiryForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/purchase/enquiries')}>Cancel</Button>
-            <Button
-              type="primary"
-              loading={creatingManual || creatingFromPr}
-              onClick={() => form.submit()}
-            >
-              Save Enquiry
-            </Button>
+            {canSave && (
+              <Button
+                type="primary"
+                loading={creatingManual || creatingFromPr}
+                onClick={() => form.submit()}
+              >
+                Save Enquiry
+              </Button>
+            )}
           </Space>
         }
       />
@@ -251,7 +256,7 @@ export const PurchaseEnquiryForm: FC = () => {
                           title: 'Required Date',
                           dataIndex: 'requiredDate',
                           key: 'requiredDate',
-                          render: (v: string | null) => v ?? '—',
+                          render: formatDateTime,
                         },
                       ]}
                       dataSource={previewItems}

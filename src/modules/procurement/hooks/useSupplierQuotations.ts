@@ -1,10 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listQuotationsForEnquiry, recordSupplierQuotation } from '@/api/supplierQuotations'
+import {
+  listQuotationsForEnquiry,
+  recordSupplierQuotation,
+  updateSupplierQuotation,
+} from '@/api/supplierQuotations'
 import type {
   ApiSupplierQuotation,
   ApiSupplierQuotationItem,
   SupplierQuotationItemPayload,
   SupplierQuotationPayload,
+  SupplierQuotationUpdatePayload,
 } from '@/types/api/procurement'
 import type {
   SupplierQuotation,
@@ -60,7 +65,9 @@ function toItem(api: ApiSupplierQuotationItem): SupplierQuotationItem {
   }
 }
 
-function toSupplierQuotation(api: ApiSupplierQuotation): SupplierQuotation {
+/** Shared with usePurchaseEnquiries, which gets the same resource nested under
+ *  each enquiry supplier. */
+export function toSupplierQuotation(api: ApiSupplierQuotation): SupplierQuotation {
   return {
     id: String(api.id),
     purchaseEnquiryId: String(api.purchase_enquiry_id),
@@ -144,4 +151,77 @@ export function useRecordSupplierQuotation() {
       })
     },
   })
+}
+
+/**
+ * Edits a quotation already on file (PUT /quotations/{id}).
+ *
+ * `purchase_enquiry_supplier_id` is deliberately not sent: ERP-BE treats which
+ * supplier a quotation belongs to as its identity and rejects a change with 422,
+ * so re-pointing a quotation means deleting and re-recording it instead.
+ */
+export function useUpdateSupplierQuotation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      quotationId,
+      input,
+    }: {
+      quotationId: string
+      input: SupplierQuotationInput
+    }) => {
+      const payload: SupplierQuotationUpdatePayload = {
+        quotation_number: input.quotationNumber,
+        quotation_date: input.quotationDate,
+        valid_until: input.validUntil ?? null,
+        payment_terms: input.paymentTerms ?? null,
+        delivery_terms: input.deliveryTerms ?? null,
+        freight_amount: input.freightAmount,
+        other_charges: input.otherCharges,
+        remarks: input.remarks ?? null,
+        items: input.items.map(toItemPayload),
+      }
+      return toSupplierQuotation((await updateSupplierQuotation(Number(quotationId), payload)).data)
+    },
+    onSuccess: (_result, variables) => {
+      const enquiryId = variables.input.purchaseEnquiryId
+      queryClient.invalidateQueries({
+        queryKey: ['purchase-enquiries', enquiryId, 'quotations'],
+      })
+      queryClient.invalidateQueries({ queryKey: ['purchase-enquiries'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-enquiries', enquiryId] })
+    },
+  })
+}
+
+/**
+ * Pairs each enquiry line with the quotation line that was recorded against it,
+ * for prefilling the edit form.
+ *
+ * Matching is by purchase_enquiry_item_id, which is what ERP-BE stores on every
+ * quotation line. Lines recorded before that column was populated fall back to
+ * item_id. Either way a quotation line is consumed once, so an enquiry listing
+ * the same item on two rows prefills them from two different quotation lines
+ * instead of both reading the first one.
+ */
+export function matchQuotationLines<E extends { id: string; itemId: string }>(
+  enquiryItems: E[],
+  quotationItems: SupplierQuotationItem[],
+): (SupplierQuotationItem | undefined)[] {
+  const remaining = [...quotationItems]
+
+  const take = (predicate: (line: SupplierQuotationItem) => boolean) => {
+    const index = remaining.findIndex(predicate)
+    return index === -1 ? undefined : remaining.splice(index, 1)[0]
+  }
+
+  // Two passes: every exact enquiry-line match is claimed before any row is
+  // allowed to fall back to item_id, so a fallback can't steal another row's line.
+  const exact = enquiryItems.map(peItem =>
+    take(line => line.purchaseEnquiryItemId !== '' && line.purchaseEnquiryItemId === peItem.id),
+  )
+
+  return exact.map(
+    (line, index) => line ?? take(candidate => candidate.itemId === enquiryItems[index].itemId),
+  )
 }

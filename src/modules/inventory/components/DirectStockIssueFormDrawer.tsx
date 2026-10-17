@@ -1,42 +1,22 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import {
-  App,
-  Button,
-  Card,
-  Col,
-  DatePicker,
-  Form,
-  InputNumber,
-  Row,
-  Select,
-  Typography,
-} from 'antd'
-import type { TableColumnsType } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import { App, Button, Col, DatePicker, Form, Row, Select, Typography } from 'antd'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { getErrorMessage } from '@/api/client'
-import { DataTable } from '@/components/ui/DataTable'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormSection } from '@/components/ui/FormSection'
 import { useEmployees } from '@/modules/hr/hooks/useEmployees'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import type { DirectIssueLine } from '@/types/api/inventory'
-import { useLocations } from '../hooks/useLocations'
-import { useStockBalance, type StockBalanceRow } from '../hooks/useStockBalance'
 import { useCreateDirectStockIssue } from '../hooks/useStockIssues'
+import { ItemLotAllocator, parseLotKey } from './ItemLotAllocator'
 
 interface ItemLine {
   itemId: string
   itemLabel: string
   qtyByLot: Record<string, number>
-}
-
-function lotKey(
-  row: Pick<StockBalanceRow, 'locationId' | 'batchNo' | 'heatNo' | 'serialNo'>,
-): string {
-  return `${row.locationId}|${row.batchNo}|${row.heatNo}|${row.serialNo}`
 }
 
 export interface DirectStockIssueFormDrawerProps {
@@ -99,10 +79,10 @@ export const DirectStockIssueFormDrawer: FC<DirectStockIssueFormDrawerProps> = (
       for (const line of itemLines) {
         for (const [key, qty] of Object.entries(line.qtyByLot)) {
           if (qty > 0) {
-            const [storeLocationId, batchNo, heatNo] = key.split('|')
+            const { locationId, batchNo, heatNo } = parseLotKey(key)
             lines.push({
               item_id: Number(line.itemId),
-              store_location_id: Number(storeLocationId),
+              store_location_id: Number(locationId),
               batch_no: batchNo,
               heat_no: heatNo,
               issued_qty: qty,
@@ -218,12 +198,13 @@ export const DirectStockIssueFormDrawer: FC<DirectStockIssueFormDrawerProps> = (
             </div>
           ) : (
             itemLines.map(line => (
-              <DirectIssueItemPanel
+              <ItemLotAllocator
                 key={line.itemId}
                 itemId={line.itemId}
-                itemLabel={line.itemLabel}
-                qtyByLot={line.qtyByLot}
-                onQtyChange={(key, qty) => setLotQty(line.itemId, key, qty)}
+                title={line.itemLabel}
+                qtyLabel="Issue Qty"
+                values={line.qtyByLot}
+                onChange={(key, qty) => setLotQty(line.itemId, key, qty)}
                 onRemove={() => setItemLines(prev => prev.filter(l => l.itemId !== line.itemId))}
               />
             ))
@@ -231,74 +212,5 @@ export const DirectStockIssueFormDrawer: FC<DirectStockIssueFormDrawerProps> = (
         </FormSection>
       </Form>
     </FormDrawer>
-  )
-}
-
-interface DirectIssueItemPanelProps {
-  itemId: string
-  itemLabel: string
-  qtyByLot: Record<string, number>
-  onQtyChange: (key: string, qty: number | null) => void
-  onRemove: () => void
-}
-
-const DirectIssueItemPanel: FC<DirectIssueItemPanelProps> = ({
-  itemId,
-  itemLabel,
-  qtyByLot,
-  onQtyChange,
-  onRemove,
-}) => {
-  const { data: rows, isLoading } = useStockBalance(itemId)
-  const { data: locations } = useLocations()
-  const locationNameById = new Map(locations.map(l => [l.id, l.name]))
-
-  const columns: TableColumnsType<StockBalanceRow> = [
-    {
-      title: 'Location',
-      dataIndex: 'locationId',
-      key: 'locationId',
-      render: (locationId: string) => locationNameById.get(locationId) ?? locationId,
-    },
-    { title: 'Batch No', dataIndex: 'batchNo', key: 'batchNo' },
-    { title: 'Heat No', dataIndex: 'heatNo', key: 'heatNo' },
-    { title: 'Available Qty', dataIndex: 'qty', key: 'qty', align: 'right' },
-    {
-      title: 'Issue Qty',
-      key: 'issueQty',
-      width: 140,
-      render: (_, row) => {
-        const key = lotKey(row)
-        return (
-          <InputNumber
-            min={0}
-            max={row.qty}
-            value={qtyByLot[key] || undefined}
-            onChange={v => onQtyChange(key, v)}
-            style={{ width: '100%' }}
-            placeholder="0"
-          />
-        )
-      },
-    },
-  ]
-
-  return (
-    <Card
-      size="small"
-      title={itemLabel}
-      extra={<Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />}
-      style={{ marginBottom: 16 }}
-    >
-      <DataTable<StockBalanceRow>
-        columns={columns}
-        dataSource={rows}
-        rowKey={row => lotKey(row)}
-        loading={isLoading}
-        pagination={false}
-        size="small"
-        locale={{ emptyText: 'No stock available for this item across store locations.' }}
-      />
-    </Card>
   )
 }

@@ -12,6 +12,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -27,6 +29,7 @@ import {
   useSalesOrderItems,
 } from '../hooks/useSalesOrders'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -40,11 +43,12 @@ interface RowActions {
   onCancel: (record: SalesOrderItemRow) => void
   onCreateChallan: (record: SalesOrderItemRow) => void
   onDelete: (record: SalesOrderItemRow) => void
+  can: { modify: boolean; delete: boolean; approve: boolean; createChallan: boolean }
 }
 
 const getColumns = (): TableColumnsType<SalesOrderItemRow> => [
   { title: 'Order #', dataIndex: 'orderNumber', key: 'orderNumber', width: 150 },
-  { title: 'Date', dataIndex: 'orderDate', key: 'orderDate', width: 120 },
+  { title: 'Date', dataIndex: 'orderDate', key: 'orderDate', width: 120, render: formatDateTime },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
   { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
@@ -106,6 +110,7 @@ const getOrderActions = (record: SalesOrderItemRow, a: RowActions): TableActionI
         label: 'Edit',
         icon: <EditOutlined />,
         variant: 'primary',
+        hidden: !a.can.modify,
         onClick: () => a.onEdit(record),
       },
       {
@@ -113,6 +118,7 @@ const getOrderActions = (record: SalesOrderItemRow, a: RowActions): TableActionI
         label: 'Approve',
         icon: <CheckOutlined />,
         variant: 'success',
+        hidden: !a.can.approve,
         onClick: () => a.onApprove(record),
       },
     )
@@ -125,6 +131,7 @@ const getOrderActions = (record: SalesOrderItemRow, a: RowActions): TableActionI
       icon: <StopOutlined />,
       variant: 'danger',
       danger: true,
+      hidden: !a.can.modify,
       onClick: () => a.onCancel(record),
     })
   }
@@ -135,6 +142,7 @@ const getOrderActions = (record: SalesOrderItemRow, a: RowActions): TableActionI
       label: 'Create Delivery Challan',
       icon: <CarOutlined />,
       variant: 'accent',
+      hidden: !a.can.createChallan,
       onClick: () => a.onCreateChallan(record),
     })
   }
@@ -146,6 +154,7 @@ const getOrderActions = (record: SalesOrderItemRow, a: RowActions): TableActionI
       icon: <DeleteOutlined />,
       variant: 'danger',
       danger: true,
+      hidden: !a.can.delete,
       onClick: () => a.onDelete(record),
     })
   }
@@ -156,6 +165,8 @@ const getOrderActions = (record: SalesOrderItemRow, a: RowActions): TableActionI
 export const SalesOrderList: FC = () => {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
+  const { canWrite: canWriteChallans } = useModulePermission('delivery-challans')
   const status = useSalesStatusFilter('order')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
@@ -248,6 +259,12 @@ export const SalesOrderList: FC = () => {
   const columns = getColumns()
 
   const rowActions: RowActions = {
+    can: {
+      modify: canModify,
+      delete: canDelete,
+      approve: canApprove,
+      createChallan: canWriteChallans,
+    },
     onView: record => navigate(`/sales/orders/${record.salesOrderId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.salesOrderId }),
     onApprove: handleApprove,
@@ -263,13 +280,15 @@ export const SalesOrderList: FC = () => {
         subtitle={`${meta?.total ?? 0} sales order items`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Order' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Sales Order
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Sales Order
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

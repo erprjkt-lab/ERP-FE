@@ -13,7 +13,6 @@ import {
   UserPermissionList,
 } from '@/modules/hr'
 import {
-  IssueMaterialList,
   LocationList,
   OpeningStockList,
   StockAdjustmentDetail,
@@ -294,7 +293,10 @@ function App() {
                 <Route path="/inventory/stock-issues" element={<StockIssueList />} />
                 <Route path="/inventory/transfers" element={<StockTransferList />} />
                 <Route path="/inventory/opening-stock" element={<OpeningStockList />} />
-                <Route path="/inventory/issue-material" element={<IssueMaterialList />} />
+                <Route
+                  path="/inventory/issue-material"
+                  element={<Navigate to="/inventory/stock-issues" replace />}
+                />
 
                 <Route path="/production/process" element={<ProcessList />} />
                 <Route path="/production/bom" element={<BomList />} />

@@ -10,6 +10,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -24,6 +25,7 @@ import {
   useStockAdjustments,
 } from '../hooks/useStockAdjustments'
 import { useInventoryFilters, useInventoryStore } from '../store/inventoryStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(STOCK_ADJUSTMENT_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -35,11 +37,18 @@ interface RowActions {
   onEdit: (record: StockAdjustment) => void
   onApprove: (record: StockAdjustment) => void
   onDelete: (record: StockAdjustment) => void
+  can: { modify: boolean; delete: boolean; approve: boolean }
 }
 
 const getColumns = (): TableColumnsType<StockAdjustment> => [
   { title: 'Adjustment #', dataIndex: 'adjustmentNumber', key: 'adjustmentNumber', width: 150 },
-  { title: 'Date', dataIndex: 'adjustmentDate', key: 'adjustmentDate', width: 110 },
+  {
+    title: 'Date',
+    dataIndex: 'adjustmentDate',
+    key: 'adjustmentDate',
+    width: 110,
+    render: formatDateTime,
+  },
   { title: 'Location', dataIndex: 'locationName', key: 'locationName', render: v => v ?? '—' },
   {
     title: 'Items',
@@ -93,6 +102,7 @@ const getAdjustmentActions = (record: StockAdjustment, a: RowActions): TableActi
         label: 'Edit',
         icon: <EditOutlined />,
         variant: 'primary',
+        hidden: !a.can.modify,
         onClick: () => a.onEdit(record),
       },
       {
@@ -100,6 +110,7 @@ const getAdjustmentActions = (record: StockAdjustment, a: RowActions): TableActi
         label: 'Approve',
         icon: <CheckOutlined />,
         variant: 'success',
+        hidden: !a.can.approve,
         onClick: () => a.onApprove(record),
       },
       {
@@ -108,6 +119,7 @@ const getAdjustmentActions = (record: StockAdjustment, a: RowActions): TableActi
         icon: <DeleteOutlined />,
         variant: 'danger',
         danger: true,
+        hidden: !a.can.delete,
         onClick: () => a.onDelete(record),
       },
     )
@@ -119,6 +131,7 @@ const getAdjustmentActions = (record: StockAdjustment, a: RowActions): TableActi
 export const StockAdjustmentList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
   const filters = useInventoryFilters('adjustment')
   const { data: adjustments, isLoading } = useStockAdjustments({ status: filters.status })
   const { mutateAsync: deleteAdjustment } = useDeleteStockAdjustment()
@@ -169,6 +182,7 @@ export const StockAdjustmentList: FC = () => {
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onApprove: handleApprove,
     onDelete: handleDelete,
+    can: { modify: canModify, delete: canDelete, approve: canApprove },
   }
 
   // Status comes filtered from ERP-BE; only the number match stays local.
@@ -184,13 +198,15 @@ export const StockAdjustmentList: FC = () => {
         subtitle={`${filtered.length} of ${adjustments.length} adjustments`}
         breadcrumbs={[{ label: 'Inventory' }, { label: 'Stock Adjustments' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Adjustment
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Adjustment
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

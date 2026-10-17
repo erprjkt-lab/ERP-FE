@@ -3,6 +3,7 @@ import { Card } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -31,6 +32,10 @@ interface BomRowActions {
   onProcessRoute: (record: FinishedGood) => void
   onBom: (record: FinishedGood) => void
   onInspectionParameters: (record: FinishedGood) => void
+  /** Each button opens that module's drawer, so opening needs `read` on it.
+   *  ERP-BE registers no module for ItemProcessRouteController, so the route
+   *  drawer follows item-bom — the closest governed owner. */
+  can: { bom: boolean; inspection: boolean }
 }
 
 const getBomActions = (record: FinishedGood, a: BomRowActions): TableActionItem[] => [
@@ -39,6 +44,7 @@ const getBomActions = (record: FinishedGood, a: BomRowActions): TableActionItem[
     label: 'Process Route',
     icon: <ApartmentOutlined />,
     variant: 'default',
+    hidden: !a.can.bom,
     onClick: () => a.onProcessRoute(record),
   },
   {
@@ -46,6 +52,7 @@ const getBomActions = (record: FinishedGood, a: BomRowActions): TableActionItem[
     label: 'Bill of Materials',
     icon: <UnorderedListOutlined />,
     variant: 'primary',
+    hidden: !a.can.bom,
     onClick: () => a.onBom(record),
   },
   {
@@ -53,11 +60,14 @@ const getBomActions = (record: FinishedGood, a: BomRowActions): TableActionItem[
     label: 'Inspection Parameters',
     icon: <ExperimentOutlined />,
     variant: 'accent',
+    hidden: !a.can.inspection,
     onClick: () => a.onInspectionParameters(record),
   },
 ]
 
 export const BomList: FC = () => {
+  const { canRead: canReadBom } = useModulePermission('item-bom')
+  const { canRead: canReadInspection } = useModulePermission('inspection-parameters')
   const { data: finishedGoods = [], isLoading } = useFinishedGoods()
   const [inspectionItemId, setInspectionItemId] = useState<string>()
   const [processRouteItemId, setProcessRouteItemId] = useState<string>()
@@ -69,6 +79,7 @@ export const BomList: FC = () => {
     onProcessRoute: record => setProcessRouteItemId(record.id),
     onBom: record => setBomItemId(record.id),
     onInspectionParameters: record => setInspectionItemId(record.id),
+    can: { bom: canReadBom, inspection: canReadInspection },
   }
 
   return (

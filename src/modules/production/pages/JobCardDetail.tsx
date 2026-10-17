@@ -24,6 +24,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -40,9 +42,10 @@ import { useBomRequirements, useMaterialIssues } from '../hooks/useJobCardMateri
 import { useJobCardMovements } from '../hooks/useJobCardMovements'
 import { useProcessLogs } from '../hooks/useProcessLogs'
 import { useReworkReviewsForJobCard } from '../hooks/useRejections'
-import { computeStepProgress } from '../utils/jobCardProgress'
+import { computeJobCardTotals, computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
 import { computeReworkBatches } from '../utils/reworkProgress'
+import { formatDateTime } from '@/utils/date'
 
 interface MaterialRow {
   key: string
@@ -55,6 +58,8 @@ interface MaterialRow {
 export const JobCardDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canModify } = usePagePermission()
+  const { canWrite: canWriteChallans } = useModulePermission('job-card-challans')
 
   const [activeStepId, setActiveStepId] = useState<string>()
   // Set while the open modal belongs to a rework batch rather than the first pass.
@@ -67,7 +72,11 @@ export const JobCardDetail: FC = () => {
   const { data: requirements = [] } = useBomRequirements(id)
   const { data: issues = [], isLoading: issuesLoading } = useMaterialIssues(id)
   const { data: bomLines = [] } = useItemBom(jobCard?.itemId)
-  const { data: reworkReviews, isLoading: reworkLoading } = useReworkReviewsForJobCard(id)
+  const {
+    data: reworkReviews,
+    allReviews: rejectionReviews,
+    isLoading: reworkLoading,
+  } = useReworkReviewsForJobCard(id)
 
   const orderedQty = jobCard?.orderedQty ?? 0
   // The first pass and the redo are two separate runs through the same route, so each
@@ -87,17 +96,32 @@ export const JobCardDetail: FC = () => {
 
   const hasMaterial = issues.length > 0
   const isClosed = jobCard?.status === 'completed' || jobCard?.status === 'closed'
-  const finalOk = progress.length ? progress[progress.length - 1].okQty : 0
-  const totalRejected = progress.reduce((sum, row) => sum + row.rejectedQty, 0)
-  const completionPercent = orderedQty > 0 ? Math.round((finalOk / orderedQty) * 100) : 0
+  // The per-process tables split the two passes apart; the summary strip is
+  // about the order as a whole and counts both.
+  // Written off for good. Qty sent back for rework is NOT scrapped — it is
+  // still in play, and counting it as settled would finish the order while the
+  // redo was still on the floor.
+  const scrappedQty = rejectionReviews
+    .filter(review => review.decision === 'REJECT' && review.status === 'APPROVED')
+    .reduce((sum, review) => sum + review.reviewedQty, 0)
+  const {
+    completedQty: finalOk,
+    rejectedQty: totalRejected,
+    balanceQty,
+    completionPercent,
+  } = computeJobCardTotals(jobCard?.routes ?? [], logs, orderedQty, scrappedQty)
   // Nothing left unaccepted or pending anywhere on the route — there's no
   // backend "complete" action for a job card yet, so this is a display-only
   // signal, not the real jobCard.status.
+  const reworkOutstanding = reworkBatches.some(batch =>
+    batch.steps.some(row => row.pendingQty > 0 || row.unacceptedQty > 0),
+  )
   const isFullyProduced =
     progress.length > 0 &&
     finalOk > 0 &&
-    finalOk + totalRejected >= orderedQty &&
-    progress.every(row => row.pendingQty === 0 && row.unacceptedQty === 0)
+    balanceQty === 0 &&
+    progress.every(row => row.pendingQty === 0 && row.unacceptedQty === 0) &&
+    !reworkOutstanding
 
   const openDrawer = (
     step: StepProgress,
@@ -108,6 +132,9 @@ export const JobCardDetail: FC = () => {
     setActiveReworkReviewId(reworkReviewId)
     setDrawer(which)
   }
+
+  // Which bucket the open modal is acting on: a Rework row sets the review id.
+  const isReworkAction = !!activeReworkReviewId
 
   const closeDrawer = () => {
     setDrawer(undefined)
@@ -187,7 +214,11 @@ export const JobCardDetail: FC = () => {
             enabled: canOutsource,
           },
           { key: 'move' as const, label: 'Move', icon: <SendOutlined />, enabled: canMove },
-        ]
+        ].filter(action =>
+          // Accept/Log/Move all mutate this job card; Outsource instead creates a
+          // job card challan, so it answers to that module.
+          action.key === 'outsource' ? canWriteChallans : canModify,
+        )
 
         return (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
@@ -222,11 +253,11 @@ export const JobCardDetail: FC = () => {
     { title: 'Qty', dataIndex: 'issuedQty', key: 'issuedQty', width: 90 },
     { title: 'Store', dataIndex: 'storeLocationName', key: 'storeLocationName', width: 150 },
     { title: 'Batch', dataIndex: 'batchNo', key: 'batchNo', width: 110 },
-    { title: 'Date', dataIndex: 'issueDate', key: 'issueDate', width: 110 },
+    { title: 'Date', dataIndex: 'issueDate', key: 'issueDate', width: 110, render: formatDateTime },
   ]
 
   const logColumns: TableColumnsType<ProcessLog> = [
-    { title: 'Date', dataIndex: 'logDate', key: 'logDate', width: 110 },
+    { title: 'Date', dataIndex: 'logDate', key: 'logDate', width: 110, render: formatDateTime },
     { title: 'Process', dataIndex: 'processName', key: 'processName' },
     { title: 'Operator', dataIndex: 'operatorName', key: 'operatorName' },
     { title: 'Shift', dataIndex: 'shiftName', key: 'shiftName', width: 100 },
@@ -240,7 +271,7 @@ export const JobCardDetail: FC = () => {
       dataIndex: 'movedAt',
       key: 'movedAt',
       width: 110,
-      render: value => String(value).slice(0, 10),
+      render: formatDateTime,
     },
     { title: 'From', dataIndex: 'fromProcessName', key: 'fromProcessName' },
     { title: 'To', dataIndex: 'toProcessName', key: 'toProcessName' },
@@ -299,7 +330,7 @@ export const JobCardDetail: FC = () => {
             />
           </Col>
           <Col xs={12} sm={6} md={3}>
-            <SummaryStat label="Balance" value={Math.max(orderedQty - finalOk, 0)} />
+            <SummaryStat label="Balance" value={balanceQty} />
           </Col>
           <Col xs={24} md={12}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -515,14 +546,19 @@ export const JobCardDetail: FC = () => {
             onClose={closeDrawer}
             jobCardId={jobCard.id}
             step={activeStep}
+            // An acceptance inherits its bucket from the movement, so the list
+            // only ever offers movements from the row that was acted on.
             movements={movements.filter(
-              movement => movement.toProcessId === activeStep?.step.processId,
+              movement =>
+                movement.toProcessId === activeStep?.step.processId &&
+                movement.isRework === isReworkAction,
             )}
           />
           <RequestOutsourceModal
             open={drawer === 'outsource'}
             onClose={closeDrawer}
             jobCardId={jobCard.id}
+            isRework={isReworkAction}
             step={activeStep}
           />
           <LogProductionModal
@@ -540,10 +576,13 @@ export const JobCardDetail: FC = () => {
             open={drawer === 'move'}
             onClose={closeDrawer}
             jobCardId={jobCard.id}
+            isRework={isReworkAction}
             step={activeStep}
             nextStep={nextStep}
             movements={movements.filter(
-              movement => movement.fromProcessId === activeStep?.step.processId,
+              movement =>
+                movement.fromProcessId === activeStep?.step.processId &&
+                movement.isRework === isReworkAction,
             )}
           />
         </>

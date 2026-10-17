@@ -32,6 +32,7 @@ export const ItemBomForm: FC = () => {
 
   return (
     <SimpleMasterList<ItemBomLine>
+      moduleKey="item-bom"
       title={finishedGood ? `Item BOM — ${finishedGood.code} · ${finishedGood.name}` : 'Item BOM'}
       breadcrumbParent={{ label: 'BOM', href: '/production/bom' }}
       breadcrumbLabel="Item BOM"

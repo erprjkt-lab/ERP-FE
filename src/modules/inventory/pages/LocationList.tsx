@@ -1,6 +1,7 @@
 import { StopOutlined } from '@ant-design/icons'
 import { App, Tag } from 'antd'
 import type { FC } from 'react'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
@@ -15,6 +16,7 @@ import {
 } from '../hooks/useLocations'
 
 export const LocationList: FC = () => {
+  const { canModify } = usePagePermission()
   const { modal, message } = App.useApp()
   const { data: locations = [], isLoading } = useStoreLocations()
   const { mutateAsync: createLocation } = useCreateLocation()
@@ -117,7 +119,7 @@ export const LocationList: FC = () => {
                 key: 'deactivate',
                 label: 'Deactivate',
                 icon: <StopOutlined />,
-                hidden: !record.isActive,
+                hidden: !record.isActive || !canModify,
                 onClick: () => confirmDeactivate(record),
               },
             ]

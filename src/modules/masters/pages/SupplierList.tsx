@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -42,6 +43,7 @@ interface SupplierRowActions {
   onView: (record: Supplier) => void
   onEdit: (record: Supplier) => void
   onDelete: (record: Supplier) => void
+  can: { modify: boolean; delete: boolean }
 }
 
 const getSupplierActions = (record: Supplier, a: SupplierRowActions): TableActionItem[] => [
@@ -57,6 +59,7 @@ const getSupplierActions = (record: Supplier, a: SupplierRowActions): TableActio
     label: 'Edit',
     icon: <EditOutlined />,
     variant: 'primary',
+    hidden: !a.can.modify,
     onClick: () => a.onEdit(record),
   },
   {
@@ -65,6 +68,7 @@ const getSupplierActions = (record: Supplier, a: SupplierRowActions): TableActio
     icon: <DeleteOutlined />,
     variant: 'danger',
     danger: true,
+    hidden: !a.can.delete,
     onClick: () => a.onDelete(record),
   },
 ]
@@ -72,6 +76,7 @@ const getSupplierActions = (record: Supplier, a: SupplierRowActions): TableActio
 export const SupplierList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { page, pageSize, paginationProps } = useServerPagination()
   const { data: suppliers = [], meta, isLoading } = useSuppliers(page, pageSize)
@@ -100,6 +105,7 @@ export const SupplierList: FC = () => {
   const columns = getColumns()
 
   const rowActions: SupplierRowActions = {
+    can: { modify: canModify, delete: canDelete },
     onView: record => navigate(`/masters/suppliers/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: handleDelete,
@@ -120,13 +126,15 @@ export const SupplierList: FC = () => {
         subtitle={`${filtered.length} of ${meta?.total ?? suppliers.length} suppliers`}
         breadcrumbs={[{ label: 'Masters', href: '/masters' }, { label: 'Suppliers' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            Add Supplier
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              Add Supplier
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

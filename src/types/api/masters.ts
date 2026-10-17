@@ -243,6 +243,9 @@ export interface ItemMasterPayload {
   description?: string
   price?: number
   status?: number
+  batch_tracking?: boolean
+  heat_tracking?: boolean
+  serial_tracking?: boolean
   party_id?: number | null
   customer_part_no?: string
   drawing_no?: string

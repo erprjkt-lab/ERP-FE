@@ -3,6 +3,7 @@ import { App, Alert, Button, Card, Col, Form, Row, Space, Tag, Typography } from
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -41,6 +42,7 @@ interface JobCardFormValues {
 
 export const JobCardForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm<JobCardFormValues>()
 
@@ -124,9 +126,11 @@ export const JobCardForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/production/work-orders')}>Cancel</Button>
-            <Button type="primary" loading={saving} onClick={() => form.submit()}>
-              Save Job Card
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={saving} onClick={() => form.submit()}>
+                Save Job Card
+              </Button>
+            )}
           </Space>
         }
       />

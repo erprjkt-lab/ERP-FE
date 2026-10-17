@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useDepartments } from '@/modules/hr/hooks/useDepartments'
@@ -45,6 +46,9 @@ export const StockRequisitionForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: requisition } = useStockRequisition(id)
   const { data: departments } = useDepartments()
@@ -151,9 +155,11 @@ export const StockRequisitionForm: FC = () => {
             <Button onClick={() => navigate('/inventory/requisitions')} style={{ marginRight: 8 }}>
               Cancel
             </Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Requisition
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Requisition
+              </Button>
+            )}
           </>
         }
       />

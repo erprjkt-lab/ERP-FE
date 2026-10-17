@@ -2,6 +2,7 @@ import { CheckOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons
 import { App, Button, Descriptions, Form, Space } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { downloadInspectionReportPdf } from '@/api/inspectionReports'
 import { DataTable } from '@/components/ui/DataTable'
@@ -21,6 +22,7 @@ import {
   useInspectionReport,
 } from '../hooks/useInspectionReports'
 import { ReportReadingsFields, toReadingsPayload } from './ReportReadingsFields'
+import { formatDateTime } from '@/utils/date'
 
 export interface InspectionReportDetailModalProps {
   reportId: string
@@ -42,6 +44,12 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
   const [downloading, setDownloading] = useState(false)
   const { data: report, isLoading } = useInspectionReport(reportId)
   const { data: itemParameters } = useInspectionParameters(itemId)
+  // IPR, FIR and IIR are three separate rbac modules; the report says which one
+  // it belongs to, so this works wherever the component is embedded (quality
+  // pages, GRN detail) without the caller passing a module key.
+  const { canWrite, canApprove } = useModulePermission(
+    report ? report.reportType.toLowerCase() : '',
+  )
   const { mutateAsync: addReading, isPending: addingReading } = useAddInspectionReading(reportId)
   const { mutateAsync: approve, isPending: approving } = useApproveInspectionReport()
 
@@ -157,7 +165,9 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
                 label={REPORT_STATUS_LABELS[report.status]}
               />
             </Descriptions.Item>
-            <Descriptions.Item label="Report Date">{report.reportDate ?? '—'}</Descriptions.Item>
+            <Descriptions.Item label="Report Date">
+              {formatDateTime(report.reportDate)}
+            </Descriptions.Item>
             <Descriptions.Item label="Process">{report.processName ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Sampling Qty">{report.samplingQty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="OK Qty">{report.okQty ?? '—'}</Descriptions.Item>
@@ -181,14 +191,20 @@ export const InspectionReportDetailModal: FC<InspectionReportDetailModalProps> =
               style={{ marginTop: 16 }}
             >
               <ReportReadingsFields parameters={unreadParameters} form={form} />
-              <Button icon={<PlusOutlined />} loading={addingReading} onClick={() => form.submit()}>
-                Save Readings
-              </Button>
+              {canWrite && (
+                <Button
+                  icon={<PlusOutlined />}
+                  loading={addingReading}
+                  onClick={() => form.submit()}
+                >
+                  Save Readings
+                </Button>
+              )}
             </Form>
           )}
 
           <Space style={{ marginTop: 16 }}>
-            {report.status === 'SUBMITTED' && (
+            {report.status === 'SUBMITTED' && canApprove && (
               <Button
                 type="primary"
                 icon={<CheckOutlined />}

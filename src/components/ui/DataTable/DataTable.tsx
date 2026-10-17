@@ -655,8 +655,14 @@ export function DataTable<T extends AnyObject>({
               {pagedMobileData.map((record, index) => {
                 const recordKey = getRecordKey(record, rowKey, index)
                 const rowProps = onRow ? onRow(record, index) : {}
+                // `hidden` is how pages gate an action they have no permission
+                // for, so it has to drop the action here exactly as it does on
+                // desktop — otherwise it still shows in the kebab, and a hidden
+                // primary action makes the whole card tap fire it.
                 const cardActions = rowActions
-                  ? (rowActions(record).filter(Boolean) as TableActionItem[])
+                  ? (rowActions(record).filter(
+                      action => Boolean(action) && !(action as TableActionItem).hidden,
+                    ) as TableActionItem[])
                   : []
 
                 // Tapping the card body only ever runs an action the page marked

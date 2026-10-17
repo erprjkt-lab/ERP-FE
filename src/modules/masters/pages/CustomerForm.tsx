@@ -2,6 +2,7 @@ import { App, Button, Card, Col, Form, Row, Select, Space } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -29,6 +30,9 @@ export const CustomerForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: customer } = useCustomer(id)
   const countryId = Form.useWatch('countryId', form) as string | undefined
@@ -136,9 +140,11 @@ export const CustomerForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/masters/customers')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Customer
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Customer
+              </Button>
+            )}
           </Space>
         }
       />

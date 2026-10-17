@@ -8,6 +8,7 @@ import { Alert, App, Button, Card, Descriptions, Empty, Image, Space, Tag, Timel
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -20,10 +21,12 @@ import {
   useCustomerComplaint,
   useStartComplaintReview,
 } from '../hooks/useCustomerComplaints'
+import { formatDateTime } from '@/utils/date'
 
 export const CustomerComplaintDetail: FC = () => {
   const { id } = useParams()
   const { modal, message } = App.useApp()
+  const { canModify } = usePagePermission()
   const [editOpen, setEditOpen] = useState(false)
   const [resolutionOpen, setResolutionOpen] = useState(false)
 
@@ -51,9 +54,11 @@ export const CustomerComplaintDetail: FC = () => {
 
   // The lifecycle ERP-BE enforces: Open → In Review → Resolved → Closed. Filing a
   // resolution is what resolves it, and only a Resolved complaint can be closed.
-  const canStartReview = complaint.status === 'open'
-  const canResolve = complaint.status === 'open' || complaint.status === 'in_review'
-  const canClose = complaint.status === 'resolved'
+  // Every lifecycle step here is a `modify` on this module as far as ERP-BE is
+  // concerned (its action_overrides map `close` onto modify too).
+  const canStartReview = complaint.status === 'open' && canModify
+  const canResolve = (complaint.status === 'open' || complaint.status === 'in_review') && canModify
+  const canClose = complaint.status === 'resolved' && canModify
   const isClosed = complaint.status === 'closed'
 
   return (
@@ -68,7 +73,7 @@ export const CustomerComplaintDetail: FC = () => {
         ]}
         actions={
           <Space>
-            {!isClosed && (
+            {!isClosed && canModify && (
               <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
                 Edit
               </Button>
@@ -131,7 +136,9 @@ export const CustomerComplaintDetail: FC = () => {
               label={COMPLAINT_STATUS_LABELS[complaint.status as ComplaintStatus]}
             />
           </Descriptions.Item>
-          <Descriptions.Item label="Complaint Date">{complaint.complaintDate}</Descriptions.Item>
+          <Descriptions.Item label="Complaint Date">
+            {formatDateTime(complaint.complaintDate)}
+          </Descriptions.Item>
           <Descriptions.Item label="Customer">{complaint.partyName}</Descriptions.Item>
           <Descriptions.Item label="Item">{complaint.itemName}</Descriptions.Item>
           <Descriptions.Item label="Invoice">{complaint.invoiceNumber ?? '—'}</Descriptions.Item>

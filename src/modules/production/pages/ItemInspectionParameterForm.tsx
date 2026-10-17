@@ -66,6 +66,7 @@ export const ItemInspectionParameterForm: FC<ItemInspectionParameterFormProps> =
 
   return (
     <SimpleMasterList<InspectionParameter>
+      moduleKey="inspection-parameters"
       title={item ? `Inspection Parameters — ${item.code} · ${item.name}` : 'Inspection Parameters'}
       breadcrumbParent={breadcrumbParent}
       breadcrumbLabel="Inspection Parameter"

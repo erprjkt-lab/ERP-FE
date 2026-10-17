@@ -2,6 +2,7 @@ import { CheckOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons
 import { App, Button, Card, Descriptions, Drawer, Form, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { downloadInspectionReportPdf } from '@/api/inspectionReports'
 import { DataTable } from '@/components/ui/DataTable'
@@ -20,6 +21,7 @@ import {
   useInspectionReport,
 } from '../hooks/useInspectionReports'
 import { ReportReadingsFields, toReadingsPayload } from './ReportReadingsFields'
+import { formatDateTime } from '@/utils/date'
 
 export interface InspectionReportDetailProps {
   reportId?: string
@@ -43,6 +45,12 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
   const [downloading, setDownloading] = useState(false)
   const { data: report, isLoading } = useInspectionReport(reportId)
   const { data: itemParameters = [] } = useInspectionParameters(itemId)
+  // IPR, FIR and IIR are three separate rbac modules; the report says which one
+  // it belongs to, so this works wherever the component is embedded (quality
+  // pages, GRN detail) without the caller passing a module key.
+  const { canWrite, canApprove } = useModulePermission(
+    report ? report.reportType.toLowerCase() : '',
+  )
   const { mutateAsync: addReading, isPending: addingReading } = useAddInspectionReading(
     reportId ?? '',
   )
@@ -166,7 +174,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
           >
             Download PDF
           </Button>
-          {report?.status === 'SUBMITTED' && (
+          {report?.status === 'SUBMITTED' && canApprove && (
             <Button
               type="primary"
               icon={<CheckOutlined />}
@@ -185,7 +193,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} bordered>
-            <Descriptions.Item label="Date">{report.reportDate ?? '—'}</Descriptions.Item>
+            <Descriptions.Item label="Date">{formatDateTime(report.reportDate)}</Descriptions.Item>
             {report.processName && (
               <Descriptions.Item label="Process">{report.processName}</Descriptions.Item>
             )}
@@ -196,7 +204,9 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
             <Descriptions.Item label="OK Qty">{report.okQty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Rejected Qty">{report.rejectedQty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Approved By">{report.approvedBy ?? '—'}</Descriptions.Item>
-            <Descriptions.Item label="Approved At">{report.approvedAt ?? '—'}</Descriptions.Item>
+            <Descriptions.Item label="Approved At">
+              {formatDateTime(report.approvedAt)}
+            </Descriptions.Item>
           </Descriptions>
 
           <Card
@@ -226,15 +236,17 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
                 </Typography.Title>
               }
               extra={
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  loading={addingReading}
-                  onClick={() => form.submit()}
-                >
-                  Save Readings
-                </Button>
+                canWrite ? (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    loading={addingReading}
+                    onClick={() => form.submit()}
+                  >
+                    Save Readings
+                  </Button>
+                ) : null
               }
             >
               <Form form={form} onFinish={handleAddReadings}>

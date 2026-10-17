@@ -15,12 +15,15 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { usePurchaseEnquiry } from '../hooks/usePurchaseEnquiries'
 import {
+  matchQuotationLines,
   useRecordSupplierQuotation,
   useSupplierQuotationByPeSupplier,
+  useUpdateSupplierQuotation,
 } from '../hooks/useSupplierQuotations'
 import type { SupplierQuotationItemInput } from '../hooks/useSupplierQuotations'
 import { getErrorMessage } from '@/api/client'
@@ -37,17 +40,31 @@ interface ItemRowValues {
 export const SupplierQuotationForm: FC = () => {
   const { id: enquiryId, peSupplierId } = useParams()
   const navigate = useNavigate()
+  // Recording a new quotation is `write purchase-enquiries` on ERP-BE;
+  // editing one already on file is `modify` (SupplierQuotationController).
+  const { canWrite, canModify } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
   const { data: enquiry } = usePurchaseEnquiry(enquiryId)
-  const { data: existingQuotation } = useSupplierQuotationByPeSupplier(enquiryId, peSupplierId)
-  const { mutateAsync: recordQuotation, isPending: saving } = useRecordSupplierQuotation()
+  const { data: existingQuotation, isLoading: quotationLoading } = useSupplierQuotationByPeSupplier(
+    enquiryId,
+    peSupplierId,
+  )
+  const { mutateAsync: recordQuotation, isPending: recording } = useRecordSupplierQuotation()
+  const { mutateAsync: updateQuotation, isPending: updating } = useUpdateSupplierQuotation()
+  const saving = recording || updating
 
   const peSupplier = enquiry?.suppliers.find(sup => sup.id === peSupplierId)
+  const isEdit = Boolean(existingQuotation)
+  const canSave = isEdit ? canModify : canWrite
 
   useEffect(() => {
-    if (existingQuotation) {
+    // Both have to be in before prefilling: the rows are driven by the enquiry's
+    // items, and the values by the quotation's lines.
+    if (existingQuotation && enquiry) {
+      const matched = matchQuotationLines(enquiry.items, existingQuotation.items)
+
       form.setFieldsValue({
         quotationNumber: existingQuotation.quotationNumber,
         quotationDate: dayjs(existingQuotation.quotationDate),
@@ -57,10 +74,8 @@ export const SupplierQuotationForm: FC = () => {
         freightAmount: existingQuotation.freightAmount,
         otherCharges: existingQuotation.otherCharges,
         remarks: existingQuotation.remarks,
-        items: enquiry?.items.map(peItem => {
-          const existingItem = existingQuotation.items.find(
-            i => i.purchaseEnquiryItemId === peItem.id,
-          )
+        items: enquiry.items.map((peItem, index) => {
+          const existingItem = matched[index]
           return {
             quotedQty: existingItem?.quotedQty ?? peItem.requiredQty,
             rate: existingItem?.rate ?? 0,
@@ -75,7 +90,10 @@ export const SupplierQuotationForm: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingQuotation?.id, enquiry?.id, form])
 
-  if (!enquiry || !peSupplier) {
+  // Wait for the quotation lookup too, not just the enquiry: until it settles
+  // `existingQuotation` is undefined, and submitting then would POST a second
+  // quotation for a supplier that already has one instead of updating it.
+  if (!enquiry || !peSupplier || quotationLoading) {
     return (
       <div>
         <Button onClick={() => navigate(`/purchase/enquiries/${enquiryId}`)}>Back</Button>
@@ -112,21 +130,30 @@ export const SupplierQuotationForm: FC = () => {
       }
     })
 
+    const input = {
+      purchaseEnquiryId: enquiry.id,
+      purchaseEnquirySupplierId: peSupplier.id,
+      quotationNumber: values.quotationNumber,
+      quotationDate: values.quotationDate.format('YYYY-MM-DD'),
+      validUntil: values.validUntil ? values.validUntil.format('YYYY-MM-DD') : null,
+      paymentTerms: values.paymentTerms,
+      deliveryTerms: values.deliveryTerms,
+      freightAmount: values.freightAmount ?? 0,
+      otherCharges: values.otherCharges ?? 0,
+      remarks: values.remarks,
+      items,
+    }
+
     try {
-      await recordQuotation({
-        purchaseEnquiryId: enquiry.id,
-        purchaseEnquirySupplierId: peSupplier.id,
-        quotationNumber: values.quotationNumber,
-        quotationDate: values.quotationDate.format('YYYY-MM-DD'),
-        validUntil: values.validUntil ? values.validUntil.format('YYYY-MM-DD') : null,
-        paymentTerms: values.paymentTerms,
-        deliveryTerms: values.deliveryTerms,
-        freightAmount: values.freightAmount ?? 0,
-        otherCharges: values.otherCharges ?? 0,
-        remarks: values.remarks,
-        items,
-      })
-      message.success('Supplier quotation recorded')
+      // A supplier may hold only one quotation per enquiry (ERP-BE enforces it),
+      // so an edit has to PUT the existing one — POSTing again would either
+      // duplicate the quotation or be rejected outright.
+      if (existingQuotation) {
+        await updateQuotation({ quotationId: existingQuotation.id, input })
+      } else {
+        await recordQuotation(input)
+      }
+      message.success(`Supplier quotation ${existingQuotation ? 'updated' : 'recorded'}`)
       navigate(`/purchase/enquiries/${enquiry.id}`)
     } catch (error) {
       message.error(getErrorMessage(error))
@@ -149,9 +176,11 @@ export const SupplierQuotationForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate(`/purchase/enquiries/${enquiry.id}`)}>Cancel</Button>
-            <Button type="primary" loading={saving} onClick={() => form.submit()}>
-              {existingQuotation ? 'Update Quotation' : 'Record Quotation'}
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={saving} onClick={() => form.submit()}>
+                {existingQuotation ? 'Update Quotation' : 'Record Quotation'}
+              </Button>
+            )}
           </Space>
         }
       />

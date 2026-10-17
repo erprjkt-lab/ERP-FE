@@ -12,6 +12,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -29,6 +31,7 @@ import { usePurchaseEnquiryItems } from '../hooks/usePurchaseEnquiries'
 import { useCreatePurchaseOrderFromEnquiry, usePurchaseOrders } from '../hooks/usePurchaseOrders'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 const ENQUIRY_STATUSES = Object.keys(ENQUIRY_STATUS_LABELS) as PurchaseEnquiryStatus[]
 
@@ -56,6 +59,9 @@ interface RowActions {
   onCreatePO: (record: PurchaseEnquiryItemRow) => void
   onViewPO: (order: PurchaseOrder) => void
   onRecordQuotation: (record: PurchaseEnquiryItemRow) => void
+  /** Recording a quotation edits the enquiry; creating a PO writes a new order,
+   *  so that one answers to the purchase-orders module instead. */
+  can: { modify: boolean; createPO: boolean }
 }
 
 const getEnquiryActions = (
@@ -83,6 +89,7 @@ const getEnquiryActions = (
       label: 'Edit',
       icon: <EditOutlined />,
       variant: 'primary',
+      hidden: !a.can.modify,
       onClick: () => a.onEdit(record),
     })
   }
@@ -93,6 +100,7 @@ const getEnquiryActions = (
       label: 'Supplier Quotation',
       icon: <FileTextOutlined />,
       variant: 'primary',
+      hidden: !a.can.modify,
       onClick: () => a.onRecordQuotation(record),
     })
   }
@@ -113,6 +121,7 @@ const getEnquiryActions = (
       label: 'Create Purchase Order',
       icon: <ShoppingCartOutlined />,
       variant: 'success',
+      hidden: !a.can.createPO,
       onClick: () => a.onCreatePO(record),
     })
   }
@@ -138,11 +147,13 @@ const getColumns = (): TableColumnsType<PurchaseEnquiryItemRow> => [
     render: (_, record) => (
       <div>
         <div style={{ fontWeight: 600 }}>{record.enquiryNumber}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.enquiryDate}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+          {formatDateTime(record.enquiryDate)}
+        </div>
       </div>
     ),
   },
-  { title: 'Due Date', dataIndex: 'enquiryDueDate', key: 'enquiryDueDate', render: v => v ?? '—' },
+  { title: 'Due Date', dataIndex: 'enquiryDueDate', key: 'enquiryDueDate', render: formatDateTime },
   { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
   { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
   {
@@ -153,7 +164,12 @@ const getColumns = (): TableColumnsType<PurchaseEnquiryItemRow> => [
     width: 110,
   },
   { title: 'UOM', dataIndex: 'uomName', key: 'uomName', width: 80, render: v => v ?? '—' },
-  { title: 'Required Date', dataIndex: 'requiredDate', key: 'requiredDate', render: v => v ?? '—' },
+  {
+    title: 'Required Date',
+    dataIndex: 'requiredDate',
+    key: 'requiredDate',
+    render: formatDateTime,
+  },
   {
     title: 'Status',
     dataIndex: 'status',
@@ -170,6 +186,8 @@ const getColumns = (): TableColumnsType<PurchaseEnquiryItemRow> => [
 export const PurchaseEnquiryList: FC = () => {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { canWrite, canModify } = usePagePermission()
+  const { canWrite: canWriteOrders } = useModulePermission('purchase-orders')
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [quotationEnquiryId, setQuotationEnquiryId] = useState<string>()
   const [compareEnquiryId, setCompareEnquiryId] = useState<string>()
@@ -206,6 +224,7 @@ export const PurchaseEnquiryList: FC = () => {
     onCreatePO: handleCreatePO,
     onViewPO: order => navigate(`/purchase/orders/${order.id}`),
     onRecordQuotation: record => setQuotationEnquiryId(record.purchaseEnquiryId),
+    can: { modify: canModify, createPO: canWriteOrders },
   }
 
   const columns = getColumns()
@@ -247,13 +266,15 @@ export const PurchaseEnquiryList: FC = () => {
         subtitle={`${meta?.total ?? 0} enquiry items`}
         breadcrumbs={[{ label: 'Purchase', href: '/purchase' }, { label: 'Enquiries' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Enquiry
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Enquiry
+            </Button>
+          ) : undefined
         }
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

@@ -124,14 +124,14 @@ export function useReworkReviewsForJobCard(jobCardId: string | undefined) {
     })),
   })
 
-  const reviews = results
-    .flatMap(result => result.data ?? [])
-    .map(toRejectionReview)
-    // Only an approved Rework decision can be cited on a process log.
-    .filter(review => review.decision === 'REWORK' && review.status === 'APPROVED')
+  const allReviews = results.flatMap(result => result.data ?? []).map(toRejectionReview)
 
   return {
-    data: reviews,
+    // Only an approved Rework decision can be cited on a process log.
+    data: allReviews.filter(review => review.decision === 'REWORK' && review.status === 'APPROVED'),
+    /** Every review, whatever the decision — the summary needs the approved
+     *  Reject ones to tell scrapped qty from qty still in play. */
+    allReviews,
     rejections,
     isLoading: rejectionsLoading || results.some(result => result.isLoading),
   }

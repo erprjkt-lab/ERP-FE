@@ -11,6 +11,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { downloadSalesInvoicePdf } from '@/api/salesInvoices'
 import { DataTable } from '@/components/ui/DataTable'
@@ -28,6 +29,7 @@ import {
   useSalesInvoices,
 } from '../hooks/useSalesInvoices'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -41,13 +43,20 @@ interface RowActions {
   onCancel: (record: SalesInvoice) => void
   onDelete: (record: SalesInvoice) => void
   busyId: string | undefined
+  can: { modify: boolean; delete: boolean; approve: boolean }
 }
 
 const money = (value: number) => `₹${value.toFixed(2)}`
 
 const getColumns = (): TableColumnsType<SalesInvoice> => [
   { title: 'Invoice #', dataIndex: 'invoiceNumber', key: 'invoiceNumber', width: 160 },
-  { title: 'Date', dataIndex: 'invoiceDate', key: 'invoiceDate', width: 120 },
+  {
+    title: 'Date',
+    dataIndex: 'invoiceDate',
+    key: 'invoiceDate',
+    width: 120,
+    render: formatDateTime,
+  },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   { title: 'GSTIN', dataIndex: 'gstin', key: 'gstin', width: 160, render: v => v ?? '—' },
   {
@@ -116,6 +125,7 @@ const getInvoiceActions = (record: SalesInvoice, a: RowActions): TableActionItem
         icon: <CheckCircleOutlined />,
         variant: 'success',
         loading: a.busyId === record.id,
+        hidden: !a.can.approve,
         onClick: () => a.onPost(record),
       },
       {
@@ -124,6 +134,7 @@ const getInvoiceActions = (record: SalesInvoice, a: RowActions): TableActionItem
         icon: <DeleteOutlined />,
         variant: 'danger',
         danger: true,
+        hidden: !a.can.delete,
         onClick: () => a.onDelete(record),
       },
     )
@@ -137,6 +148,7 @@ const getInvoiceActions = (record: SalesInvoice, a: RowActions): TableActionItem
       variant: 'danger',
       danger: true,
       loading: a.busyId === record.id,
+      hidden: !a.can.modify,
       onClick: () => a.onCancel(record),
     })
   }
@@ -147,6 +159,7 @@ const getInvoiceActions = (record: SalesInvoice, a: RowActions): TableActionItem
 export const SalesInvoiceList: FC = () => {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
   const status = useSalesStatusFilter('invoice')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
@@ -182,6 +195,7 @@ export const SalesInvoiceList: FC = () => {
   }
 
   const rowActions: RowActions = {
+    can: { modify: canModify, delete: canDelete, approve: canApprove },
     onView: record => navigate(`/sales/invoices/${record.id}`),
     onDownload: record =>
       runBusy(
@@ -223,19 +237,21 @@ export const SalesInvoiceList: FC = () => {
         subtitle={`${meta?.total ?? 0} invoices`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Invoice' }]}
         actions={
-          <Dropdown
-            menu={{
-              items: [
-                { key: 'challan', label: 'From Delivery Challan' },
-                { key: 'direct', label: 'Direct Invoice' },
-              ],
-              onClick: ({ key }) => setDrawer(key as 'challan' | 'direct'),
-            }}
-          >
-            <Button type="primary" icon={<PlusOutlined />}>
-              <Space>New Invoice</Space>
-            </Button>
-          </Dropdown>
+          canWrite ? (
+            <Dropdown
+              menu={{
+                items: [
+                  { key: 'challan', label: 'From Delivery Challan' },
+                  { key: 'direct', label: 'Direct Invoice' },
+                ],
+                onClick: ({ key }) => setDrawer(key as 'challan' | 'direct'),
+              }}
+            >
+              <Button type="primary" icon={<PlusOutlined />}>
+                <Space>New Invoice</Space>
+              </Button>
+            </Dropdown>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

@@ -3,6 +3,7 @@ import { App, Button, Card, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { usePurchaseEnquiry, useQuotationComparison } from '../hooks/usePurchaseEnquiries'
@@ -16,6 +17,9 @@ import { getErrorMessage } from '@/api/client'
 export const PurchaseEnquiryCompare: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  // ERP-BE's PurchaseEnquiryController requires `write purchase-enquiries` for
+  // selectSupplier (the module has no `approve` action at all).
+  const { canWrite: canSelectSupplier } = usePagePermission()
   const { message } = App.useApp()
   const { data: enquiry, isLoading } = usePurchaseEnquiry(id)
   const { data: rows } = useQuotationComparison(id)
@@ -126,12 +130,18 @@ export const PurchaseEnquiryCompare: FC = () => {
     {
       title: 'Action',
       key: 'action',
-      render: (_, q) =>
-        isSupplierSelected(q.supplierId) ? (
-          <Tag icon={<CheckCircleOutlined />} color="green">
-            Selected
-          </Tag>
-        ) : (
+      render: (_, q) => {
+        if (isSupplierSelected(q.supplierId)) {
+          return (
+            <Tag icon={<CheckCircleOutlined />} color="green">
+              Selected
+            </Tag>
+          )
+        }
+
+        if (!canSelectSupplier) return '—'
+
+        return (
           <Button
             size="small"
             type="primary"
@@ -141,7 +151,8 @@ export const PurchaseEnquiryCompare: FC = () => {
           >
             Select
           </Button>
-        ),
+        )
+      },
     },
   ]
 

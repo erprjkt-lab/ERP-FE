@@ -16,6 +16,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
@@ -48,6 +49,9 @@ interface OrderFormValues {
 export const SalesOrderForm: FC = () => {
   const { id } = useParams()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
   const navigate = useNavigate()
   const { message } = App.useApp()
   const [form] = Form.useForm<OrderFormValues>()
@@ -135,9 +139,11 @@ export const SalesOrderForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/sales/orders')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Save Changes' : 'Save Sales Order'}
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Save Changes' : 'Save Sales Order'}
+              </Button>
+            )}
           </Space>
         }
       />

@@ -17,15 +17,6 @@
     "build-storybook": "storybook build",
     "prepare": "husky"
   },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{css,json,md}": [
-      "prettier --write"
-    ]
-  },
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
     "@dnd-kit/core": "^6.3.1",

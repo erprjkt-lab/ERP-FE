@@ -8,6 +8,7 @@ import {
   listPurchaseEnquiryItems,
   updatePurchaseEnquiry,
 } from '@/api/purchaseEnquiries'
+import { toSupplierQuotation } from './useSupplierQuotations'
 import type { ItemListParams } from '@/types/api'
 import type {
   ApiPurchaseEnquiry,
@@ -98,6 +99,10 @@ function toSupplier(api: ApiPurchaseEnquirySupplier): PurchaseEnquirySupplier {
     sentAt: api.sent_at,
     responseReceivedAt: api.response_received_at,
     remarks: api.remarks ?? undefined,
+    // ERP-BE eager loads suppliers.quotation.items.{item,uom} on the enquiry
+    // (it used to send the quotation without its lines), so the recorded
+    // quotation arrives here complete.
+    quotation: api.quotation ? toSupplierQuotation(api.quotation) : undefined,
   }
 }
 

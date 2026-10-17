@@ -14,6 +14,7 @@ import {
   Typography,
 } from 'antd'
 import type { FormInstance, FormListFieldData, SelectProps } from 'antd'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
@@ -48,6 +49,9 @@ export const PurchaseRequisitionForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: requisition } = usePurchaseRequisition(id)
   const { data: departments } = useDepartments()
@@ -153,9 +157,11 @@ export const PurchaseRequisitionForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/purchase/requisitions')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Requisition
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Requisition
+              </Button>
+            )}
           </Space>
         }
       />

@@ -11,6 +11,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -31,10 +32,12 @@ import {
   useDeleteCustomerComplaint,
   useStartComplaintReview,
 } from '../hooks/useCustomerComplaints'
+import { formatDateTime } from '@/utils/date'
 
 export const CustomerComplaintList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [status, setStatus] = useState<ComplaintStatus>()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<CustomerComplaint>()
@@ -93,7 +96,13 @@ export const CustomerComplaintList: FC = () => {
 
   const columns: TableColumnsType<CustomerComplaint> = [
     { title: 'Complaint #', dataIndex: 'complaintNumber', key: 'complaintNumber', width: 150 },
-    { title: 'Date', dataIndex: 'complaintDate', key: 'complaintDate', width: 110 },
+    {
+      title: 'Date',
+      dataIndex: 'complaintDate',
+      key: 'complaintDate',
+      width: 110,
+      render: formatDateTime,
+    },
     { title: 'Customer', dataIndex: 'partyName', key: 'partyName' },
     { title: 'Item', dataIndex: 'itemName', key: 'itemName' },
     {
@@ -128,9 +137,11 @@ export const CustomerComplaintList: FC = () => {
         subtitle={`${meta?.total ?? complaints.length} complaints`}
         breadcrumbs={[{ label: 'Quality' }, { label: 'Customer Complaints' }]}
         actions={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
-            Record Complaint
-          </Button>
+          canWrite ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
+              Record Complaint
+            </Button>
+          ) : undefined
         }
       />
 
@@ -178,28 +189,28 @@ export const CustomerComplaintList: FC = () => {
               key: 'edit',
               label: 'Edit',
               icon: <EditOutlined />,
-              hidden: record.status === 'closed',
+              hidden: record.status === 'closed' || !canModify,
               onClick: () => setEditing(record),
             },
             {
               key: 'start-review',
               label: 'Start Review',
               icon: <FileTextOutlined />,
-              hidden: record.status !== 'open',
+              hidden: record.status !== 'open' || !canModify,
               onClick: () => run(() => startReview(record.id), 'Review started'),
             },
             {
               key: 'resolve',
               label: 'Record Resolution',
               icon: <PlusOutlined />,
-              hidden: record.status !== 'open' && record.status !== 'in_review',
+              hidden: (record.status !== 'open' && record.status !== 'in_review') || !canModify,
               onClick: () => setResolving(record),
             },
             {
               key: 'close',
               label: 'Close',
               icon: <CheckCircleOutlined />,
-              hidden: record.status !== 'resolved',
+              hidden: record.status !== 'resolved' || !canModify,
               onClick: () => confirmClose(record),
             },
             {
@@ -209,7 +220,7 @@ export const CustomerComplaintList: FC = () => {
               danger: true,
               variant: 'danger',
               // ERP-BE refuses to delete a closed complaint.
-              hidden: record.status === 'closed',
+              hidden: record.status === 'closed' || !canDelete,
               onClick: () => handleDelete(record),
             },
           ]}

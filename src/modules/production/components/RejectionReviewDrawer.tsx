@@ -3,6 +3,7 @@ import { App, Button, Drawer, Empty, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { DataTable } from '@/components/ui/DataTable'
@@ -25,6 +26,7 @@ interface RejectionReviewDrawerProps {
 }
 
 const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
+  const { canApprove } = useModulePermission('rejections')
   const { message } = App.useApp()
   const { data: reviews, isLoading } = useRejectionReviews(rejection.id)
   const { mutateAsync: approve, isPending: approving } = useApproveRejectionReview()
@@ -65,7 +67,7 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
       key: 'action',
       width: 80,
       render: (_, r) =>
-        r.status === 'SUBMITTED' ? (
+        r.status === 'SUBMITTED' && canApprove ? (
           <Button
             size="small"
             type="primary"
@@ -102,6 +104,7 @@ export const RejectionReviewDrawer: FC<RejectionReviewDrawerProps> = ({
   open,
   onClose,
 }) => {
+  const { canWrite } = useModulePermission('rejections')
   const [reviewingRejection, setReviewingRejection] = useState<Rejection>()
   const { data: jobCard } = useJobCard(rejection?.jobCardId)
 
@@ -156,7 +159,7 @@ export const RejectionReviewDrawer: FC<RejectionReviewDrawerProps> = ({
             <RejectionReviewsPanel rejection={rejection} />
           </div>
 
-          {rejection.pendingQty ? (
+          {rejection.pendingQty && canWrite ? (
             <Button
               type="primary"
               block

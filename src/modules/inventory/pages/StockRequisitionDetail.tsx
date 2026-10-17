@@ -4,16 +4,21 @@ import {
   CloseOutlined,
   DeleteOutlined,
   EditOutlined,
+  InboxOutlined,
 } from '@ant-design/icons'
 import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { StockIssue, StockRequisitionItem } from '@/types/inventory'
 import { STOCK_REQUISITION_STATUS_BADGE, STOCK_REQUISITION_STATUS_LABELS } from '../constants'
+import { RequisitionIssueDrawer } from '../components/RequisitionIssueDrawer'
 import { useStockIssuesForRequisition } from '../hooks/useStockIssues'
 import {
   useApproveStockRequisition,
@@ -23,13 +28,17 @@ import {
   useStockRequisition,
 } from '../hooks/useStockRequisitions'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 export const StockRequisitionDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canApprove } = usePagePermission()
+  const { canWrite: canWriteIssues } = useModulePermission('stock-issues')
   const { data: requisition, isLoading } = useStockRequisition(id)
   const { data: issues } = useStockIssuesForRequisition(id)
+  const [issueOpen, setIssueOpen] = useState(false)
   const { mutateAsync: approve, isPending: approving } = useApproveStockRequisition()
   const { mutateAsync: reject, isPending: rejecting } = useRejectStockRequisition()
   const { mutateAsync: close, isPending: closing } = useCloseStockRequisition()
@@ -153,7 +162,7 @@ export const StockRequisitionDetail: FC = () => {
       title: 'Issue Date',
       dataIndex: 'issueDate',
       key: 'issueDate',
-      render: (v: string) => v ?? '—',
+      render: formatDateTime,
     },
   ]
 
@@ -177,46 +186,72 @@ export const StockRequisitionDetail: FC = () => {
             </Button>
             {requisition.status === 'PENDING_APPROVAL' && (
               <>
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  loading={cancelling}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`/inventory/requisitions/${requisition.id}/edit`)}
-                >
-                  Edit
-                </Button>
-                <Button danger icon={<CloseOutlined />} loading={rejecting} onClick={handleReject}>
-                  Reject
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  loading={approving}
-                  onClick={handleApprove}
-                >
-                  Approve
-                </Button>
+                {canModify && (
+                  <>
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                      loading={cancelling}
+                      onClick={handleCancel}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() => navigate(`/inventory/requisitions/${requisition.id}/edit`)}
+                    >
+                      Edit
+                    </Button>
+                  </>
+                )}
+                {canApprove && (
+                  <Button
+                    danger
+                    icon={<CloseOutlined />}
+                    loading={rejecting}
+                    onClick={handleReject}
+                  >
+                    Reject
+                  </Button>
+                )}
+                {canApprove && (
+                  <Button
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    loading={approving}
+                    onClick={handleApprove}
+                  >
+                    Approve
+                  </Button>
+                )}
               </>
             )}
             {requisition.status === 'APPROVED' && (
               <>
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  loading={cancelling}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button loading={closing} onClick={handleClose}>
-                  Close
-                </Button>
+                {canModify && (
+                  <>
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                      loading={cancelling}
+                      onClick={handleCancel}
+                    >
+                      Cancel
+                    </Button>
+                    <Button loading={closing} onClick={handleClose}>
+                      Close
+                    </Button>
+                  </>
+                )}
+                {canWriteIssues && (
+                  <Button
+                    type="primary"
+                    icon={<InboxOutlined />}
+                    onClick={() => setIssueOpen(true)}
+                  >
+                    Issue Stock
+                  </Button>
+                )}
               </>
             )}
           </Space>
@@ -234,7 +269,7 @@ export const StockRequisitionDetail: FC = () => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Requisition Date">
-                {requisition.requisitionDate}
+                {formatDateTime(requisition.requisitionDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Priority">{requisition.priority}</Descriptions.Item>
               <Descriptions.Item label="Department">
@@ -289,6 +324,12 @@ export const StockRequisitionDetail: FC = () => {
           </Col>
         )}
       </Row>
+
+      <RequisitionIssueDrawer
+        open={issueOpen}
+        requisitionId={id}
+        onClose={() => setIssueOpen(false)}
+      />
     </div>
   )
 }

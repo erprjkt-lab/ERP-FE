@@ -4,11 +4,13 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { JobCard, JobCardStatus } from '@/types/production'
 import { JOB_CARD_STATUS_CODE, useJobCards } from '../hooks/useJobCards'
+import { formatDateTime } from '@/utils/date'
 
 const ALL_STATUSES = 'all' as const
 
@@ -39,7 +41,13 @@ const getColumns = (onOpen: (record: JobCard) => void): TableColumnsType<JobCard
       </Button>
     ),
   },
-  { title: 'Date', dataIndex: 'jobCardDate', key: 'jobCardDate', width: 110 },
+  {
+    title: 'Date',
+    dataIndex: 'jobCardDate',
+    key: 'jobCardDate',
+    width: 110,
+    render: formatDateTime,
+  },
   {
     title: 'Item',
     key: 'item',
@@ -54,7 +62,13 @@ const getColumns = (onOpen: (record: JobCard) => void): TableColumnsType<JobCard
   },
   { title: 'Party', dataIndex: 'partyName', key: 'partyName', render: name => name || '—' },
   { title: 'Ordered Qty', dataIndex: 'orderedQty', key: 'orderedQty', width: 110 },
-  { title: 'Target Date', dataIndex: 'targetDate', key: 'targetDate', width: 110 },
+  {
+    title: 'Target Date',
+    dataIndex: 'targetDate',
+    key: 'targetDate',
+    width: 110,
+    render: formatDateTime,
+  },
   {
     title: 'Route',
     dataIndex: 'manufacturingRoute',
@@ -73,6 +87,7 @@ const getColumns = (onOpen: (record: JobCard) => void): TableColumnsType<JobCard
 
 export const JobCardList: FC = () => {
   const navigate = useNavigate()
+  const { canWrite } = usePagePermission()
   const [statusFilter, setStatusFilter] = useState<JobCardStatus | typeof ALL_STATUSES>(
     ALL_STATUSES,
   )
@@ -95,13 +110,15 @@ export const JobCardList: FC = () => {
         subtitle={`${filtered.length} of ${jobCards.length} job cards`}
         breadcrumbs={[{ label: 'Production' }, { label: 'Work Order (Jobcard)' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/production/work-orders/new')}
-          >
-            Add Job Card
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/production/work-orders/new')}
+            >
+              Add Job Card
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

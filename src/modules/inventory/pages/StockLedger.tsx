@@ -9,6 +9,7 @@ import type { StockLedgerEntry } from '@/types/inventory'
 import { STOCK_MOVEMENT_TYPE_OPTIONS } from '../constants'
 import { useLocations } from '../hooks/useLocations'
 import { useStockLedger } from '../hooks/useStockLedger'
+import { formatDateTime } from '@/utils/date'
 
 const getColumns = (): TableColumnsType<StockLedgerEntry> => [
   {
@@ -16,7 +17,7 @@ const getColumns = (): TableColumnsType<StockLedgerEntry> => [
     dataIndex: 'transactionDate',
     key: 'transactionDate',
     width: 160,
-    render: (v?: string) => (v ? dayjs(v).format('DD-MMM-YYYY HH:mm') : '—'),
+    render: formatDateTime,
   },
   { title: 'Item', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
   { title: 'Location', dataIndex: 'locationName', key: 'locationName', render: v => v ?? '—' },

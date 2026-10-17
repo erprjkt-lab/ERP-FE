@@ -1,44 +1,22 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import {
-  App,
-  AutoComplete,
-  Button,
-  Col,
-  DatePicker,
-  Form,
-  Input,
-  InputNumber,
-  Row,
-  Select,
-  Typography,
-} from 'antd'
-import type { FormListFieldData } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import { App, Button, Col, DatePicker, Form, Input, Row, Select, Typography } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
+import { useState } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormSection } from '@/components/ui/FormSection'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
-import type { ProcurementItemOption } from '@/modules/procurement/hooks/useProcurementItems'
 import { useCreateStockTransfer } from '../hooks/useStockTransfers'
 import { useLocations } from '../hooks/useLocations'
-import { useStockBalance } from '../hooks/useStockBalance'
-
-interface ItemRowValues {
-  itemId: string
-  batchNo?: string
-  heatNo?: string
-  serialNo?: string
-  qty: number
-  remarks?: string
-}
+import { ItemLotAllocator, parseLotKey } from './ItemLotAllocator'
 
 interface TransferFormValues {
   transferDate: dayjs.Dayjs
   fromLocationId: string
   toLocationId: string
   remarks?: string
-  items: ItemRowValues[]
 }
 
 export interface StockTransferFormDrawerProps {
@@ -50,35 +28,75 @@ export const StockTransferFormDrawer: FC<StockTransferFormDrawerProps> = ({ open
   const { message } = App.useApp()
   const [form] = Form.useForm<TransferFormValues>()
 
-  const { data: items } = useProcurementItems()
+  // Items added to the transfer, and the qty moved out of each of their lots:
+  // { itemId: { lotKey: qty } }.
+  const [movedItems, setMovedItems] = useState<string[]>([])
+  const [qtyByItem, setQtyByItem] = useState<Record<string, Record<string, number>>>({})
+  const [pendingItemId, setPendingItemId] = useState<string>()
+
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: locations } = useLocations()
   const { mutateAsync: createTransfer, isPending: creating } = useCreateStockTransfer()
 
   const fromLocationId = Form.useWatch('fromLocationId', form) as string | undefined
   const toLocationId = Form.useWatch('toLocationId', form) as string | undefined
   const locationOptions = locations.map(l => ({ label: l.name, value: l.id }))
+  const itemOptions = items
+    .filter(i => !movedItems.includes(i.id))
+    .map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
 
   const handleClose = () => {
     form.resetFields()
+    setMovedItems([])
+    setQtyByItem({})
+    setPendingItemId(undefined)
     onClose()
+  }
+
+  const handleAddItem = () => {
+    if (!pendingItemId) return
+    setMovedItems(prev => [...prev, pendingItemId])
+    setPendingItemId(undefined)
+  }
+
+  const removeItem = (itemId: string) => {
+    setMovedItems(prev => prev.filter(id => id !== itemId))
+    setQtyByItem(prev => {
+      const next = { ...prev }
+      delete next[itemId]
+      return next
+    })
+  }
+
+  const setLotQty = (itemId: string, key: string, qty: number | null) => {
+    setQtyByItem(prev => ({ ...prev, [itemId]: { ...prev[itemId], [key]: qty ?? 0 } }))
   }
 
   const handleSubmit = async () => {
     const values = await form.validateFields()
+
+    const lines = []
+    for (const itemId of movedItems) {
+      for (const [key, qty] of Object.entries(qtyByItem[itemId] ?? {})) {
+        if (qty > 0) {
+          const { batchNo, heatNo, serialNo } = parseLotKey(key)
+          lines.push({ itemId, batchNo, heatNo, serialNo, qty, remarks: undefined })
+        }
+      }
+    }
+
+    if (lines.length === 0) {
+      message.error('Enter a quantity to move from at least one batch')
+      return
+    }
+
     try {
       await createTransfer({
         transferDate: values.transferDate.format('YYYY-MM-DD'),
         fromLocationId: values.fromLocationId,
         toLocationId: values.toLocationId,
         remarks: values.remarks,
-        items: values.items.map(row => ({
-          itemId: row.itemId,
-          batchNo: row.batchNo,
-          heatNo: row.heatNo,
-          serialNo: row.serialNo,
-          qty: row.qty,
-          remarks: row.remarks,
-        })),
+        items: lines,
       })
       message.success('Stock transfer posted')
       handleClose()
@@ -97,7 +115,7 @@ export const StockTransferFormDrawer: FC<StockTransferFormDrawerProps> = ({ open
       submitting={creating}
       submitText="Post Transfer"
     >
-      <Form form={form} layout="vertical" initialValues={{ transferDate: dayjs(), items: [{}] }}>
+      <Form form={form} layout="vertical" initialValues={{ transferDate: dayjs() }}>
         <FormSection title="Transfer Details">
           <Row gutter={24}>
             <Col xs={24} sm={12} md={6}>
@@ -123,6 +141,10 @@ export const StockTransferFormDrawer: FC<StockTransferFormDrawerProps> = ({ open
                   placeholder="Move stock out of"
                   options={locationOptions.filter(o => o.value !== toLocationId)}
                   showSearch
+                  // Allocated quantities are keyed by the source lot they came
+                  // from, so they can't carry over to a different source — they
+                  // would be sent as the new location's batches.
+                  onChange={() => setQtyByItem({})}
                   filterOption={(input, option) =>
                     String(option?.label ?? '')
                       .toLowerCase()
@@ -156,153 +178,85 @@ export const StockTransferFormDrawer: FC<StockTransferFormDrawerProps> = ({ open
             </Col>
           </Row>
           <Typography.Text type="secondary">
-            Posting moves the stock in one step — there is no in-transit or approval stage.
+            Posting moves the stock in one step — there is no in-transit or approval stage. Every
+            batch below moves to the same destination, since ERP-BE books one destination per
+            transfer.
           </Typography.Text>
         </FormSection>
 
-        <FormSection title="Items">
-          <Form.List
-            name="items"
-            rules={[
-              {
-                validator: async (_, v) => {
-                  if (!v || v.length === 0) throw new Error('Add at least one item')
-                },
-              },
-            ]}
-          >
-            {(fields, { add, remove }, { errors }) => (
-              <>
-                <div
-                  style={{
-                    overflowX: 'auto',
-                    maxWidth: '100%',
-                    WebkitOverflowScrolling: 'touch',
-                    paddingBottom: 4,
-                  }}
-                >
-                  <div style={{ minWidth: 720 }}>
-                    {fields.map(field => (
-                      <TransferItemRow
-                        key={field.key}
-                        field={field}
-                        items={items}
-                        fromLocationId={fromLocationId}
-                        onRemove={() => remove(field.name)}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <Form.ErrorList errors={errors} />
-                <Button
-                  type="dashed"
-                  icon={<PlusOutlined />}
-                  onClick={() => add()}
-                  style={{ width: '100%', marginTop: 8 }}
-                >
-                  Add Item
-                </Button>
-              </>
-            )}
-          </Form.List>
+        <FormSection
+          title="Items to Move"
+          description="Pick an item to list every batch it holds at the source location, then enter how much of each to move."
+        >
+          <Row gutter={12} style={{ marginBottom: 16 }}>
+            <Col xs={24} sm={18} md={20}>
+              <Select
+                style={{ width: '100%' }}
+                placeholder={
+                  fromLocationId ? 'Select an item to move' : 'Select a source location first'
+                }
+                disabled={!fromLocationId}
+                value={pendingItemId}
+                onChange={setPendingItemId}
+                options={itemOptions}
+                popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                showSearch
+                allowClear
+                filterOption={(input, option) =>
+                  String(option?.label ?? '')
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+              />
+            </Col>
+            <Col xs={24} sm={6} md={4}>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAddItem}
+                disabled={!pendingItemId}
+                style={{ width: '100%' }}
+              >
+                Add Item
+              </Button>
+            </Col>
+          </Row>
+
+          {movedItems.length === 0 ? (
+            <div
+              style={{
+                padding: 24,
+                textAlign: 'center',
+                background: 'rgba(0, 0, 0, 0.02)',
+                borderRadius: 8,
+                border: '1px dashed rgba(0, 0, 0, 0.15)',
+              }}
+            >
+              <Typography.Text type="secondary">
+                Add an item above to list its batches at the source location.
+              </Typography.Text>
+            </div>
+          ) : (
+            movedItems.map(itemId => {
+              const item = items.find(i => i.id === itemId)
+              return (
+                <ItemLotAllocator
+                  key={itemId}
+                  itemId={itemId}
+                  title={item ? `${item.code} — ${item.name}` : itemId}
+                  locationId={fromLocationId}
+                  stockLabel="Available Qty"
+                  qtyLabel="Transfer Qty"
+                  values={qtyByItem[itemId] ?? {}}
+                  onChange={(key, qty) => setLotQty(itemId, key, qty)}
+                  onRemove={() => removeItem(itemId)}
+                  emptyText="This item holds no stock at the source location."
+                />
+              )
+            })
+          )}
         </FormSection>
       </Form>
     </FormDrawer>
-  )
-}
-
-interface TransferItemRowProps {
-  field: FormListFieldData
-  items: ProcurementItemOption[]
-  fromLocationId?: string
-  onRemove: () => void
-}
-
-const TransferItemRow: FC<TransferItemRowProps> = ({ field, items, fromLocationId, onRemove }) => {
-  const selectedItemId = Form.useWatch(['items', field.name, 'itemId']) as string | undefined
-  const selectedItem = items.find(i => i.id === selectedItemId)
-
-  // Only lots that actually sit in the source location can be moved out of it.
-  const { data: balanceRows } = useStockBalance(selectedItemId)
-  const lotsAtSource = fromLocationId
-    ? balanceRows.filter(r => r.locationId === fromLocationId)
-    : []
-  const batchOptions = [...new Set(lotsAtSource.map(r => r.batchNo))].map(value => ({ value }))
-  const heatOptions = [...new Set(lotsAtSource.map(r => r.heatNo))].map(value => ({ value }))
-  const available = lotsAtSource.reduce((sum, row) => sum + row.qty, 0)
-  const autoCompleteFilter = (input: string, option?: { value: string }) =>
-    (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr 1fr 120px 1fr 32px',
-        gap: '0 8px',
-        alignItems: 'start',
-      }}
-    >
-      <Form.Item name={[field.name, 'itemId']} rules={[{ required: true, message: 'Required' }]}>
-        <Select
-          placeholder="Select item"
-          options={items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))}
-          showSearch
-          filterOption={(input, option) =>
-            String(option?.label ?? '')
-              .toLowerCase()
-              .includes(input.toLowerCase())
-          }
-        />
-      </Form.Item>
-      <Form.Item
-        name={[field.name, 'batchNo']}
-        rules={
-          selectedItem?.batchTracking
-            ? [{ required: true, message: 'Batch no. required for this item' }]
-            : []
-        }
-      >
-        <AutoComplete
-          options={batchOptions}
-          filterOption={autoCompleteFilter}
-          placeholder={selectedItem?.batchTracking ? 'Batch No (required)' : 'Batch No'}
-        />
-      </Form.Item>
-      <Form.Item
-        name={[field.name, 'heatNo']}
-        rules={
-          selectedItem?.heatTracking
-            ? [{ required: true, message: 'Heat no. required for this item' }]
-            : []
-        }
-      >
-        <AutoComplete
-          options={heatOptions}
-          filterOption={autoCompleteFilter}
-          placeholder={selectedItem?.heatTracking ? 'Heat No (required)' : 'Heat No'}
-        />
-      </Form.Item>
-      <Form.Item
-        name={[field.name, 'qty']}
-        rules={[{ required: true, message: 'Required' }]}
-        extra={
-          selectedItemId && fromLocationId ? (
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              {available} available
-            </Typography.Text>
-          ) : undefined
-        }
-      >
-        <InputNumber
-          placeholder={selectedItem ? `Qty (${selectedItem.uomName})` : 'Qty'}
-          min={0.001}
-          style={{ width: '100%' }}
-        />
-      </Form.Item>
-      <Form.Item name={[field.name, 'remarks']}>
-        <Input placeholder="Remarks" />
-      </Form.Item>
-      <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />
-    </div>
   )
 }

@@ -35,6 +35,7 @@ import {
   usePurchaseRequisitionsByIds,
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 type Mode = 'manual' | 'fromRequisitions'
 
@@ -379,7 +380,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                           title: 'Required Date',
                           dataIndex: 'requiredDate',
                           key: 'requiredDate',
-                          render: (v: string | null) => v ?? '—',
+                          render: formatDateTime,
                         },
                       ]}
                       dataSource={previewItems}
@@ -521,7 +522,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                       title: 'Required Date',
                       dataIndex: 'requiredDate',
                       key: 'requiredDate',
-                      render: (v: string | null) => v ?? '—',
+                      render: formatDateTime,
                     },
                   ]}
                   dataSource={enquiry?.items ?? []}

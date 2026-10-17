@@ -3,6 +3,7 @@ import { App, Button, Card, Checkbox, Col, Empty, Row, Select, Typography } from
 import type { TableColumnsType } from 'antd'
 import type { FC, Key } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -35,6 +36,13 @@ const ACTION_LABELS: Record<MenuAction, string> = {
 
 export const UserPermissionList: FC = () => {
   const { message } = App.useApp()
+  // EmployeeController puts grantMenuPermissionsBulk behind `modify menus` (not
+  // `modify employees`), and GET /employees/{id}/menus behind `read menus`.
+  // NOTE: ERP-BE's config/rbac_modules.php has no `menus` module, so those two
+  // permissions are never generated and nobody — super-admins included — holds
+  // them. Until BE adds that module this screen cannot load or save. Gating on
+  // the real requirement rather than a near-miss keeps the FE honest about it.
+  const { canModify: canGrant } = useModulePermission('menus')
   const [employeeId, setEmployeeId] = useState<string>()
   // Only the menus the user actually touched; everything else falls back to what the
   // BE reports as granted, so switching employee just means clearing this.
@@ -109,6 +117,7 @@ export const UserPermissionList: FC = () => {
           <Checkbox
             checked={selected === total}
             indeterminate={selected > 0 && selected < total}
+            disabled={!canGrant}
             onChange={e => setAll(targets, e.target.checked)}
           />
         )
@@ -129,6 +138,7 @@ export const UserPermissionList: FC = () => {
         row.availableActions.includes(action) ? (
           <Checkbox
             checked={(edits[row.key] ?? row.grantedActions).includes(action)}
+            disabled={!canGrant}
             onChange={e => toggle(row, action, e.target.checked)}
           />
         ) : (
@@ -153,15 +163,17 @@ export const UserPermissionList: FC = () => {
         subtitle="Grant per-menu access for one employee. A menu only offers the actions its module supports."
         breadcrumbs={[{ label: 'Administration' }, { label: 'Permissions' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            loading={saving}
-            disabled={pending.length === 0}
-            onClick={handleSave}
-          >
-            {pending.length > 0 ? `Save changes (${pending.length})` : 'Save changes'}
-          </Button>
+          canGrant ? (
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={saving}
+              disabled={pending.length === 0}
+              onClick={handleSave}
+            >
+              {pending.length > 0 ? `Save changes (${pending.length})` : 'Save changes'}
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

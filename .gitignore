@@ -12,6 +12,9 @@ dist
 dist-ssr
 storybook-static
 *.local
+# `*.local` only matches names ENDING in .local — spell out the scratch-note and
+# credential conventions so e.g. VERIFY.local.md / auth.local.json stay untracked.
+*.local.*
 
 # Environment
 .env

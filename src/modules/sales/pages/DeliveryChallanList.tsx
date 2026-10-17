@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { downloadDeliveryChallanPdf } from '@/api/deliveryChallans'
 import { DataTable } from '@/components/ui/DataTable'
@@ -15,6 +16,7 @@ import { DeliveryChallanFormDrawer } from '../components/DeliveryChallanFormDraw
 import { CHALLAN_STATUS_BADGE, CHALLAN_STATUS_LABELS } from '../constants'
 import { useCancelDeliveryChallan, useDeliveryChallanItems } from '../hooks/useDeliveryChallans'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(CHALLAN_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -27,11 +29,18 @@ interface RowActions {
   onCancel: (record: DeliveryChallanItemRow) => void
   downloadingId: string | undefined
   cancellingId: string | undefined
+  can: { modify: boolean }
 }
 
 const getColumns = (): TableColumnsType<DeliveryChallanItemRow> => [
   { title: 'Challan #', dataIndex: 'challanNumber', key: 'challanNumber', width: 150 },
-  { title: 'Date', dataIndex: 'challanDate', key: 'challanDate', width: 120 },
+  {
+    title: 'Date',
+    dataIndex: 'challanDate',
+    key: 'challanDate',
+    width: 120,
+    render: formatDateTime,
+  },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
   { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
@@ -90,6 +99,7 @@ const getChallanActions = (record: DeliveryChallanItemRow, a: RowActions): Table
     danger: true,
     disabled: record.status !== 'DISPATCHED',
     loading: a.cancellingId === record.deliveryChallanId,
+    hidden: !a.can.modify,
     onClick: () => a.onCancel(record),
   },
 ]
@@ -97,6 +107,7 @@ const getChallanActions = (record: DeliveryChallanItemRow, a: RowActions): Table
 export const DeliveryChallanList: FC = () => {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canWrite, canModify } = usePagePermission()
   const status = useSalesStatusFilter('challan')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
@@ -153,6 +164,7 @@ export const DeliveryChallanList: FC = () => {
   const columns = getColumns()
 
   const rowActions: RowActions = {
+    can: { modify: canModify },
     onView: record => navigate(`/sales/delivery-challans/${record.deliveryChallanId}`),
     onDownload: handleDownload,
     onCancel: handleCancel,
@@ -167,9 +179,11 @@ export const DeliveryChallanList: FC = () => {
         subtitle={`${meta?.total ?? 0} delivery challan items`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Delivery Challan' }]}
         actions={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
-            New Delivery Challan
-          </Button>
+          canWrite ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
+              New Delivery Challan
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

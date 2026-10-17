@@ -10,6 +10,7 @@ import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -20,6 +21,7 @@ import { ItemProcessRouteDrawer } from '@/modules/production/components/ItemProc
 import type { FinishedGood } from '@/types/masters'
 import { FinishedGoodFormDrawer } from '../components/FinishedGoodFormDrawer'
 import { MASTER_STATUS_OPTIONS } from '../constants'
+import { useCustomers } from '../hooks/useCustomers'
 import { useDeleteFinishedGood, useFinishedGoods } from '../hooks/useFinishedGoods'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -30,9 +32,12 @@ interface RowActions {
   onProcessRoute: (record: FinishedGood) => void
   onBom: (record: FinishedGood) => void
   onInspectionParameters: (record: FinishedGood) => void
+  can: { modify: boolean; delete: boolean }
 }
 
-const getColumns = (): TableColumnsType<FinishedGood> => [
+// ItemResource sends party_id but no party_name, so the customer column
+// resolves the name against the party master.
+const getColumns = (customerNames: Map<string, string>): TableColumnsType<FinishedGood> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   {
     title: 'Name',
@@ -44,7 +49,12 @@ const getColumns = (): TableColumnsType<FinishedGood> => [
       </div>
     ),
   },
-  { title: 'Customer', dataIndex: 'customerName', key: 'customerName' },
+  {
+    title: 'Customer',
+    key: 'customerName',
+    render: (_, record) =>
+      (record.customerId && customerNames.get(String(record.customerId))) || '—',
+  },
   { title: 'UOM', dataIndex: 'uom', key: 'uom', width: 90 },
   { title: 'Price', dataIndex: 'price', key: 'price', width: 100 },
   {
@@ -61,6 +71,7 @@ const getFinishedGoodActions = (record: FinishedGood, a: RowActions): TableActio
     label: 'Edit',
     icon: <EditOutlined />,
     variant: 'primary',
+    hidden: !a.can.modify,
     onClick: () => a.onEdit(record),
   },
   {
@@ -90,17 +101,20 @@ const getFinishedGoodActions = (record: FinishedGood, a: RowActions): TableActio
     icon: <DeleteOutlined />,
     variant: 'danger',
     danger: true,
+    hidden: !a.can.delete,
     onClick: () => a.onDelete(record),
   },
 ]
 
 export const FinishedGoodList: FC = () => {
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [inspectionItemId, setInspectionItemId] = useState<string>()
   const [processRouteItemId, setProcessRouteItemId] = useState<string>()
   const [bomItemId, setBomItemId] = useState<string>()
   const { data: finishedGoods = [], isLoading } = useFinishedGoods()
+  const { data: customers = [] } = useCustomers()
   const { mutateAsync: deleteFinishedGood } = useDeleteFinishedGood()
   const filters = useMastersStore(s => s.finishedGoodFilters)
   const setFilter = useMastersStore(s => s.setFinishedGoodFilter)
@@ -123,9 +137,11 @@ export const FinishedGoodList: FC = () => {
     })
   }
 
-  const columns = getColumns()
+  const customerNames = new Map(customers.map(c => [c.id, c.name]))
+  const columns = getColumns(customerNames)
 
   const rowActions: RowActions = {
+    can: { modify: canModify, delete: canDelete },
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: handleDelete,
     onProcessRoute: record => setProcessRouteItemId(record.id),
@@ -148,13 +164,15 @@ export const FinishedGoodList: FC = () => {
         subtitle={`${filtered.length} of ${finishedGoods.length} finished goods`}
         breadcrumbs={[{ label: 'Masters', href: '/masters' }, { label: 'Finished Goods' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            Add Finished Good
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              Add Finished Good
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

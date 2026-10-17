@@ -3,6 +3,7 @@ import { App, Button, Card, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -10,6 +11,7 @@ import type { TableActionItem } from '@/components/ui'
 import type { OpeningStock, OpeningStockItem } from '@/types/inventory'
 import { OpeningStockFormDrawer } from '../components/OpeningStockFormDrawer'
 import { useDeleteOpeningStock, useOpeningStocks } from '../hooks/useOpeningStocks'
+import { formatDateTime } from '@/utils/date'
 
 const ITEM_COLUMNS: TableColumnsType<OpeningStockItem> = [
   {
@@ -34,6 +36,7 @@ const ITEM_COLUMNS: TableColumnsType<OpeningStockItem> = [
 const getOpeningStockActions = (
   record: OpeningStock,
   onDelete: (record: OpeningStock) => void,
+  canDelete: boolean,
 ): TableActionItem[] => [
   {
     key: 'delete',
@@ -41,12 +44,14 @@ const getOpeningStockActions = (
     icon: <DeleteOutlined />,
     variant: 'danger',
     danger: true,
+    hidden: !canDelete,
     onClick: () => onDelete(record),
   },
 ]
 
 export const OpeningStockList: FC = () => {
   const { message, modal } = App.useApp()
+  const { canWrite, canDelete } = usePagePermission()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { data: entries, isLoading } = useOpeningStocks()
   const { mutateAsync: deleteEntry } = useDeleteOpeningStock()
@@ -71,7 +76,7 @@ export const OpeningStockList: FC = () => {
 
   const columns: TableColumnsType<OpeningStock> = [
     { title: 'Entry #', dataIndex: 'entryNumber', key: 'entryNumber', width: 160 },
-    { title: 'Date', dataIndex: 'entryDate', key: 'entryDate', width: 120 },
+    { title: 'Date', dataIndex: 'entryDate', key: 'entryDate', width: 120, render: formatDateTime },
     {
       title: 'Items',
       key: 'items',
@@ -107,9 +112,11 @@ export const OpeningStockList: FC = () => {
         subtitle={`${entries.length} entries — load stock that was already on hand before the system went live`}
         breadcrumbs={[{ label: 'Inventory' }, { label: 'Opening Stock' }]}
         actions={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
-            New Opening Stock
-          </Button>
+          canWrite ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
+              New Opening Stock
+            </Button>
+          ) : undefined
         }
       />
 
@@ -126,7 +133,7 @@ export const OpeningStockList: FC = () => {
           loading={isLoading}
           totalLabel="entries"
           fillHeight
-          rowActions={record => getOpeningStockActions(record, handleDelete)}
+          rowActions={record => getOpeningStockActions(record, handleDelete, canDelete)}
           expandable={{
             expandedRowRender: record => (
               <DataTable<OpeningStockItem>

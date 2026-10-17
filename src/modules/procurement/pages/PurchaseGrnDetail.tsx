@@ -17,6 +17,7 @@ import {
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { Modal } from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/DataTable'
@@ -35,6 +36,7 @@ import {
   ITEM_TYPE_RAW_MATERIAL,
 } from '../constants'
 import { useCancelGrn, useGrn, useSaveGrnItemQc } from '../hooks/usePurchaseGrns'
+import { formatDateTime } from '@/utils/date'
 
 const QC_LOCKED_STATUSES = new Set([2, 3, 4]) // QC Done | Stock Posted | Cancelled
 
@@ -42,6 +44,7 @@ export const PurchaseGrnDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify } = usePagePermission()
   const { data: grn, isLoading } = useGrn(id)
   const { mutateAsync: cancelGrnMutation, isPending: cancelling } = useCancelGrn()
   const [qcItem, setQcItem] = useState<GrnItem | null>(null)
@@ -172,10 +175,12 @@ export const PurchaseGrnDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/grn')}>
               Back
             </Button>
-            <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
-            {grn.status !== 4 && (
+            {canModify && (
+              <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
+            {grn.status !== 4 && canModify && (
               <Button danger icon={<StopOutlined />} loading={cancelling} onClick={handleCancel}>
                 Cancel GRN
               </Button>
@@ -194,7 +199,7 @@ export const PurchaseGrnDetail: FC = () => {
                   label={GRN_STATUS_LABELS[grn.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="GRN Date">{grn.grnDate}</Descriptions.Item>
+              <Descriptions.Item label="GRN Date">{formatDateTime(grn.grnDate)}</Descriptions.Item>
               <Descriptions.Item label="Supplier">
                 {grn.supplierName ?? grn.supplierId}
               </Descriptions.Item>
@@ -202,7 +207,7 @@ export const PurchaseGrnDetail: FC = () => {
                 {grn.supplierDocNo ?? '—'}
               </Descriptions.Item>
               <Descriptions.Item label="Supplier Doc Date">
-                {grn.supplierDocDate ?? '—'}
+                {formatDateTime(grn.supplierDocDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Created By">{grn.createdBy}</Descriptions.Item>
               <Descriptions.Item label="Remarks" span="filled">

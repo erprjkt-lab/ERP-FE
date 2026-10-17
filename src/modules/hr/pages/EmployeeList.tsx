@@ -10,6 +10,7 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -64,6 +65,7 @@ interface EmployeeRowActions {
   onView: (record: Employee) => void
   onEdit: (record: Employee) => void
   onDelete: (record: Employee) => void
+  can: { modify: boolean; delete: boolean }
 }
 
 const getEmployeeActions = (record: Employee, a: EmployeeRowActions): TableActionItem[] => [
@@ -79,6 +81,7 @@ const getEmployeeActions = (record: Employee, a: EmployeeRowActions): TableActio
     label: 'Edit',
     icon: <EditOutlined />,
     variant: 'primary',
+    hidden: !a.can.modify,
     onClick: () => a.onEdit(record),
   },
   {
@@ -87,6 +90,7 @@ const getEmployeeActions = (record: Employee, a: EmployeeRowActions): TableActio
     icon: <DeleteOutlined />,
     variant: 'danger',
     danger: true,
+    hidden: !a.can.delete,
     onClick: () => a.onDelete(record),
   },
 ]
@@ -94,6 +98,7 @@ const getEmployeeActions = (record: Employee, a: EmployeeRowActions): TableActio
 export const EmployeeList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const { token } = antTheme.useToken()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const { employeeListFilters, setFilter, resetFilters } = useHRStore()
@@ -123,6 +128,7 @@ export const EmployeeList: FC = () => {
     onView: record => navigate(`/hr/employees/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: handleDelete,
+    can: { modify: canModify, delete: canDelete },
   }
 
   // Search is ERP-BE's (it matches name, email and username); status and
@@ -144,13 +150,15 @@ export const EmployeeList: FC = () => {
         actions={
           <>
             <Button icon={<ExportOutlined />}>Export</Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setDrawerState({ mode: 'add' })}
-            >
-              Add Employee
-            </Button>
+            {canWrite && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setDrawerState({ mode: 'add' })}
+              >
+                Add Employee
+              </Button>
+            )}
           </>
         }
       >

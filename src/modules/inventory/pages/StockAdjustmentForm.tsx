@@ -16,6 +16,7 @@ import type { FormListFieldData } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
@@ -38,6 +39,7 @@ interface ItemRowValues {
 
 export const StockAdjustmentForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
@@ -97,9 +99,11 @@ export const StockAdjustmentForm: FC = () => {
             <Button onClick={() => navigate('/inventory/adjustments')} style={{ marginRight: 8 }}>
               Cancel
             </Button>
-            <Button type="primary" loading={creating} onClick={() => form.submit()}>
-              Save Adjustment
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating} onClick={() => form.submit()}>
+                Save Adjustment
+              </Button>
+            )}
           </>
         }
       />

@@ -12,7 +12,7 @@ import {
   useRawMaterial,
   useUpdateRawMaterial,
 } from '../hooks/useRawMaterials'
-import { useHsnCodes } from '../hooks/useHsnCodes'
+import { useHsnGstAutofill } from '../hooks/useHsnGstAutofill'
 import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -38,12 +38,11 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
   const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
-  const { data: hsnCodes = [] } = useHsnCodes()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
   const { data: materialGrades = [] } = useMaterialGrades()
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
-  const hsnCodeOptions = hsnCodes.map(h => ({ label: `${h.hsn} (${h.gstRate}%)`, value: h.hsn }))
   const materialGradeOptions = materialGrades.map(m => ({
     label: m.material_grade,
     value: String(m.id),
@@ -63,6 +62,9 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
         gstPercent: rawMaterial.gstPercent,
         description: rawMaterial.description,
         status: rawMaterial.status,
+        batchTracking: rawMaterial.batchTracking,
+        heatTracking: rawMaterial.heatTracking,
+        serialTracking: rawMaterial.serialTracking,
         materialGradeId: rawMaterial.materialGradeId ?? undefined,
         materialType: rawMaterial.materialType,
         shape: rawMaterial.shape,
@@ -109,6 +111,9 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
+      batchTracking: values.batchTracking as boolean | undefined,
+      heatTracking: values.heatTracking as boolean | undefined,
+      serialTracking: values.serialTracking as boolean | undefined,
       materialGradeId: values.materialGradeId as string | undefined,
       materialGrade: materialGradeOptions.find(o => o.value === values.materialGradeId)?.label,
       materialType: values.materialType as string | undefined,
@@ -146,7 +151,12 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
       submitting={creating || updating}
       submitText={isEdit ? 'Update Raw Material' : 'Save Raw Material'}
     >
-      <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ status: 'active' }}
+        onValuesChange={autofillGst}
+      >
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Item Code" name="code" disabled />}
           <div className="erp-form-grid">
@@ -188,6 +198,24 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
               name="status"
               fieldType="select"
               options={MASTER_STATUS_OPTIONS}
+            />
+            <FormField
+              label="Batch Tracking"
+              name="batchTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Heat Tracking"
+              name="heatTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Serial Tracking"
+              name="serialTracking"
+              fieldType="switch"
+              valuePropName="checked"
             />
           </div>
         </FormSection>

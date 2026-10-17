@@ -154,6 +154,10 @@ export function useUpdateStockAdjustment() {
 function invalidateOne(queryClient: ReturnType<typeof useQueryClient>, id: string) {
   queryClient.invalidateQueries({ queryKey: ['stock-adjustments'] })
   queryClient.invalidateQueries({ queryKey: ['stock-adjustments', id] })
+  // Approving posts the variance to stock, and ItemLotAllocator shows system qty
+  // from this query. Reject/update don't move stock, but they come through here
+  // too and a spare refetch is cheaper than threading a flag through.
+  queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
 }
 
 export function useApproveStockAdjustment() {

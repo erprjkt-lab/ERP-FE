@@ -11,6 +11,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -31,6 +33,7 @@ import {
   useSalesEnquiryItems,
 } from '../hooks/useSalesEnquiries'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(ENQUIRY_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -43,11 +46,18 @@ interface RowActions {
   onCreateQuotation: (record: SalesEnquiryItemRow) => void
   onClose: (record: SalesEnquiryItemRow) => void
   onDelete: (record: SalesEnquiryItemRow) => void
+  can: { modify: boolean; delete: boolean; createQuote: boolean }
 }
 
 const getColumns = (): TableColumnsType<SalesEnquiryItemRow> => [
   { title: 'Enquiry #', dataIndex: 'enquiryNumber', key: 'enquiryNumber', width: 150 },
-  { title: 'Date', dataIndex: 'enquiryDate', key: 'enquiryDate', width: 120 },
+  {
+    title: 'Date',
+    dataIndex: 'enquiryDate',
+    key: 'enquiryDate',
+    width: 120,
+    render: formatDateTime,
+  },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
   { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
   { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
@@ -98,6 +108,7 @@ const getEnquiryActions = (record: SalesEnquiryItemRow, a: RowActions): TableAct
       label: 'Edit',
       icon: <EditOutlined />,
       variant: 'primary',
+      hidden: !a.can.modify,
       onClick: () => a.onEdit(record),
     })
   }
@@ -109,6 +120,7 @@ const getEnquiryActions = (record: SalesEnquiryItemRow, a: RowActions): TableAct
         label: 'Create Quotation',
         icon: <FileTextOutlined />,
         variant: 'accent',
+        hidden: !a.can.createQuote,
         onClick: () => a.onCreateQuotation(record),
       },
       {
@@ -117,6 +129,7 @@ const getEnquiryActions = (record: SalesEnquiryItemRow, a: RowActions): TableAct
         icon: <StopOutlined />,
         variant: 'danger',
         danger: true,
+        hidden: !a.can.modify,
         onClick: () => a.onClose(record),
       },
     )
@@ -129,6 +142,7 @@ const getEnquiryActions = (record: SalesEnquiryItemRow, a: RowActions): TableAct
       icon: <DeleteOutlined />,
       variant: 'danger',
       danger: true,
+      hidden: !a.can.delete,
       onClick: () => a.onDelete(record),
     })
   }
@@ -139,6 +153,8 @@ const getEnquiryActions = (record: SalesEnquiryItemRow, a: RowActions): TableAct
 export const SalesEnquiryList: FC = () => {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
+  const { canWrite: canWriteQuotations } = useModulePermission('sales-quotations')
   const status = useSalesStatusFilter('enquiry')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
@@ -219,6 +235,7 @@ export const SalesEnquiryList: FC = () => {
   const columns = getColumns()
 
   const rowActions: RowActions = {
+    can: { modify: canModify, delete: canDelete, createQuote: canWriteQuotations },
     onView: record => navigate(`/sales/enquiries/${record.salesEnquiryId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.salesEnquiryId }),
     onCreateQuotation: handleCreateQuotation,
@@ -233,13 +250,15 @@ export const SalesEnquiryList: FC = () => {
         subtitle={`${meta?.total ?? 0} enquiry items`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Enquiry' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Enquiry
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Enquiry
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

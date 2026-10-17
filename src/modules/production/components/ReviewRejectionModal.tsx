@@ -1,6 +1,7 @@
 import { App, Form, Input, InputNumber, Select } from 'antd'
 import type { FC } from 'react'
 import { useEffect, useMemo } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { Modal } from '@/components/ui/Modal'
 import { useMachines } from '@/modules/masters/hooks/useMachines'
@@ -45,6 +46,7 @@ export const ReviewRejectionModal: FC<ReviewRejectionModalProps> = ({
   rejection,
   jobCardRoutes,
 }) => {
+  const { canWrite } = useModulePermission('rejections')
   const { message } = App.useApp()
   const [form] = Form.useForm<ReviewFormValues>()
   const { data: reasons } = useRejectionReasons({ status: 1 })
@@ -113,6 +115,7 @@ export const ReviewRejectionModal: FC<ReviewRejectionModalProps> = ({
       onOk={handleSubmit}
       confirmLoading={isPending}
       okText="Submit Review"
+      okButtonProps={{ disabled: !canWrite }}
       width={620}
     >
       {rejection && (

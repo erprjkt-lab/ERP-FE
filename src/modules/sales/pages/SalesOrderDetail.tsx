@@ -11,6 +11,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -27,6 +29,7 @@ import {
 import { useSalesOrderDispatchedQtyByItem } from '../hooks/useDeliveryChallans'
 import { useDeleteSalesOrder, useSalesOrder, useSalesOrderAction } from '../hooks/useSalesOrders'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 const getItemColumns = (
   dispatchedByItemId: Map<string, number>,
@@ -74,13 +77,19 @@ const getItemColumns = (
     dataIndex: 'committedDate',
     key: 'committedDate',
     width: 140,
-    render: v => v || '—',
+    render: formatDateTime,
   },
 ]
 
 const CHALLAN_COLUMNS: TableColumnsType<DeliveryChallan> = [
   { title: 'Challan #', dataIndex: 'challanNumber', key: 'challanNumber', width: 150 },
-  { title: 'Date', dataIndex: 'challanDate', key: 'challanDate', width: 120 },
+  {
+    title: 'Date',
+    dataIndex: 'challanDate',
+    key: 'challanDate',
+    width: 120,
+    render: formatDateTime,
+  },
   { title: 'Vehicle No', dataIndex: 'vehicleNo', key: 'vehicleNo', render: v => v || '—' },
   {
     title: 'Status',
@@ -100,6 +109,8 @@ export const SalesOrderDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canDelete, canApprove } = usePagePermission()
+  const { canWrite: canWriteChallans } = useModulePermission('delivery-challans')
   const { data: order, isLoading } = useSalesOrder(id)
   const { mutateAsync: runAction, isPending } = useSalesOrderAction()
   const { mutateAsync: removeOrder, isPending: deleting } = useDeleteSalesOrder()
@@ -202,40 +213,50 @@ export const SalesOrderDetail: FC = () => {
               Back
             </Button>
             {/* Backend only permits edits while the order is still a draft. */}
-            <Button icon={<EditOutlined />} disabled={!isDraft} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
-            <Button
-              type={isDraft ? 'primary' : 'default'}
-              icon={<CheckOutlined />}
-              disabled={!isDraft}
-              loading={isPending}
-              onClick={handleApprove}
-            >
-              Approve
-            </Button>
-            <Button danger icon={<StopOutlined />} disabled={isFinished} onClick={handleCancel}>
-              Cancel Order
-            </Button>
+            {canModify && (
+              <Button icon={<EditOutlined />} disabled={!isDraft} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
+            {canApprove && (
+              <Button
+                type={isDraft ? 'primary' : 'default'}
+                icon={<CheckOutlined />}
+                disabled={!isDraft}
+                loading={isPending}
+                onClick={handleApprove}
+              >
+                Approve
+              </Button>
+            )}
+            {canModify && (
+              <Button danger icon={<StopOutlined />} disabled={isFinished} onClick={handleCancel}>
+                Cancel Order
+              </Button>
+            )}
             {/* Dispatch only makes sense once the order is confirmed and not yet fully shipped/cancelled. */}
-            <Button
-              type={order.status === 'CONFIRMED' ? 'primary' : 'default'}
-              icon={<CarOutlined />}
-              disabled={order.status !== 'CONFIRMED'}
-              onClick={() => setChallanDrawerOpen(true)}
-            >
-              Create Delivery Challan
-            </Button>
+            {canWriteChallans && (
+              <Button
+                type={order.status === 'CONFIRMED' ? 'primary' : 'default'}
+                icon={<CarOutlined />}
+                disabled={order.status !== 'CONFIRMED'}
+                onClick={() => setChallanDrawerOpen(true)}
+              >
+                Create Delivery Challan
+              </Button>
+            )}
             {/* Backend only permits deletion while still a draft. */}
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              disabled={!isDraft}
-              loading={deleting}
-              onClick={handleDelete}
-            >
-              Delete
-            </Button>
+            {canDelete && (
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                disabled={!isDraft}
+                loading={deleting}
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+            )}
           </Space>
         }
       />
@@ -250,7 +271,9 @@ export const SalesOrderDetail: FC = () => {
                   label={ORDER_STATUS_LABELS[order.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="Order Date">{order.orderDate}</Descriptions.Item>
+              <Descriptions.Item label="Order Date">
+                {formatDateTime(order.orderDate)}
+              </Descriptions.Item>
               <Descriptions.Item label="Customer">
                 {order.partyName ?? order.partyId}
               </Descriptions.Item>
@@ -258,7 +281,7 @@ export const SalesOrderDetail: FC = () => {
                 {order.customerPoNo || '—'}
               </Descriptions.Item>
               <Descriptions.Item label="Customer PO Date">
-                {order.customerPoDate || '—'}
+                {formatDateTime(order.customerPoDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Source">
                 {order.salesQuotationId ? (

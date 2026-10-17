@@ -3,6 +3,7 @@ import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -42,6 +43,7 @@ interface RawMaterialRowActions {
   onEdit: (record: RawMaterial) => void
   onDelete: (record: RawMaterial) => void
   onInspectionParameters: (record: RawMaterial) => void
+  can: { modify: boolean; delete: boolean }
 }
 
 const getRawMaterialActions = (
@@ -60,6 +62,7 @@ const getRawMaterialActions = (
     label: 'Edit',
     icon: <EditOutlined />,
     variant: 'primary',
+    hidden: !a.can.modify,
     onClick: () => a.onEdit(record),
   },
   {
@@ -68,12 +71,14 @@ const getRawMaterialActions = (
     icon: <DeleteOutlined />,
     variant: 'danger',
     danger: true,
+    hidden: !a.can.delete,
     onClick: () => a.onDelete(record),
   },
 ]
 
 export const RawMaterialList: FC = () => {
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [inspectionItemId, setInspectionItemId] = useState<string>()
   const { data: rawMaterials = [], isLoading } = useRawMaterials()
@@ -102,6 +107,7 @@ export const RawMaterialList: FC = () => {
   const columns = getColumns()
 
   const rowActions: RawMaterialRowActions = {
+    can: { modify: canModify, delete: canDelete },
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: handleDelete,
     onInspectionParameters: record => setInspectionItemId(record.id),
@@ -122,13 +128,15 @@ export const RawMaterialList: FC = () => {
         subtitle={`${filtered.length} of ${rawMaterials.length} raw materials`}
         breadcrumbs={[{ label: 'Masters', href: '/masters' }, { label: 'Raw Materials' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            Add Raw Material
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              Add Raw Material
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -184,6 +192,7 @@ export const RawMaterialList: FC = () => {
       />
 
       <InspectionParametersDrawer
+        rawMaterial
         open={!!inspectionItemId}
         itemId={inspectionItemId}
         onClose={() => setInspectionItemId(undefined)}

@@ -29,7 +29,8 @@ import {
   AppstoreOutlined,
   ShoppingOutlined,
 } from '@ant-design/icons'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -44,10 +45,12 @@ import {
 import { useJobCards } from '../hooks/useJobCards'
 import type { Challan, ChallanItem, ChallanRequest, ChallanStatus } from '@/types/production'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 import './Outsource.css'
 
 export const OutsourceList = () => {
   const { message } = App.useApp()
+  const { canWrite, canModify } = usePagePermission()
   const { data: jobCards = [] } = useJobCards()
   const {
     data: pendingRequests = [],
@@ -99,10 +102,16 @@ export const OutsourceList = () => {
   }
 
   const jobCardsById = useMemo(() => new Map(jobCards.map(jc => [jc.id, jc])), [jobCards])
-  const jobCardLabel = (jobCardId: string) => {
-    const jc = jobCardsById.get(jobCardId)
-    return jc ? `${jc.jobCardNumber} · ${jc.itemName}` : jobCardId
-  }
+  // Memoised so the search filter below can depend on it directly rather than on
+  // the map it closes over — same result, minus the lint warning for a dep the
+  // filter was already tracking indirectly.
+  const jobCardLabel = useCallback(
+    (jobCardId: string) => {
+      const jc = jobCardsById.get(jobCardId)
+      return jc ? `${jc.jobCardNumber} · ${jc.itemName}` : jobCardId
+    },
+    [jobCardsById],
+  )
 
   const selectedRequests = pendingRequests.filter(r => selectedRequestIds.includes(r.id))
 
@@ -136,7 +145,7 @@ export const OutsourceList = () => {
 
       return true
     })
-  }, [challans, searchQuery, statusFilter, jobCardsById])
+  }, [challans, searchQuery, statusFilter, jobCardLabel])
 
   // Columns for Pending Requests DataTable
   const requestColumns: TableColumnsType<ChallanRequest> = [
@@ -190,7 +199,7 @@ export const OutsourceList = () => {
       dataIndex: 'requestedAt',
       key: 'requestedAt',
       width: 120,
-      render: v => (v ? String(v).slice(0, 10) : '—'),
+      render: formatDateTime,
     },
   ]
 
@@ -208,7 +217,7 @@ export const OutsourceList = () => {
       dataIndex: 'challanDate',
       key: 'challanDate',
       width: 110,
-      render: v => <span style={{ color: '#64748B', fontSize: 13 }}>{v}</span>,
+      render: v => <span style={{ color: '#64748B', fontSize: 13 }}>{formatDateTime(v)}</span>,
     },
     {
       title: 'Vendor Name',
@@ -313,7 +322,7 @@ export const OutsourceList = () => {
             Details
           </Button>
 
-          {c.status === 'open' && (
+          {c.status === 'open' && canModify && (
             <Button
               type="primary"
               size="small"
@@ -326,7 +335,7 @@ export const OutsourceList = () => {
             </Button>
           )}
 
-          {c.status === 'received' && (
+          {c.status === 'received' && canModify && (
             <Button
               size="small"
               icon={<LockOutlined />}
@@ -361,7 +370,7 @@ export const OutsourceList = () => {
             >
               Refresh
             </Button>
-            {activeTab === 'pending' && selectedRequestIds.length > 0 && (
+            {activeTab === 'pending' && selectedRequestIds.length > 0 && canWrite && (
               <Button
                 type="primary"
                 icon={<ExportOutlined />}
@@ -910,10 +919,17 @@ export const OutsourceList = () => {
                           Number(item.dispatchedQty) > 0) ||
                         drawerChallan.status === 'closed'
 
-                      return isFullyReceived ? (
-                        <Tag color="success" icon={<CheckOutlined />}>
-                          Accepted
-                        </Tag>
+                      if (isFullyReceived) {
+                        return (
+                          <Tag color="success" icon={<CheckOutlined />}>
+                            Accepted
+                          </Tag>
+                        )
+                      }
+
+                      // Still outstanding, but this user may not record receipts.
+                      return !canModify ? (
+                        <span style={{ color: '#94A3B8' }}>—</span>
                       ) : (
                         <Button
                           size="small"

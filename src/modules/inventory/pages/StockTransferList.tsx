@@ -3,6 +3,7 @@ import { App, Button, Card, Space, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -10,6 +11,7 @@ import type { TableActionItem } from '@/components/ui'
 import type { StockTransfer, StockTransferItem } from '@/types/inventory'
 import { StockTransferFormDrawer } from '../components/StockTransferFormDrawer'
 import { useDeleteStockTransfer, useStockTransfers } from '../hooks/useStockTransfers'
+import { formatDateTime } from '@/utils/date'
 
 const ITEM_COLUMNS: TableColumnsType<StockTransferItem> = [
   {
@@ -26,6 +28,7 @@ const ITEM_COLUMNS: TableColumnsType<StockTransferItem> = [
 const getStockTransferActions = (
   record: StockTransfer,
   onDelete: (record: StockTransfer) => void,
+  canDelete: boolean,
 ): TableActionItem[] => [
   {
     key: 'delete',
@@ -33,12 +36,14 @@ const getStockTransferActions = (
     icon: <DeleteOutlined />,
     variant: 'danger',
     danger: true,
+    hidden: !canDelete,
     onClick: () => onDelete(record),
   },
 ]
 
 export const StockTransferList: FC = () => {
   const { message, modal } = App.useApp()
+  const { canWrite, canDelete } = usePagePermission()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { data: transfers, isLoading } = useStockTransfers()
   const { mutateAsync: deleteTransfer } = useDeleteStockTransfer()
@@ -63,7 +68,13 @@ export const StockTransferList: FC = () => {
 
   const columns: TableColumnsType<StockTransfer> = [
     { title: 'Transfer #', dataIndex: 'transferNumber', key: 'transferNumber', width: 160 },
-    { title: 'Date', dataIndex: 'transferDate', key: 'transferDate', width: 120 },
+    {
+      title: 'Date',
+      dataIndex: 'transferDate',
+      key: 'transferDate',
+      width: 120,
+      render: formatDateTime,
+    },
     {
       title: 'Movement',
       key: 'movement',
@@ -109,9 +120,11 @@ export const StockTransferList: FC = () => {
         subtitle={`${transfers.length} transfers — move stock between your own store locations`}
         breadcrumbs={[{ label: 'Inventory' }, { label: 'Stock Transfer' }]}
         actions={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
-            New Transfer
-          </Button>
+          canWrite ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
+              New Transfer
+            </Button>
+          ) : undefined
         }
       />
 
@@ -128,7 +141,7 @@ export const StockTransferList: FC = () => {
           loading={isLoading}
           totalLabel="transfers"
           fillHeight
-          rowActions={record => getStockTransferActions(record, handleDelete)}
+          rowActions={record => getStockTransferActions(record, handleDelete, canDelete)}
           expandable={{
             expandedRowRender: record => (
               <DataTable<StockTransferItem>

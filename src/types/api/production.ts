@@ -92,7 +92,8 @@ export interface ApiInspectionParameter {
 }
 
 export interface CreateInspectionParameterPayload {
-  process_id: number
+  /** Omitted for raw materials, which have no process route. */
+  process_id?: number
   param_type: number
   parameter: string
   specification: string
@@ -255,6 +256,9 @@ export interface CreateMovementPayload {
   to_process_id: number
   moved_qty: number
   moved_at?: string | null
+  /** Keeps a rework redo in its own balance bucket instead of pooling with the
+   *  first pass. ERP-BE validates the two separately end to end. */
+  is_rework?: boolean
 }
 
 export interface AcceptMovementPayload {
@@ -279,6 +283,10 @@ export interface CreateProcessLogPayload {
   bypassed_qty?: number
   inbound_challan_item_id?: number | null
   inbound_rework_review_id?: number | null
+  /** Set for any log against a Rework row. Citing inbound_rework_review_id
+   *  implies it, but send it explicitly so later hops of the redo — which carry
+   *  no review id — stay in the rework bucket. */
+  is_rework?: boolean
   production_seconds?: number | null
   downtime_seconds?: number | null
   remark?: string | null
@@ -297,11 +305,13 @@ export interface ApiJobCardChallanRequest {
   requested_by: number | null
   requested_by_name: string | null
   requested_at: string | null
+  is_rework: boolean
 }
 
 export interface CreateChallanRequestPayload {
   process_id: number
   requested_qty: number
+  is_rework?: boolean
 }
 
 export interface ApiJobCardChallanItem {

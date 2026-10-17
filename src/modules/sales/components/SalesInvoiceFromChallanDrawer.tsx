@@ -11,6 +11,7 @@ import type { SalesInvoiceFromChallanItemPayload } from '@/types/api/sales'
 import type { DeliveryChallanItemRow } from '@/types/sales'
 import { useDeliveryChallanItems } from '../hooks/useDeliveryChallans'
 import { useCreateSalesInvoiceFromChallan } from '../hooks/useSalesInvoices'
+import { formatDateTime } from '@/utils/date'
 
 interface HeaderValues {
   invoiceDate: dayjs.Dayjs
@@ -97,7 +98,13 @@ export const SalesInvoiceFromChallanDrawer: FC<SalesInvoiceFromChallanDrawerProp
 
   const columns: TableColumnsType<DeliveryChallanItemRow> = [
     { title: 'Challan #', dataIndex: 'challanNumber', key: 'challanNumber', width: 150 },
-    { title: 'Date', dataIndex: 'challanDate', key: 'challanDate', width: 110 },
+    {
+      title: 'Date',
+      dataIndex: 'challanDate',
+      key: 'challanDate',
+      width: 110,
+      render: formatDateTime,
+    },
     {
       title: 'Item',
       key: 'item',

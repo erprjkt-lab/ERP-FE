@@ -3,11 +3,59 @@ import { render, screen } from '@testing-library/react'
 import { App as AntApp } from 'antd'
 import type { ReactElement } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MODULE_PAGES } from '@/layouts/sidebarNav'
+import { usePermissionStore } from '@/store/permissionStore'
+import type { ModulePermissions } from '@/store/permissionStore'
+
+const ALL_ACTIONS = { read: true, write: true, modify: true, delete: true, approve: true }
+const NO_ACTIONS = { read: false, write: false, modify: false, delete: false, approve: false }
+
+/**
+ * Pages hide their action buttons unless the permission store says the user may
+ * use them, and that store is normally filled by the sidebar query in AppLayout
+ * — which page tests don't render. Seed it here so a page test exercises a
+ * fully-permitted user by default, and pass `permissions` to test a restricted
+ * one.
+ */
+function seedPermissions(paths: string[], granted: Partial<typeof ALL_ACTIONS> | 'all') {
+  const can = granted === 'all' ? ALL_ACTIONS : { ...NO_ACTIONS, ...granted }
+  const entry = (moduleKey: string): ModulePermissions => ({
+    id: 1,
+    name: moduleKey,
+    moduleKey,
+    route: null,
+    icon: null,
+    can,
+  })
+
+  const modulePermissions: Record<string, ModulePermissions> = {}
+  const routePermissions: Record<string, ModulePermissions> = {}
+
+  for (const [moduleKey, pages] of Object.entries(MODULE_PAGES)) {
+    modulePermissions[moduleKey] = entry(moduleKey)
+    for (const page of pages) routePermissions[page.path] = modulePermissions[moduleKey]
+  }
+  // Whatever route this test renders at, so usePagePermission resolves there too.
+  for (const path of paths) routePermissions[path] = entry('test-route')
+
+  usePermissionStore.setState({ modulePermissions, routePermissions, isLoaded: true })
+}
 
 export function renderPage(
   ui: ReactElement,
-  { path = '/', initialEntries = ['/'] }: { path?: string; initialEntries?: string[] } = {},
+  {
+    path = '/',
+    initialEntries = ['/'],
+    permissions = 'all',
+  }: {
+    path?: string
+    initialEntries?: string[]
+    /** 'all' (the default) or the subset of actions this user holds. */
+    permissions?: Partial<typeof ALL_ACTIONS> | 'all'
+  } = {},
 ) {
+  seedPermissions(initialEntries.map(String), permissions)
+
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 0 }, mutations: { retry: false } },
   })

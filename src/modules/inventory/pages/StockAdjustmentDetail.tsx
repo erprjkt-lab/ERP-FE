@@ -3,6 +3,7 @@ import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'an
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -12,11 +13,13 @@ import { StockAdjustmentFormDrawer } from '../components/StockAdjustmentFormDraw
 import { STOCK_ADJUSTMENT_STATUS_BADGE, STOCK_ADJUSTMENT_STATUS_LABELS } from '../constants'
 import { useApproveStockAdjustment, useStockAdjustment } from '../hooks/useStockAdjustments'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 export const StockAdjustmentDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canApprove } = usePagePermission()
   const { data: adjustment, isLoading } = useStockAdjustment(id)
   const { mutateAsync: approve, isPending: approving } = useApproveStockAdjustment()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -98,17 +101,21 @@ export const StockAdjustmentDetail: FC = () => {
             </Button>
             {adjustment.status === 'PENDING_APPROVAL' && (
               <>
-                <Button icon={<EditOutlined />} onClick={() => setDrawerOpen(true)}>
-                  Edit
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  loading={approving}
-                  onClick={handleApprove}
-                >
-                  Approve
-                </Button>
+                {canModify && (
+                  <Button icon={<EditOutlined />} onClick={() => setDrawerOpen(true)}>
+                    Edit
+                  </Button>
+                )}
+                {canApprove && (
+                  <Button
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    loading={approving}
+                    onClick={handleApprove}
+                  >
+                    Approve
+                  </Button>
+                )}
               </>
             )}
           </Space>
@@ -126,7 +133,7 @@ export const StockAdjustmentDetail: FC = () => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Adjustment Date">
-                {adjustment.adjustmentDate}
+                {formatDateTime(adjustment.adjustmentDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Location">
                 {adjustment.locationName ?? '—'}
@@ -136,7 +143,7 @@ export const StockAdjustmentDetail: FC = () => {
                 {adjustment.approvedBy ?? '—'}
               </Descriptions.Item>
               <Descriptions.Item label="Approved At">
-                {adjustment.approvedAt ?? '—'}
+                {formatDateTime(adjustment.approvedAt)}
               </Descriptions.Item>
               <Descriptions.Item label="Remarks" span="filled">
                 {adjustment.remarks ?? '—'}

@@ -80,6 +80,10 @@ export interface PurchaseEnquirySupplier {
   sentAt?: string | null
   responseReceivedAt?: string | null
   remarks?: string
+  /** The quotation recorded against this supplier, with its lines. ERP-BE eager
+   *  loads `suppliers.quotation.items` on the enquiry, so it arrives with the
+   *  enquiry — no separate fetch needed to show or prefill what was quoted. */
+  quotation?: SupplierQuotation
 }
 
 export interface PurchaseEnquiry extends BaseEntity {

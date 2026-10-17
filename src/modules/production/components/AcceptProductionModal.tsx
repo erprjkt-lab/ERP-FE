@@ -8,6 +8,7 @@ import type { JobCardMovement } from '@/types/production'
 import { useAcceptMovement } from '../hooks/useJobCardMovements'
 import type { StepProgress } from '../utils/jobCardProgress'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 export interface AcceptProductionModalProps {
   open: boolean
@@ -96,7 +97,7 @@ export const AcceptProductionModal: FC<AcceptProductionModalProps> = ({
       dataIndex: 'movedAt',
       key: 'movedAt',
       width: 110,
-      render: value => String(value).slice(0, 10),
+      render: formatDateTime,
     },
     { title: 'From Process', dataIndex: 'fromProcessName', key: 'fromProcessName' },
     { title: 'Moved', dataIndex: 'movedQty', key: 'movedQty', width: 90 },

@@ -4,6 +4,8 @@ import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -14,6 +16,7 @@ import { GrnFormDrawer } from '../components/GrnFormDrawer'
 import { GRN_LINE_STATUS_BADGE, GRN_LINE_STATUS_LABELS, ITEM_TYPE_RAW_MATERIAL } from '../constants'
 import { useGrnItems } from '../hooks/usePurchaseGrns'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(GRN_LINE_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -24,6 +27,9 @@ interface RowActions {
   onView: (record: GrnItemRow) => void
   onEdit: (record: GrnItemRow) => void
   onIir: (record: GrnItemRow) => void
+  /** Opening the IIR drawer is an incoming-inspection action, so it answers to
+   *  the `iir` module rather than this page's. */
+  can: { modify: boolean; iir: boolean }
 }
 
 const getColumns = (): TableColumnsType<GrnItemRow> => [
@@ -34,7 +40,9 @@ const getColumns = (): TableColumnsType<GrnItemRow> => [
     render: (_, record) => (
       <div>
         <div style={{ fontWeight: 600 }}>{record.grnNo}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.grnDate}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+          {formatDateTime(record.grnDate)}
+        </div>
       </div>
     ),
   },
@@ -100,11 +108,12 @@ const getGrnActions = (record: GrnItemRow, a: RowActions): TableActionItem[] => 
     label: 'Edit GRN',
     icon: <EditOutlined />,
     variant: 'primary',
+    hidden: !a.can.modify,
     onClick: () => a.onEdit(record),
   },
   // IIR only applies to raw-material lines (same rule as the GRN detail page).
   // item_type arrives as a raw join column, so it can be the int or its string form.
-  ...(Number(record.itemType) === ITEM_TYPE_RAW_MATERIAL
+  ...(Number(record.itemType) === ITEM_TYPE_RAW_MATERIAL && a.can.iir
     ? [
         {
           key: 'iir',
@@ -119,6 +128,8 @@ const getGrnActions = (record: GrnItemRow, a: RowActions): TableActionItem[] => 
 
 export const PurchaseGrnList: FC = () => {
   const navigate = useNavigate()
+  const { canWrite, canModify } = usePagePermission()
+  const { canRead: canReadIir } = useModulePermission('iir')
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [iirRow, setIirRow] = useState<GrnItemRow>()
   const [page, setPage] = useState(1)
@@ -140,6 +151,7 @@ export const PurchaseGrnList: FC = () => {
     onView: record => navigate(`/purchase/grn/${record.grnId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.grnId }),
     onIir: record => setIirRow(record),
+    can: { modify: canModify, iir: canReadIir },
   }
 
   const filtered = items.filter(
@@ -153,13 +165,15 @@ export const PurchaseGrnList: FC = () => {
         subtitle={`${meta?.total ?? 0} GRN items`}
         breadcrumbs={[{ label: 'Purchase', href: '/purchase' }, { label: 'GRN' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New GRN
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New GRN
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

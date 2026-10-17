@@ -52,6 +52,9 @@ function toPayload(input: Partial<ConsumableInput>) {
     gst_percent: input.gstPercent,
     description: input.description,
     status: input.status === 'inactive' ? 0 : 1,
+    batch_tracking: input.batchTracking,
+    heat_tracking: input.heatTracking,
+    serial_tracking: input.serialTracking,
     price: input.price,
   }
 }

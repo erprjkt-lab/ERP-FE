@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { TableActionItem } from '@/components/ui'
@@ -14,6 +15,7 @@ import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
 import { useApprovePurchaseOrder, usePurchaseOrderItems } from '../hooks/usePurchaseOrders'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(PO_STATUS_LABELS).map(([value, label]) => ({ value, label }))
 
@@ -25,7 +27,9 @@ const getColumns = (): TableColumnsType<PurchaseOrderItemRow> => [
     render: (_, record) => (
       <div>
         <div style={{ fontWeight: 600 }}>{record.poNumber}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.poDate}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+          {formatDateTime(record.poDate)}
+        </div>
       </div>
     ),
   },
@@ -86,6 +90,7 @@ const getOrderActions = (
     onView: (record: PurchaseOrderItemRow) => void
     onEdit: (record: PurchaseOrderItemRow) => void
     onApprove: (record: PurchaseOrderItemRow) => void
+    can: { modify: boolean; approve: boolean }
   },
 ): TableActionItem[] => {
   const actions: TableActionItem[] = [
@@ -105,6 +110,7 @@ const getOrderActions = (
         label: 'Edit PO',
         icon: <EditOutlined />,
         variant: 'primary',
+        hidden: !a.can.modify,
         onClick: () => a.onEdit(record),
       },
       {
@@ -112,6 +118,7 @@ const getOrderActions = (
         label: 'Approve PO',
         icon: <CheckOutlined />,
         variant: 'success',
+        hidden: !a.can.approve,
         onClick: () => a.onApprove(record),
       },
     )
@@ -123,6 +130,7 @@ const getOrderActions = (
 export const PurchaseOrderList: FC = () => {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { canWrite, canModify, canApprove } = usePagePermission()
   const { mutateAsync: approveOrder } = useApprovePurchaseOrder()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [page, setPage] = useState(1)
@@ -159,6 +167,7 @@ export const PurchaseOrderList: FC = () => {
     onEdit: (record: PurchaseOrderItemRow) =>
       setDrawerState({ mode: 'edit', id: record.purchaseOrderId }),
     onApprove: handleApprove,
+    can: { modify: canModify, approve: canApprove },
   }
 
   return (
@@ -168,13 +177,15 @@ export const PurchaseOrderList: FC = () => {
         subtitle={`${meta?.total ?? 0} purchase order items`}
         breadcrumbs={[{ label: 'Purchase', href: '/purchase' }, { label: 'Purchase Order' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Purchase Order
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Purchase Order
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">

@@ -3,6 +3,7 @@ import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'an
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
@@ -13,6 +14,7 @@ import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
 import { usePurchaseEnquiries } from '../hooks/usePurchaseEnquiries'
 import { useApprovePurchaseOrder, usePurchaseOrder } from '../hooks/usePurchaseOrders'
+import { formatDateTime } from '@/utils/date'
 
 export const PurchaseOrderDetail: FC = () => {
   const { id } = useParams()
@@ -21,6 +23,7 @@ export const PurchaseOrderDetail: FC = () => {
   const { data: order, isLoading } = usePurchaseOrder(id)
   const { data: enquiries } = usePurchaseEnquiries()
   const { message } = App.useApp()
+  const { canModify, canApprove } = usePagePermission()
   const { mutateAsync: approveOrder, isPending: approving } = useApprovePurchaseOrder()
 
   const handleApprove = async () => {
@@ -62,7 +65,7 @@ export const PurchaseOrderDetail: FC = () => {
       title: 'Delivery Date',
       dataIndex: 'deliveryDate',
       key: 'deliveryDate',
-      render: (v: string) => v ?? '—',
+      render: formatDateTime,
     },
   ]
 
@@ -83,17 +86,21 @@ export const PurchaseOrderDetail: FC = () => {
             </Button>
             {order.status === 'PENDING_APPROVAL' && (
               <>
-                <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-                  Edit
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  loading={approving}
-                  onClick={handleApprove}
-                >
-                  Approve
-                </Button>
+                {canModify && (
+                  <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                    Edit
+                  </Button>
+                )}
+                {canApprove && (
+                  <Button
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    loading={approving}
+                    onClick={handleApprove}
+                  >
+                    Approve
+                  </Button>
+                )}
               </>
             )}
             {sourceEnquiry && (
@@ -115,7 +122,7 @@ export const PurchaseOrderDetail: FC = () => {
                   label={PO_STATUS_LABELS[order.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="PO Date">{order.poDate}</Descriptions.Item>
+              <Descriptions.Item label="PO Date">{formatDateTime(order.poDate)}</Descriptions.Item>
               <Descriptions.Item label="Supplier">
                 {order.supplierName ?? order.supplierId}
               </Descriptions.Item>

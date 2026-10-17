@@ -204,6 +204,14 @@ export interface SupplierQuotationItemPayload {
   remarks?: string | null
 }
 
+// PUT /quotations/{id}. Everything is `sometimes` on the BE, and
+// purchase_enquiry_supplier_id is deliberately absent: ERP-BE rejects any attempt
+// to re-point a recorded quotation at a different supplier (422), because that
+// bypassed its one-quotation-per-supplier guard.
+export type SupplierQuotationUpdatePayload = Partial<
+  Omit<SupplierQuotationPayload, 'purchase_enquiry_supplier_id'>
+>
+
 export interface SupplierQuotationPayload {
   purchase_enquiry_supplier_id: number
   quotation_number?: string | null
