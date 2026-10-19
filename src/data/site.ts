@@ -1,14 +1,10 @@
 export const COMPANY = {
   name: 'CoreFlowTech',
   tagline: 'Enterprise Resource Planning Solutions',
-  address: 'Suvarnabhoomi, near Speed Well Party Plot, Ambika Township, Rajkot 360004',
-  phone: '+91 97730 84699',
+  address: "308, Shree Mahalaxmi Complex, Opp. to Saint Mary's High School, Kalavad Road, Rajkot 360005",
   // .in, matching the real domain — .com belongs to an unrelated company.
   email: 'info@coreflowtech.in',
 }
-
-// Same number as COMPANY.phone — wa.me needs it digits-only with country code.
-export const WHATSAPP_URL = 'https://wa.me/919773084699'
 
 export interface NavItem {
   label: string
@@ -210,13 +206,14 @@ export const STATS: Stat[] = [
 ]
 
 export const MARQUEE_ITEMS = [
+  'Industrial Management',
   'Engineering',
+  'Manufacturing ERP',
+  'Custom Software',
   'Healthcare',
   'Technology',
-  'Manufacturing',
-  'Retail',
-  'Logistics',
-  'Trading',
+  'Retail & Logistics',
+  'Enterprise Solutions',
 ]
 
 export const FAQS = [

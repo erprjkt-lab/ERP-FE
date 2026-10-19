@@ -43,15 +43,16 @@ import { ERP_MODULES, INDUSTRIES, MARQUEE_ITEMS, PRODUCTS } from '@/data/site'
 const SERVICE_CARDS = [
   {
     icon: Workflow,
-    title: 'ERP Solutions',
+    title: 'ERP & Industrial Management Systems',
     description:
-      'A single connected system for HR, finance, inventory, production, procurement and sales.',
+      'A single connected system for HR, finance, inventory, production, procurement and sales, configured for manufacturing and growing businesses.',
     to: '/services/erp-solutions',
   },
   {
     icon: Globe2,
-    title: 'Web Development',
-    description: 'Fast, modern websites and web platforms built to represent your business well.',
+    title: 'Software & Web Development',
+    description:
+      'Fast, modern web platforms and custom software engineering built to represent and scale your business.',
     to: '/services/web-development',
   },
 ]
@@ -251,7 +252,7 @@ export function Home() {
             <Reveal>
               <span className="inline-flex animate-ring-pulse items-center gap-2 rounded-full border border-brand-100 bg-white px-4 py-1.5 text-xs font-semibold text-brand-700 shadow-sm">
                 <Sparkles className="h-3.5 w-3.5" />
-                ERP built for how you actually work
+                Enterprise ERP & Industrial Management Systems
               </span>
             </Reveal>
             <AnimatedText
@@ -263,9 +264,9 @@ export function Home() {
             />
             <Reveal delay={0.2} soft>
               <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
-                CoreFlowTech builds ERP software and web platforms for engineering, healthcare,
-                technology and manufacturing businesses — one connected system instead of ten
-                disconnected tools.
+                CoreFlowTech delivers custom ERP software and industrial management systems for
+                engineering, healthcare, technology and manufacturing businesses — one connected
+                platform instead of ten disconnected tools.
               </p>
             </Reveal>
             <Reveal delay={0.3}>

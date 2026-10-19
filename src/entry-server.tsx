@@ -20,3 +20,5 @@ export function render(url: string): string {
     </StrictMode>,
   )
 }
+
+export { getPageSchemas } from './data/schemas'

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Mail, MapPin, Phone } from 'lucide-react'
+import { Mail, MapPin } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { Container } from '@/components/ui/Container'
 import { COMPANY, FOOTER_LINKS } from '@/data/site'
@@ -19,7 +19,7 @@ export function Footer() {
 
           <div>
             <h4 className="font-display text-sm font-semibold text-white">Company</h4>
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul className="mt-4 space-y-2 text-sm">
               {FOOTER_LINKS.company.map(link => (
                 <li key={link.path}>
                   <Link
@@ -35,7 +35,7 @@ export function Footer() {
 
           <div>
             <h4 className="font-display text-sm font-semibold text-white">Services</h4>
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul className="mt-4 space-y-2 text-sm">
               {FOOTER_LINKS.services.map(link => (
                 <li key={link.path}>
                   <Link
@@ -55,10 +55,6 @@ export function Footer() {
               <li className="flex items-start gap-2.5">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" />
                 <span>{COMPANY.address}</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 shrink-0 text-brand-400" />
-                <span>{COMPANY.phone}</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="h-4 w-4 shrink-0 text-brand-400" />

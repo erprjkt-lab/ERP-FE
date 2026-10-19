@@ -27,7 +27,7 @@ import { AnimatedText } from '@/components/ui/AnimatedText'
 import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { CtaBanner } from '@/components/sections/CtaBanner'
-import { ERP_BENEFITS, ERP_MODULES, ERP_WORKFLOW, FAQS, WHATSAPP_URL } from '@/data/site'
+import { ERP_BENEFITS, ERP_MODULES, ERP_WORKFLOW, FAQS } from '@/data/site'
 
 const PLATFORM_HIGHLIGHTS = [
   { icon: LayoutGrid, label: 'Modular by design' },
@@ -100,21 +100,21 @@ export function ErpSolutions() {
             <Reveal>
               <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-700">
                 <Sparkles className="h-3.5 w-3.5" />
-                ERP Solutions
+                ERP Software & Industrial Management
               </span>
             </Reveal>
             <AnimatedText
               as="h1"
-              text="Every department. One system."
-              highlight="One system."
+              text="Industrial management systems & enterprise ERP"
+              highlight="enterprise ERP"
               delay={0.1}
               className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
             />
             <Reveal delay={0.25} soft>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-500">
-                CoreFlowTech ERP connects HR, finance, inventory, production, procurement and sales
-                into a single platform — configured around how your business actually runs, not a
-                rigid template you have to adapt to.
+                CoreFlowTech delivers premier ERP software and custom industrial management systems in
+                Rajkot, Gujarat. Connect HR, finance, inventory, production routes, procurement and sales
+                into a single platform — configured around how your manufacturing and business workflow runs.
               </p>
             </Reveal>
             <Reveal delay={0.3}>
@@ -335,8 +335,6 @@ export function ErpSolutions() {
         title="See CoreFlowTech ERP on your own data"
         description="We'll walk through your current process and show exactly how it maps onto the platform."
         primaryLabel="Book a Free ERP Demo"
-        secondaryLabel="Chat on WhatsApp"
-        secondaryHref={WHATSAPP_URL}
       />
     </div>
   )

@@ -56,20 +56,21 @@ export function WebDevelopment() {
           <div className="mx-auto max-w-3xl text-center">
             <Reveal>
               <span className="inline-block rounded-full bg-brand-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-700">
-                Web Development
+                Software & Web Development in Rajkot
               </span>
             </Reveal>
             <AnimatedText
               as="h1"
-              text="Websites built to represent your business well"
-              highlight="represent your business"
+              text="Software development & web platforms in Rajkot"
+              highlight="Software development"
               delay={0.1}
               className="mt-6 font-display text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl"
             />
             <Reveal delay={0.25} soft>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-500">
-                From marketing sites to full web platforms, we design and build fast, modern
-                experiences — no page builders, no generic templates.
+                CoreFlowTech is a premier software development company in Rajkot. From custom web
+                applications and enterprise B2B portals to high-performance marketing platforms, we design
+                and build fast, modern software experiences — custom engineered for scale.
               </p>
             </Reveal>
             <Reveal delay={0.3}>

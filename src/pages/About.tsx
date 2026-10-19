@@ -51,10 +51,10 @@ export function About() {
             />
             <Reveal delay={0.25} soft>
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-500">
-                CoreFlowTech is a software company focused on two things: enterprise resource
-                planning systems that unify how a business operates, and web platforms that
-                represent it well. We work across engineering, healthcare, technology and
-                manufacturing — building for how each industry actually runs.
+                CoreFlowTech is a premier software development and ERP company in Rajkot, Gujarat.
+                We specialize in custom industrial management systems that unify business operations,
+                alongside modern enterprise web applications engineered for manufacturing, healthcare,
+                engineering, and technology teams.
               </p>
             </Reveal>
           </div>

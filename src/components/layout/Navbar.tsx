@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Menu, Phone, X } from 'lucide-react'
+import { ChevronDown, Menu, X } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
-import { COMPANY, NAV_ITEMS } from '@/data/site'
+import { NAV_ITEMS } from '@/data/site'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -107,13 +107,6 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-4 lg:flex">
-          <a
-            href={`tel:${COMPANY.phone.replace(/\s+/g, '')}`}
-            className="flex items-center gap-1.5 text-xs font-semibold text-ink-600 transition-colors hover:text-brand-600"
-          >
-            <Phone className="h-3.5 w-3.5" />
-            {COMPANY.phone}
-          </a>
           <Button to="/contact" variant="primary" className="!px-5 !py-2.5 text-xs">
             Get a Quote
           </Button>

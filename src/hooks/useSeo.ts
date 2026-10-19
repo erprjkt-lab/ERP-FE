@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { getBreadcrumbs, getSeoForPath, SEO_ROUTES, SITE_NAME, SITE_URL } from '@/data/seo'
+import { getPageSchemas } from '@/data/schemas'
 
 function setMeta(selector: string, attr: string, value: string) {
   const el = document.head.querySelector<HTMLMetaElement | HTMLLinkElement>(selector)
@@ -19,6 +20,11 @@ function setJsonLd(id: string, data: unknown) {
     document.head.appendChild(el)
   }
   el.textContent = JSON.stringify(data)
+}
+
+function removeJsonLd(id: string) {
+  const el = document.getElementById(id)
+  if (el) el.remove()
 }
 
 /**
@@ -53,17 +59,23 @@ export function useSeo() {
     setMeta('meta[name="twitter:image"]', 'content', imageUrl)
     setMeta('meta[name="robots"]', 'content', known ? 'index, follow' : 'noindex, nofollow')
 
-    if (!known) return
+    if (!known) {
+      removeJsonLd('ld-extra')
+      return
+    }
 
+    const { webpageType, extraSchemas } = getPageSchemas(pathname)
     const breadcrumbs = getBreadcrumbs(pathname)
+
     setJsonLd('ld-webpage', {
       '@context': 'https://schema.org',
-      '@type': 'WebPage',
+      '@type': webpageType,
       name: title,
       description,
       url,
       isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     })
+
     setJsonLd('ld-breadcrumb', {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
@@ -74,5 +86,19 @@ export function useSeo() {
         item: `${SITE_URL}${crumb.path}`,
       })),
     })
+
+    if (extraSchemas.length > 0) {
+      const extraPayload =
+        extraSchemas.length === 1
+          ? extraSchemas[0]
+          : {
+              '@context': 'https://schema.org',
+              '@graph': extraSchemas,
+            }
+      setJsonLd('ld-extra', extraPayload)
+    } else {
+      removeJsonLd('ld-extra')
+    }
   }, [pathname])
 }
+

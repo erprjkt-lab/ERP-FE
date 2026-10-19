@@ -45,7 +45,7 @@ if (!existsSync(ssrEntry)) {
     `Missing ${ssrEntry} — run "npm run build:ssr" (or "npm run build", which does this for you) before prerendering.`,
   )
 }
-const { render } = await import(pathToFileURL(ssrEntry).href)
+const { render, getPageSchemas } = await import(pathToFileURL(ssrEntry).href)
 
 function replaceTagContent(html, findAttr, findValue, newContent) {
   const pattern = new RegExp(`(<[^>]*\\b${findAttr}="${findValue}"[^>]*\\b(?:content|href)=")[^"]*(")`)
@@ -128,10 +128,12 @@ for (const route of routes) {
   html = replaceTagContent(html, 'name', 'twitter:description', description)
   html = replaceTagContent(html, 'name', 'twitter:image', imageUrl)
 
+  const { webpageType, extraSchemas } = getPageSchemas ? getPageSchemas(route.path) : { webpageType: 'WebPage', extraSchemas: [] }
   const breadcrumbs = getBreadcrumbs(route.path)
+
   html = setJsonLdPlaceholder(html, 'ld-webpage', {
     '@context': 'https://schema.org',
-    '@type': 'WebPage',
+    '@type': webpageType,
     name: route.title,
     description: route.description,
     url,
@@ -148,19 +150,17 @@ for (const route of routes) {
     })),
   })
 
-  // Genuinely applicable only here — this is the one page actually
-  // describing the ERP product itself. No price/offers/rating: none of
-  // that is real, so none of it is claimed.
-  if (route.path === '/services/erp-solutions') {
-    html = appendJsonLd(html, {
-      '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'CoreFlowTech ERP',
-      applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web',
-      description: route.description,
-      url,
-    })
+  if (extraSchemas.length > 0) {
+    const extraPayload =
+      extraSchemas.length === 1
+        ? extraSchemas[0]
+        : {
+            '@context': 'https://schema.org',
+            '@graph': extraSchemas,
+          }
+    html = setJsonLdPlaceholder(html, 'ld-extra', extraPayload)
+  } else {
+    html = html.replace(/\s*<script type="application\/ld\+json" id="ld-extra"><\/script>\n?/, '')
   }
 
   const bodyHtml = render(route.path)
@@ -191,7 +191,7 @@ for (const route of routes) {
   html = replaceTagContent(html, 'name', 'twitter:title', notFoundTitle)
   html = replaceTagContent(html, 'name', 'robots', 'noindex, nofollow')
   html = html.replace(
-    /<script type="application\/ld\+json" id="ld-webpage"><\/script>\s*<script type="application\/ld\+json" id="ld-breadcrumb"><\/script>\n?/,
+    /\s*<script type="application\/ld\+json" id="ld-(?:webpage|breadcrumb|extra)"><\/script>\n?/g,
     '',
   )
 
