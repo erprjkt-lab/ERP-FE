@@ -339,3 +339,58 @@ body {
     flex-grow: 1 !important;
   }
 }
+
+/* ── Toasts (antd `message`) ─────────────────────────────────────────────────
+   antd hardcodes `closable: false` on message, so these never render a close
+   button of their own. DismissibleMessages makes a tap anywhere on a toast
+   clear it; the rules below make that tappable area obvious and finger-sized
+   on touch, where there is no hover to hint at it.
+
+   Selectors are doubled up (`.ant-message .ant-message-notice`) because antd's
+   own CSS-in-JS rules for layout out-specify a bare class — verified in the
+   browser: a single class won the ::after and padding but lost width/display. */
+
+.ant-message-notice-wrapper {
+  cursor: pointer;
+}
+
+@media (max-width: 767.98px) {
+  /* Clear of the fixed header. */
+  .ant-message {
+    top: 8px !important;
+  }
+
+  /* Stretch the notice across the screen so the text has room beside the ✕. */
+  .ant-message .ant-message-notice {
+    width: 100%;
+    padding-inline: 8px;
+  }
+
+  .ant-message .ant-message-notice-wrapper {
+    width: 100%;
+    /* Room on the right for the ✕ so long messages don't run under it. */
+    padding-inline: 14px 44px;
+    padding-block: 12px;
+    text-align: start;
+    position: relative;
+  }
+
+  /* Affordance only — the whole toast is the hit area, so this needs no
+     pointer handling of its own. */
+  .ant-message .ant-message-notice-wrapper::after {
+    content: '✕';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px: minimum comfortable touch target. */
+    inline-size: 44px;
+    block-size: 100%;
+    min-block-size: 44px;
+    font-size: 13px;
+    line-height: 1;
+    opacity: 0.45;
+  }
+}

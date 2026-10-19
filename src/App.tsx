@@ -1,6 +1,7 @@
 import { App as AntApp, ConfigProvider } from 'antd'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/RequireAuth'
+import { CAN_HOVER, DismissibleMessages } from '@/components/ui/DismissibleMessages'
 import { AppLayout } from '@/layouts/AppLayout'
 import { ALL_NAV_LEAVES } from '@/layouts/navConfig'
 import {
@@ -166,9 +167,19 @@ const IMPLEMENTED_PATHS = new Set([
 function App() {
   return (
     <ConfigProvider theme={ANTD_THEME}>
-      {/* Longer than antd's 3s default — API validation errors can be a full
-          sentence and were dismissing before they could be read. */}
-      <AntApp message={{ duration: 5 }}>
+      {/* duration: longer than antd's 3s default — API validation errors can be
+          a full sentence and were dismissing before they could be read.
+
+          pauseOnHover: antd defaults this to true, which on a touch screen is a
+          trap — tapping a toast latches :hover, so the countdown pauses and the
+          toast sits there until something else is tapped. That read as "it stays
+          for 15 seconds and won't close", because trying to dismiss it was what
+          kept it alive. Keep the pause only where a real pointer can hover.
+
+          maxCount: caps the stack so a burst of row-level errors can't bury the
+          screen — and keeps "tap to dismiss" to a predictable handful. */}
+      <AntApp message={{ duration: 5, pauseOnHover: CAN_HOVER, maxCount: 3 }}>
+        <DismissibleMessages />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
