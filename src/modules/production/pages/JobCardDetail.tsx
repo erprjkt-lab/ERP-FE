@@ -33,11 +33,18 @@ import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { JobCardInspectionReports } from '@/modules/quality/components/JobCardInspectionReports'
-import type { JobCardMovement, MaterialIssue, MaterialReturn, ProcessLog } from '@/types/production'
+import type {
+  JobCardMovement,
+  MaterialIssue,
+  MaterialReturn,
+  ProcessLog,
+  ProductionReceipt,
+} from '@/types/production'
 import { AcceptProductionModal } from '../components/AcceptProductionModal'
 import { MetaItem, SummaryStat } from '../components/JobCardStats'
 import { LogProductionModal } from '../components/LogProductionModal'
 import { MoveForwardModal } from '../components/MoveForwardModal'
+import { ReceiveProductionModal } from '../components/ReceiveProductionModal'
 import { RequestOutsourceModal } from '../components/RequestOutsourceModal'
 import { ReturnMaterialModal } from '../components/ReturnMaterialModal'
 import { useItemBom } from '../hooks/useItemBom'
@@ -56,6 +63,7 @@ import {
   useJobCardMovements,
 } from '../hooks/useJobCardMovements'
 import { useDeleteProcessLog, useProcessLogs } from '../hooks/useProcessLogs'
+import { useDeleteProductionReceipt, useProductionReceipts } from '../hooks/useProductionReceipts'
 import { useReworkReviewsForJobCard } from '../hooks/useRejections'
 import { computeJobCardTotals, computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
@@ -100,7 +108,7 @@ export const JobCardDetail: FC = () => {
   const [activeStepId, setActiveStepId] = useState<string>()
   // Set while the open modal belongs to a rework batch rather than the first pass.
   const [activeReworkReviewId, setActiveReworkReviewId] = useState<string>()
-  const [drawer, setDrawer] = useState<'accept' | 'log' | 'move' | 'outsource'>()
+  const [drawer, setDrawer] = useState<'accept' | 'log' | 'move' | 'outsource' | 'receive'>()
   const [returnOpen, setReturnOpen] = useState(false)
 
   const { data: jobCard, isLoading } = useJobCard(id)
@@ -110,12 +118,14 @@ export const JobCardDetail: FC = () => {
   const { data: issues = [], isLoading: issuesLoading } = useMaterialIssues(id)
   const { data: materialSummary = [], isLoading: summaryLoading } = useMaterialSummary(id)
   const { data: materialReturns = [], isLoading: returnsLoading } = useMaterialReturns(id)
+  const { data: receipts = [], isLoading: receiptsLoading } = useProductionReceipts(id)
   const { data: bomLines = [] } = useItemBom(jobCard?.itemId)
   const { mutateAsync: removeLog } = useDeleteProcessLog(id)
   const { mutateAsync: removeMovement } = useDeleteMovement(id)
   const { mutateAsync: removeAcceptance } = useDeleteAcceptance(id)
   const { mutateAsync: removeIssue } = useDeleteMaterialIssue(id)
   const { mutateAsync: removeReturn } = useDeleteMaterialReturn(id)
+  const { mutateAsync: removeReceipt } = useDeleteProductionReceipt(id)
   const {
     data: reworkReviews,
     allReviews: rejectionReviews,
@@ -128,7 +138,17 @@ export const JobCardDetail: FC = () => {
   // tab counts only its own logs. A rework log re-processes qty the first pass already
   // counted, and mixing them would double-count every step.
   const firstPassLogs = logs.filter(log => !log.isRework)
-  const progress = computeStepProgress(jobCard?.routes ?? [], firstPassLogs, movements, orderedQty)
+  // ERP-BE no longer posts finished-goods stock when the last step is logged; the
+  // qty waits to be received, so what has been received nets out of that step's
+  // ready-to-move figure the way a movement does for every earlier step.
+  const receivedQty = receipts.reduce((sum, receipt) => sum + receipt.receivedQty, 0)
+  const progress = computeStepProgress(
+    jobCard?.routes ?? [],
+    firstPassLogs,
+    movements,
+    orderedQty,
+    receivedQty,
+  )
   const reworkBatches = computeReworkBatches(jobCard?.routes ?? [], reworkReviews, logs, movements)
   const activeBatch = reworkBatches.find(batch => batch.review.id === activeReworkReviewId)
   const activeRows = activeBatch?.steps ?? progress
@@ -170,7 +190,7 @@ export const JobCardDetail: FC = () => {
 
   const openDrawer = (
     step: StepProgress,
-    which: 'accept' | 'log' | 'move' | 'outsource',
+    which: 'accept' | 'log' | 'move' | 'outsource' | 'receive',
     reworkReviewId?: string,
   ) => {
     setActiveStepId(step.step.processId)
@@ -343,10 +363,13 @@ export const JobCardDetail: FC = () => {
       render: (_, record) => {
         const canAccept = record.unacceptedQty > 0
         const canLog = record.pendingQty > 0 && (!record.isFirst || hasMaterial)
-        const canMove = record.readyToMoveQty > 0 && !record.isLast
+        // The last step has no next process to move to — its OK qty settles by
+        // being received into store, which is the same "send it onward" slot.
+        const canMove = record.readyToMoveQty > 0
         const canOutsource = record.pendingQty > 0
         // The one step the floor should do next gets the filled button.
-        const primary = canAccept ? 'accept' : canLog ? 'log' : canMove ? 'move' : undefined
+        const onwardKey = record.isLast ? 'receive' : 'move'
+        const primary = canAccept ? 'accept' : canLog ? 'log' : canMove ? onwardKey : undefined
 
         const actions = [
           { key: 'accept' as const, label: 'Accept', icon: <CheckOutlined />, enabled: canAccept },
@@ -357,7 +380,14 @@ export const JobCardDetail: FC = () => {
             icon: <ExportOutlined />,
             enabled: canOutsource,
           },
-          { key: 'move' as const, label: 'Move', icon: <SendOutlined />, enabled: canMove },
+          record.isLast
+            ? {
+                key: 'receive' as const,
+                label: 'Receive',
+                icon: <InboxOutlined />,
+                enabled: canMove,
+              }
+            : { key: 'move' as const, label: 'Move', icon: <SendOutlined />, enabled: canMove },
         ].filter(action =>
           // Accept/Log/Move all mutate this job card; Outsource instead creates a
           // job card challan, so it answers to that module.
@@ -447,6 +477,30 @@ export const JobCardDetail: FC = () => {
               'Takes the material back out of store stock and onto the job card again. Refused if the returned stock has since been consumed elsewhere.',
             run: () => removeReturn(entry.id),
             success: 'Material return deleted and reverted',
+          })),
+        ]
+      : []),
+  ]
+
+  const receiptColumns: TableColumnsType<ProductionReceipt> = [
+    {
+      title: 'Date',
+      dataIndex: 'receivedAt',
+      key: 'receivedAt',
+      width: 110,
+      render: formatDateTime,
+    },
+    { title: 'Item', dataIndex: 'itemName', key: 'itemName' },
+    { title: 'Store', dataIndex: 'storeLocationName', key: 'storeLocationName', width: 170 },
+    { title: 'Qty', dataIndex: 'receivedQty', key: 'receivedQty', width: 90 },
+    ...(canDelete
+      ? [
+          deleteColumn<ProductionReceipt>(receipt => ({
+            title: `Delete the receipt of ${receipt.receivedQty}?`,
+            content:
+              'Takes the finished goods back out of store stock and returns the qty to ready-to-receive at the final process. Refused if any of it has already been issued or sold.',
+            run: () => removeReceipt(receipt.id),
+            success: 'Production receipt deleted and stock reversed',
           })),
         ]
       : []),
@@ -783,6 +837,22 @@ export const JobCardDetail: FC = () => {
               ),
             },
             {
+              key: 'receipts',
+              label: `Stock Received (${receipts.length})`,
+              children: (
+                <DataTable<ProductionReceipt>
+                  columns={receiptColumns}
+                  dataSource={receipts}
+                  rowKey="id"
+                  loading={receiptsLoading}
+                  pagination={false}
+                  size="small"
+                  scroll={{ x: 'max-content' }}
+                  totalLabel="receipts"
+                />
+              ),
+            },
+            {
               key: 'logs',
               label: `Production Logs (${logs.length})`,
               children: (
@@ -900,6 +970,15 @@ export const JobCardDetail: FC = () => {
             open={returnOpen}
             onClose={() => setReturnOpen(false)}
             jobCardId={jobCard.id}
+          />
+          <ReceiveProductionModal
+            open={drawer === 'receive'}
+            onClose={closeDrawer}
+            jobCardId={jobCard.id}
+            step={activeStep}
+            outputLocationId={jobCard.outputLocationId}
+            outputLocationName={jobCard.outputLocationName}
+            receipts={receipts}
           />
           <MoveForwardModal
             open={drawer === 'move'}

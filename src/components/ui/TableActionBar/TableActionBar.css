@@ -152,8 +152,17 @@
   color: #722ed1;
 }
 
+/* In flight: not the 35%-opacity "dead" look of a disabled button — the action
+   is working, so it stays legible while refusing further clicks. */
+.erp-table-action-btn.is-loading {
+  cursor: progress;
+  pointer-events: none;
+  opacity: 0.75;
+  transform: none;
+}
+
 /* Disabled State */
-.erp-table-action-btn:disabled,
+.erp-table-action-btn:disabled:not(.is-loading),
 .erp-table-action-btn.is-disabled {
   opacity: 0.35;
   cursor: not-allowed;

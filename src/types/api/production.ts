@@ -166,6 +166,29 @@ export interface ApiJobCardBomRequirement {
  *  ERP-BE (ok+rejected logged at the first route step, scaled by
  *  required_qty/ordered_qty), not a stored column, and pending_used_qty is the
  *  ceiling a new material return may not exceed. */
+/** A pull of last-step OK qty into store. Since ERP-BE made this an explicit
+ *  action it is no longer tied 1:1 to a process log, so process_log_id is null
+ *  on anything created through POST job-cards/{id}/production-receipts. */
+export interface ApiProductionReceipt {
+  id: number
+  job_card_id: number
+  process_log_id: number | null
+  item_id: number
+  item_name: string | null
+  store_location_id: number
+  store_location_name: string | null
+  received_qty: number
+  received_at: string | null
+  stock_movement_id: number | null
+}
+
+export interface CreateProductionReceiptPayload {
+  received_qty: number
+  /** Defaults to the job card's output location when omitted. */
+  store_location_id?: number | null
+  received_at?: string | null
+}
+
 export interface ApiMaterialSummaryRow {
   component_item_id: number
   component_name: string | null

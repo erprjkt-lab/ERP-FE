@@ -26,6 +26,7 @@ import {
   useRejectionReviews,
   useRejectionsForJobCard,
 } from '../hooks/useRejections'
+import { useProductionReceipts } from '../hooks/useProductionReceipts'
 import { computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
 import type { Rejection, RejectionReview } from '@/types/production'
@@ -136,9 +137,19 @@ export const RejectionReviewDetail: FC = () => {
   const { data: logs = [] } = useProcessLogs(jobCardId)
   const { data: movements = [] } = useJobCardMovements(jobCardId)
   const { data: rejections, isLoading: rejectionsLoading } = useRejectionsForJobCard(jobCardId)
+  const { data: receipts = [] } = useProductionReceipts(jobCardId)
 
   const orderedQty = jobCard?.orderedQty ?? 0
-  const progress = computeStepProgress(jobCard?.routes ?? [], logs, movements, orderedQty)
+  // The last step's qty settles by being received into store, not by a movement,
+  // so without this its ready-to-move reads as everything ever produced there.
+  const receivedQty = receipts.reduce((sum, receipt) => sum + receipt.receivedQty, 0)
+  const progress = computeStepProgress(
+    jobCard?.routes ?? [],
+    logs,
+    movements,
+    orderedQty,
+    receivedQty,
+  )
   const finalOk = progress.length ? progress[progress.length - 1].okQty : 0
   const totalRejected = progress.reduce((sum, row) => sum + row.rejectedQty, 0)
 

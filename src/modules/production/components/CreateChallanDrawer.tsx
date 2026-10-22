@@ -1,20 +1,23 @@
-import { App, Col, Form, InputNumber, Row } from 'antd'
+import { App, Col, Form, InputNumber, Row, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
-import { FormField } from '@/components/ui/FormField'
-import { Modal } from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/DataTable'
+import { FormDrawer } from '@/components/ui/FormDrawer'
+import { FormField } from '@/components/ui/FormField'
 import { useVendors } from '@/modules/masters/hooks/useVendors'
 import type { ChallanRequest } from '@/types/production'
 import { useCreateChallan } from '../hooks/useJobCardChallans'
 import { getErrorMessage } from '@/api/client'
 
-export interface CreateChallanModalProps {
+export interface CreateChallanDrawerProps {
   open: boolean
   onClose: () => void
+  /** Every pending request, so several can go out on one vendor challan. */
   requests: ChallanRequest[]
+  /** The row the user acted on — its full pending qty is filled in up front. */
+  seedRequestId?: string
   jobCardLabel: (jobCardId: string) => string
 }
 
@@ -23,10 +26,11 @@ interface ChallanFormValues {
   destinationPartyId: string
 }
 
-export const CreateChallanModal: FC<CreateChallanModalProps> = ({
+export const CreateChallanDrawer: FC<CreateChallanDrawerProps> = ({
   open,
   onClose,
   requests,
+  seedRequestId,
   jobCardLabel,
 }) => {
   const { message } = App.useApp()
@@ -45,35 +49,37 @@ export const CreateChallanModal: FC<CreateChallanModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  // Reset the per-row qty/rate state whenever the modal opens for a new
-  // selection. Adjusted during render (React's recommended pattern for
-  // resetting state on a prop change) rather than in the effect above,
-  // since these are plain useState setters, not the Form instance's own
-  // (non-React) state.
-  const [trackedOpen, setTrackedOpen] = useState(open)
-  if (open !== trackedOpen) {
-    setTrackedOpen(open)
-    if (open) {
-      setDispatchQty(Object.fromEntries(requests.map(r => [r.id, r.pendingQty])))
-      setRate({})
-    }
+  // Only the row that was acted on starts with a quantity; the rest sit at 0 and
+  // are left out of the payload unless the user types one. That is the whole
+  // bundling mechanism — no extra selection UI needed. Adjusted during render
+  // (React's pattern for resetting state on a prop change) rather than in the
+  // effect above, since these are plain useState setters.
+  const [trackedSeed, setTrackedSeed] = useState<string | undefined>()
+  if (open && seedRequestId !== trackedSeed) {
+    setTrackedSeed(seedRequestId)
+    const seeded = requests.find(request => request.id === seedRequestId)
+    setDispatchQty(seeded ? { [seeded.id]: seeded.pendingQty } : {})
+    setRate({})
+  }
+  if (!open && trackedSeed !== undefined) {
+    setTrackedSeed(undefined)
   }
 
-  const handleOk = async () => {
+  const items = requests
+    .map(request => ({
+      challan_request_id: Number(request.id),
+      dispatched_qty: dispatchQty[request.id] ?? 0,
+      rate: rate[request.id] ?? null,
+    }))
+    .filter(item => item.dispatched_qty > 0)
+
+  const handleSubmit = async () => {
     let values: ChallanFormValues
     try {
       values = await form.validateFields()
     } catch {
       return
     }
-
-    const items = requests
-      .map(request => ({
-        challan_request_id: Number(request.id),
-        dispatched_qty: dispatchQty[request.id] ?? 0,
-        rate: rate[request.id] ?? null,
-      }))
-      .filter(item => item.dispatched_qty > 0)
 
     if (items.length === 0) {
       message.error('Enter a dispatch quantity for at least one request')
@@ -100,7 +106,7 @@ export const CreateChallanModal: FC<CreateChallanModalProps> = ({
     {
       title: 'Dispatch Qty',
       key: 'dispatchQty',
-      width: 140,
+      width: 130,
       render: (_, r) => (
         <InputNumber
           size="small"
@@ -115,7 +121,7 @@ export const CreateChallanModal: FC<CreateChallanModalProps> = ({
     {
       title: 'Rate',
       key: 'rate',
-      width: 120,
+      width: 110,
       render: (_, r) => (
         <InputNumber
           size="small"
@@ -130,14 +136,16 @@ export const CreateChallanModal: FC<CreateChallanModalProps> = ({
   ]
 
   return (
-    <Modal
-      title="Create Challan"
+    <FormDrawer
+      title="Create Outsource Challan"
       open={open}
+      onClose={onClose}
       onCancel={onClose}
-      onOk={handleOk}
-      okText="Create Challan"
-      confirmLoading={isPending}
-      width={780}
+      onSubmit={handleSubmit}
+      submitText={items.length > 1 ? `Create Challan (${items.length} items)` : 'Create Challan'}
+      submitting={isPending}
+      submitDisabled={items.length === 0}
+      width={760}
     >
       <Form form={form} layout="vertical">
         <Row gutter={16}>
@@ -161,13 +169,20 @@ export const CreateChallanModal: FC<CreateChallanModalProps> = ({
         </Row>
       </Form>
 
+      <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+        One challan can carry work from several job cards to the same vendor — give any other
+        pending request below a dispatch quantity to add it.
+      </Typography.Text>
+
       <DataTable<ChallanRequest>
         columns={columns}
         dataSource={requests}
         rowKey="id"
         pagination={false}
         size="small"
+        scroll={{ x: 'max-content' }}
+        locale={{ emptyText: 'No pending outsource requests' }}
       />
-    </Modal>
+    </FormDrawer>
   )
 }

@@ -1,22 +1,6 @@
-import {
-  App,
-  Button,
-  Card,
-  Drawer,
-  Empty,
-  Input,
-  Progress,
-  Radio,
-  Segmented,
-  Space,
-  Tabs,
-  Tag,
-  Tooltip,
-} from 'antd'
+import { App, Button, Card, Drawer, Empty, Input, Progress, Segmented, Space, Tag } from 'antd'
 import type { TableColumnsType } from 'antd'
 import {
-  CalendarOutlined,
-  CheckCircleOutlined,
   CheckOutlined,
   DeleteOutlined,
   UndoOutlined,
@@ -27,17 +11,15 @@ import {
   ReloadOutlined,
   SearchOutlined,
   ShopOutlined,
-  UnorderedListOutlined,
-  AppstoreOutlined,
-  ShoppingOutlined,
 } from '@ant-design/icons'
 import { useCallback, useMemo, useState } from 'react'
 import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui/TableActionBar'
 import { AcceptChallanItemModal } from '../components/AcceptChallanItemModal'
-import { CreateChallanModal } from '../components/CreateChallanModal'
+import { CreateChallanDrawer } from '../components/CreateChallanDrawer'
 import { useDeleteChallanRequest, usePendingChallanRequests } from '../hooks/useChallanRequests'
 import {
   useAllChallans,
@@ -51,6 +33,13 @@ import type { Challan, ChallanItem, ChallanRequest, ChallanStatus } from '@/type
 import { getErrorMessage } from '@/api/client'
 import { formatDateTime } from '@/utils/date'
 import './Outsource.css'
+
+/** One line of the outsource ledger: a request still waiting to be dispatched,
+ *  or the challan it was bundled into. `status` is what the filter and the
+ *  Status column read, so both stages sort into the same set of chips. */
+type OutsourceRow =
+  | { key: string; kind: 'request'; status: 'pending'; request: ChallanRequest }
+  | { key: string; kind: 'challan'; status: ChallanStatus; challan: Challan }
 
 export const OutsourceList = () => {
   const { message, modal } = App.useApp()
@@ -67,30 +56,51 @@ export const OutsourceList = () => {
     refetch: refetchChallans,
     isFetching,
   } = useAllChallans()
-  const { mutateAsync: markReceived, isPending: markingReceived } = useMarkChallanReceived()
-  const { mutateAsync: closeChallanMutation, isPending: closing } = useCloseChallan()
-  const { mutateAsync: unmarkReceived, isPending: unreceiving } = useUnmarkChallanReceived()
-  const { mutateAsync: deleteChallanMutation } = useDeleteChallan()
-  const { mutateAsync: deleteRequestMutation } = useDeleteChallanRequest()
+  // `variables` is the id passed to the mutation, so `isPending && variables === id`
+  // narrows the spinner to the row that was clicked instead of every row sharing
+  // the mutation.
+  const {
+    mutateAsync: markReceived,
+    isPending: markingReceived,
+    variables: markingId,
+  } = useMarkChallanReceived()
+  const {
+    mutateAsync: closeChallanMutation,
+    isPending: closing,
+    variables: closingId,
+  } = useCloseChallan()
+  const {
+    mutateAsync: unmarkReceived,
+    isPending: unreceiving,
+    variables: unreceivingId,
+  } = useUnmarkChallanReceived()
+  const {
+    mutateAsync: deleteChallanMutation,
+    isPending: deletingChallan,
+    variables: deletingChallanId,
+  } = useDeleteChallan()
+  const {
+    mutateAsync: deleteRequestMutation,
+    isPending: deletingRequest,
+    variables: deletingRequestId,
+  } = useDeleteChallanRequest()
 
-  const [activeTab, setActiveTab] = useState<'challans' | 'pending'>('challans')
-  const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([])
   const [createChallanOpen, setCreateChallanOpen] = useState(false)
+  const [seedRequestId, setSeedRequestId] = useState<string>()
   const [acceptTarget, setAcceptTarget] = useState<{ challan: Challan; item: ChallanItem }>()
 
   // Filter & Search Controls
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
-  const [drawerChallan, setDrawerChallan] = useState<Challan | undefined>()
+  // Hold the id, not the row: the drawer is now the only detail view, so it has
+  // to show what a refetch brings back (an accepted item, a new status) rather
+  // than a copy taken when it was opened.
+  const [drawerChallanId, setDrawerChallanId] = useState<string>()
 
   const handleMarkReceived = async (challanId: string) => {
     try {
       await markReceived(challanId)
       message.success('Challan marked as received at factory gate')
-      if (drawerChallan?.id === challanId) {
-        setDrawerChallan(prev => (prev ? { ...prev, status: 'received' } : undefined))
-      }
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -101,9 +111,6 @@ export const OutsourceList = () => {
     try {
       await unmarkReceived(challanId)
       message.success('Challan reverted to open')
-      if (drawerChallan?.id === challanId) {
-        setDrawerChallan(prev => (prev ? { ...prev, status: 'open' } : undefined))
-      }
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -113,9 +120,6 @@ export const OutsourceList = () => {
     try {
       await closeChallanMutation(challanId)
       message.success('Challan reconciled and closed successfully')
-      if (drawerChallan?.id === challanId) {
-        setDrawerChallan(prev => (prev ? { ...prev, status: 'closed' } : undefined))
-      }
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -134,7 +138,7 @@ export const OutsourceList = () => {
         try {
           await deleteChallanMutation(challan.id)
           message.success('Challan deleted and its requests reopened')
-          if (drawerChallan?.id === challan.id) setDrawerChallan(undefined)
+          if (drawerChallanId === challan.id) setDrawerChallanId(undefined)
         } catch (error) {
           message.error(getErrorMessage(error))
         }
@@ -152,7 +156,6 @@ export const OutsourceList = () => {
       onOk: async () => {
         try {
           await deleteRequestMutation(request.id)
-          setSelectedRequestIds(prev => prev.filter(reqId => reqId !== request.id))
           message.success('Outsource request deleted')
         } catch (error) {
           message.error(getErrorMessage(error))
@@ -173,8 +176,6 @@ export const OutsourceList = () => {
     [jobCardsById],
   )
 
-  const selectedRequests = pendingRequests.filter(r => selectedRequestIds.includes(r.id))
-
   // KPI telemetry summary calculations
   const openCount = useMemo(() => challans.filter(c => c.status === 'open').length, [challans])
   const receivedCount = useMemo(
@@ -183,147 +184,195 @@ export const OutsourceList = () => {
   )
   const closedCount = useMemo(() => challans.filter(c => c.status === 'closed').length, [challans])
 
-  // Filtered Challans
-  const filteredChallans = useMemo(() => {
-    return challans.filter(c => {
-      const q = searchQuery.toLowerCase().trim()
-      const matchesSearch =
-        !q ||
-        c.challanNumber.toLowerCase().includes(q) ||
-        c.destinationPartyName.toLowerCase().includes(q) ||
-        c.items.some(
-          it =>
-            it.processName.toLowerCase().includes(q) ||
-            jobCardLabel(it.jobCardId).toLowerCase().includes(q),
-        )
-
-      if (!matchesSearch) return false
-
-      if (statusFilter !== 'all' && c.status !== statusFilter) {
-        return false
-      }
-
-      return true
-    })
-  }, [challans, searchQuery, statusFilter, jobCardLabel])
-
-  // Columns for Pending Requests DataTable
-  const requestColumns: TableColumnsType<ChallanRequest> = [
+  const challanActions = (challan: Challan): TableActionItem[] => [
     {
-      title: 'Job Card',
-      key: 'jobCard',
-      render: (_, r) => (
-        <span style={{ fontWeight: 600, color: '#0F172A' }}>{jobCardLabel(r.jobCardId)}</span>
-      ),
+      key: 'details',
+      label: 'View Details',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => setDrawerChallanId(challan.id),
     },
     {
-      title: 'Process',
-      dataIndex: 'processName',
-      key: 'processName',
-      width: 170,
-      render: v => <Tag color="cyan">{v}</Tag>,
+      key: 'receive',
+      label: 'Mark Received',
+      icon: <CheckOutlined />,
+      variant: 'success',
+      hidden: challan.status !== 'open' || !canModify,
+      loading: markingReceived && markingId === challan.id,
+      onClick: () => handleMarkReceived(challan.id),
     },
     {
-      title: 'Requested Qty',
-      dataIndex: 'requestedQty',
-      key: 'requestedQty',
-      width: 130,
-      render: v => <span style={{ fontWeight: 600 }}>{v} pcs</span>,
+      key: 'close',
+      label: 'Close Challan',
+      icon: <LockOutlined />,
+      variant: 'primary',
+      hidden: challan.status !== 'received' || !canModify,
+      loading: closing && closingId === challan.id,
+      onClick: () => handleClose(challan.id),
     },
     {
-      title: 'Dispatched',
-      dataIndex: 'dispatchedQty',
-      key: 'dispatchedQty',
-      width: 120,
-      render: v => <span style={{ color: '#64748B' }}>{v} pcs</span>,
+      key: 'unreceive',
+      label: 'Undo Receive',
+      icon: <UndoOutlined />,
+      variant: 'warning',
+      hidden: challan.status !== 'received' || !canModify,
+      loading: unreceiving && unreceivingId === challan.id,
+      onClick: () => handleUnmarkReceived(challan.id),
     },
     {
-      title: 'Pending Qty',
-      dataIndex: 'pendingQty',
-      key: 'pendingQty',
-      width: 130,
-      render: v => (
-        <Tag color={v > 0 ? 'warning' : 'default'} style={{ fontWeight: 700 }}>
-          {v} pcs pending
-        </Tag>
-      ),
+      key: 'delete',
+      label: 'Delete Challan',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      hidden: challan.status !== 'open' || !canDelete,
+      loading: deletingChallan && deletingChallanId === challan.id,
+      onClick: () => handleDeleteChallan(challan),
     },
-    {
-      title: 'Requested By',
-      dataIndex: 'requestedByName',
-      key: 'requestedByName',
-      render: v => v || '—',
-    },
-    {
-      title: 'Date',
-      dataIndex: 'requestedAt',
-      key: 'requestedAt',
-      width: 120,
-      render: formatDateTime,
-    },
-    ...(canDelete
-      ? [
-          {
-            title: '',
-            key: 'delete',
-            width: 50,
-            align: 'right' as const,
-            render: (_: unknown, r: ChallanRequest) => (
-              <Tooltip title="Delete this outsource request">
-                <Button
-                  size="small"
-                  type="text"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDeleteRequest(r)}
-                />
-              </Tooltip>
-            ),
-          },
-        ]
-      : []),
   ]
 
-  // Columns for Compact Table View of Challans
-  const compactChallanColumns: TableColumnsType<Challan> = [
+  const requestActions = (request: ChallanRequest): TableActionItem[] => [
     {
-      title: 'Challan No',
-      dataIndex: 'challanNumber',
-      key: 'challanNumber',
-      width: 140,
-      render: v => <span className="cf-challan-pill">{v}</span>,
+      key: 'create-challan',
+      label: 'Create Challan',
+      icon: <ExportOutlined />,
+      variant: 'accent',
+      hidden: !canWrite,
+      onClick: () => {
+        setSeedRequestId(request.id)
+        setCreateChallanOpen(true)
+      },
     },
     {
-      title: 'Date',
-      dataIndex: 'challanDate',
-      key: 'challanDate',
-      width: 110,
-      render: v => <span style={{ color: '#64748B', fontSize: 13 }}>{formatDateTime(v)}</span>,
+      key: 'delete',
+      label: 'Delete Request',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      hidden: !canDelete,
+      loading: deletingRequest && deletingRequestId === request.id,
+      onClick: () => handleDeleteRequest(request),
+    },
+  ]
+
+  // Resolved against the live list every render, so accepting an item or
+  // changing the status updates the open drawer as soon as the refetch lands.
+  // Reads undefined once the challan is deleted, which closes the drawer.
+  const drawerChallan = challans.find(challan => challan.id === drawerChallanId)
+
+  // A request and the challan it becomes are two stages of one thing, and
+  // splitting them across tabs meant the floor had to know which tab a job was
+  // sitting in. One list, ordered pending-first, with the stage in the Status
+  // column.
+  const rows: OutsourceRow[] = useMemo(
+    () => [
+      ...pendingRequests.map<OutsourceRow>(request => ({
+        key: `request-${request.id}`,
+        kind: 'request',
+        status: 'pending',
+        request,
+      })),
+      ...challans.map<OutsourceRow>(challan => ({
+        key: `challan-${challan.id}`,
+        kind: 'challan',
+        status: challan.status,
+        challan,
+      })),
+    ],
+    [pendingRequests, challans],
+  )
+
+  const filteredRows = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+
+    return rows.filter(row => {
+      if (statusFilter !== 'all' && row.status !== statusFilter) return false
+      if (!q) return true
+
+      if (row.kind === 'request') {
+        return (
+          row.request.processName.toLowerCase().includes(q) ||
+          jobCardLabel(row.request.jobCardId).toLowerCase().includes(q)
+        )
+      }
+
+      return (
+        row.challan.challanNumber.toLowerCase().includes(q) ||
+        row.challan.destinationPartyName.toLowerCase().includes(q) ||
+        row.challan.items.some(
+          item =>
+            item.processName.toLowerCase().includes(q) ||
+            jobCardLabel(item.jobCardId).toLowerCase().includes(q),
+        )
+      )
+    })
+  }, [rows, searchQuery, statusFilter, jobCardLabel])
+
+  const outsourceColumns: TableColumnsType<OutsourceRow> = [
+    {
+      title: 'Reference',
+      key: 'reference',
+      width: 150,
+      render: (_, row) =>
+        row.kind === 'challan' ? (
+          <div>
+            <span className="cf-challan-pill">{row.challan.challanNumber}</span>
+            <div style={{ color: '#64748B', fontSize: 12, marginTop: 4 }}>
+              {formatDateTime(row.challan.challanDate)}
+            </div>
+          </div>
+        ) : (
+          <div style={{ color: '#94A3B8', fontSize: 13 }}>
+            Not dispatched
+            <div style={{ fontSize: 12, marginTop: 4 }}>
+              {formatDateTime(row.request.requestedAt)}
+            </div>
+          </div>
+        ),
     },
     {
-      title: 'Vendor Name',
-      dataIndex: 'destinationPartyName',
-      key: 'destinationPartyName',
-      render: v => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <ShopOutlined style={{ color: '#64748B' }} />
-          <strong style={{ color: '#0F172A' }}>{v}</strong>
-        </div>
-      ),
+      title: 'Vendor',
+      key: 'vendor',
+      width: 170,
+      render: (_, row) =>
+        row.kind === 'challan' ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ShopOutlined style={{ color: '#64748B' }} />
+            <strong style={{ color: '#0F172A' }}>{row.challan.destinationPartyName}</strong>
+          </div>
+        ) : (
+          <span style={{ color: '#94A3B8' }}>Not assigned</span>
+        ),
     },
     {
-      title: 'Outsourced Items',
-      key: 'itemsSummary',
-      render: (_, c) => {
-        const first = c.items[0]
+      title: 'Outsourced Work',
+      key: 'work',
+      render: (_, row) => {
+        if (row.kind === 'request') {
+          return (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>
+                {jobCardLabel(row.request.jobCardId)}
+              </div>
+              <Tag color="cyan" style={{ marginTop: 4 }}>
+                {row.request.processName}
+              </Tag>
+            </div>
+          )
+        }
+
+        const first = row.challan.items[0]
         if (!first) return '—'
-        const label = `${jobCardLabel(first.jobCardId)} (${first.processName})`
+
         return (
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>{label}</div>
-            {c.items.length > 1 && (
+            <div style={{ fontSize: 13, fontWeight: 500 }}>{jobCardLabel(first.jobCardId)}</div>
+            <Tag color="cyan" style={{ marginTop: 4 }}>
+              {first.processName}
+            </Tag>
+            {row.challan.items.length > 1 && (
               <span style={{ fontSize: 11, color: '#0289C3' }}>
-                +{c.items.length - 1} more item(s)
+                +{row.challan.items.length - 1} more
               </span>
             )}
           </div>
@@ -331,13 +380,25 @@ export const OutsourceList = () => {
       },
     },
     {
-      title: 'Dispatched / Recv',
-      key: 'qtyRatio',
+      title: 'Qty',
+      key: 'qty',
       width: 160,
-      render: (_, c) => {
-        const totalDisp = c.items.reduce((s, it) => s + Number(it.dispatchedQty || 0), 0)
-        const totalRecv = c.items.reduce((s, it) => s + Number(it.receivedQty || 0), 0)
+      render: (_, row) => {
+        if (row.kind === 'request') {
+          return (
+            <div style={{ fontSize: 12 }}>
+              <div style={{ fontWeight: 600 }}>{row.request.requestedQty} pcs requested</div>
+              <Tag color="warning" style={{ marginTop: 4, fontWeight: 600 }}>
+                {row.request.pendingQty} pcs pending
+              </Tag>
+            </div>
+          )
+        }
+
+        const totalDisp = row.challan.items.reduce((s, it) => s + Number(it.dispatchedQty || 0), 0)
+        const totalRecv = row.challan.items.reduce((s, it) => s + Number(it.receivedQty || 0), 0)
         const pct = totalDisp > 0 ? Math.round((totalRecv / totalDisp) * 100) : 100
+
         return (
           <div style={{ width: 130 }}>
             <div
@@ -368,8 +429,10 @@ export const OutsourceList = () => {
       title: 'Total Amount',
       key: 'totalAmt',
       width: 120,
-      render: (_, c) => {
-        const amt = c.items.reduce(
+      render: (_, row) => {
+        if (row.kind === 'request') return <span style={{ color: '#94A3B8' }}>—</span>
+
+        const amt = row.challan.items.reduce(
           (s, it) => s + Number(it.amount || Number(it.rate || 0) * Number(it.dispatchedQty || 0)),
           0,
         )
@@ -382,76 +445,16 @@ export const OutsourceList = () => {
     },
     {
       title: 'Status',
-      dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status: ChallanStatus) => <StatusBadge status={status} />,
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 180,
-      align: 'right',
-      render: (_, c) => (
-        <Space size="small">
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => setDrawerChallan(c)}
-            style={{ borderRadius: 6 }}
-          >
-            Details
-          </Button>
-
-          {c.status === 'open' && canModify && (
-            <Button
-              type="primary"
-              size="small"
-              icon={<CheckOutlined />}
-              loading={markingReceived}
-              onClick={() => handleMarkReceived(c.id)}
-              style={{ borderRadius: 6 }}
-            >
-              Receive
-            </Button>
-          )}
-
-          {c.status === 'received' && canModify && (
-            <>
-              <Button
-                size="small"
-                icon={<LockOutlined />}
-                loading={closing}
-                onClick={() => handleClose(c.id)}
-                style={{ borderRadius: 6 }}
-              >
-                Close
-              </Button>
-              <Tooltip title="Undo the gate receipt and put this challan back to open">
-                <Button
-                  size="small"
-                  type="text"
-                  icon={<UndoOutlined />}
-                  loading={unreceiving}
-                  onClick={() => handleUnmarkReceived(c.id)}
-                />
-              </Tooltip>
-            </>
-          )}
-
-          {c.status === 'open' && canDelete && (
-            <Tooltip title="Delete this challan and reopen its requests">
-              <Button
-                size="small"
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => handleDeleteChallan(c)}
-              />
-            </Tooltip>
-          )}
-        </Space>
-      ),
+      render: (_, row) =>
+        row.kind === 'request' ? (
+          <Tag color="default" style={{ fontWeight: 600 }}>
+            Pending
+          </Tag>
+        ) : (
+          <StatusBadge status={row.challan.status} />
+        ),
     },
   ]
 
@@ -474,417 +477,74 @@ export const OutsourceList = () => {
             >
               Refresh
             </Button>
-            {activeTab === 'pending' && selectedRequestIds.length > 0 && canWrite && (
-              <Button
-                type="primary"
-                icon={<ExportOutlined />}
-                onClick={() => setCreateChallanOpen(true)}
-                style={{ borderRadius: 8 }}
-              >
-                Create Challan ({selectedRequestIds.length})
-              </Button>
-            )}
           </Space>
         }
       />
 
       {/* ====================================================================
-          2. MAIN TABBED WORKSPACE
+          2. OUTSOURCE LEDGER — requests and the challans they became
           ==================================================================== */}
       <Card className="cf-outsource-main-card">
-        <Tabs
-          activeKey={activeTab}
-          onChange={k => setActiveTab(k as 'challans' | 'pending')}
-          tabBarExtraContent={
-            activeTab === 'pending' ? (
-              <Tooltip
-                title={selectedRequestIds.length === 0 ? 'Select requests to bundle' : undefined}
+        <div className="cf-outsource-filter-bar">
+          <div className="cf-filter-bar-left">
+            <Input
+              placeholder="Search by Challan #, Vendor, or Job Card..."
+              prefix={<SearchOutlined style={{ color: '#94A3B8' }} />}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              allowClear
+              className="cf-filter-search"
+            />
+
+            <Segmented
+              value={statusFilter}
+              onChange={val => setStatusFilter(String(val))}
+              options={[
+                { label: `All (${rows.length})`, value: 'all' },
+                { label: `Pending (${pendingRequests.length})`, value: 'pending' },
+                { label: `Open (${openCount})`, value: 'open' },
+                { label: `Received (${receivedCount})`, value: 'received' },
+                { label: `Closed (${closedCount})`, value: 'closed' },
+              ]}
+            />
+          </div>
+        </div>
+
+        {filteredRows.length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              searchQuery || statusFilter !== 'all'
+                ? 'Nothing matches the current filter or search criteria.'
+                : 'No outsource requests or challans yet. Raise a request from a job card process.'
+            }
+            style={{ padding: '40px 0' }}
+          >
+            {(searchQuery || statusFilter !== 'all') && (
+              <Button
+                onClick={() => {
+                  setSearchQuery('')
+                  setStatusFilter('all')
+                }}
               >
-                <Button
-                  type="primary"
-                  icon={<ExportOutlined />}
-                  disabled={selectedRequestIds.length === 0}
-                  onClick={() => setCreateChallanOpen(true)}
-                  style={{ borderRadius: 8 }}
-                >
-                  Create Challan ({selectedRequestIds.length})
-                </Button>
-              </Tooltip>
-            ) : null
-          }
-          items={[
-            {
-              key: 'challans',
-              label: `Outsource Challans (${challans.length})`,
-              children: (
-                <div>
-                  {/* Search and Filters Bar */}
-                  <div className="cf-outsource-filter-bar">
-                    <div className="cf-filter-bar-left">
-                      <Input
-                        placeholder="Search by Challan #, Vendor, or Job Card..."
-                        prefix={<SearchOutlined style={{ color: '#94A3B8' }} />}
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        allowClear
-                        className="cf-filter-search"
-                      />
-
-                      <Segmented
-                        value={statusFilter}
-                        onChange={val => setStatusFilter(String(val))}
-                        options={[
-                          { label: `All (${challans.length})`, value: 'all' },
-                          { label: `Open (${openCount})`, value: 'open' },
-                          { label: `Received (${receivedCount})`, value: 'received' },
-                          { label: `Closed (${closedCount})`, value: 'closed' },
-                        ]}
-                      />
-                    </div>
-
-                    <div className="cf-filter-bar-right">
-                      <Radio.Group
-                        value={viewMode}
-                        onChange={e => setViewMode(e.target.value)}
-                        optionType="button"
-                        buttonStyle="solid"
-                        size="small"
-                      >
-                        <Radio.Button value="cards">
-                          <AppstoreOutlined /> Cards
-                        </Radio.Button>
-                        <Radio.Button value="table">
-                          <UnorderedListOutlined /> Table
-                        </Radio.Button>
-                      </Radio.Group>
-                    </div>
-                  </div>
-
-                  {/* Empty State */}
-                  {filteredChallans.length === 0 ? (
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description={
-                        searchQuery || statusFilter !== 'all'
-                          ? 'No challans match the current filter or search criteria.'
-                          : 'No outsource challans created yet. Select pending requests to create one.'
-                      }
-                      style={{ padding: '40px 0' }}
-                    >
-                      {(searchQuery || statusFilter !== 'all') && (
-                        <Button
-                          onClick={() => {
-                            setSearchQuery('')
-                            setStatusFilter('all')
-                          }}
-                        >
-                          Clear Filters
-                        </Button>
-                      )}
-                    </Empty>
-                  ) : viewMode === 'table' ? (
-                    /* -----------------------------------------------------------------
-                       VIEW A: CLEAN COMPACT TABULAR VIEW
-                       ----------------------------------------------------------------- */
-                    <DataTable<Challan>
-                      columns={compactChallanColumns}
-                      dataSource={filteredChallans}
-                      rowKey="id"
-                      loading={challansLoading}
-                      pagination={{ pageSize: 15 }}
-                      totalLabel="challans"
-                    />
-                  ) : (
-                    /* -----------------------------------------------------------------
-                       VIEW B: EXECUTIVE DOCUMENT CARDS (CLEAR & HIGH-LEGIBILITY)
-                       ----------------------------------------------------------------- */
-                    <div className="cf-challans-stack">
-                      {filteredChallans.map(challan => {
-                        const totalDisp = challan.items.reduce(
-                          (s, it) => s + Number(it.dispatchedQty || 0),
-                          0,
-                        )
-                        const totalRecv = challan.items.reduce(
-                          (s, it) => s + Number(it.receivedQty || 0),
-                          0,
-                        )
-                        const totalOut = challan.items.reduce(
-                          (s, it) => s + Number(it.outstandingQty || 0),
-                          0,
-                        )
-                        const totalAmt = challan.items.reduce(
-                          (s, it) =>
-                            s +
-                            Number(
-                              it.amount || Number(it.rate || 0) * Number(it.dispatchedQty || 0),
-                            ),
-                          0,
-                        )
-                        const pct =
-                          totalDisp > 0
-                            ? Math.min(100, Math.round((totalRecv / totalDisp) * 100))
-                            : 100
-
-                        return (
-                          <div key={challan.id} className="cf-challan-card">
-                            {/* Card Header */}
-                            <div className="cf-challan-header">
-                              <div className="cf-challan-identity">
-                                <span className="cf-challan-pill">{challan.challanNumber}</span>
-                                <div className="cf-challan-vendor-tag">
-                                  <ShopOutlined className="cf-vendor-ico" />
-                                  <span>{challan.destinationPartyName}</span>
-                                </div>
-                                <div className="cf-challan-date-tag">
-                                  <CalendarOutlined />
-                                  <span>{challan.challanDate}</span>
-                                </div>
-                              </div>
-
-                              <div className="cf-challan-actions-cluster">
-                                <StatusBadge status={challan.status} />
-
-                                {challan.status === 'open' && canModify && (
-                                  <Button
-                                    type="primary"
-                                    size="small"
-                                    icon={<CheckOutlined />}
-                                    loading={markingReceived}
-                                    onClick={() => handleMarkReceived(challan.id)}
-                                    style={{ borderRadius: 6, fontWeight: 600 }}
-                                  >
-                                    Mark Received
-                                  </Button>
-                                )}
-
-                                {challan.status === 'received' && canModify && (
-                                  <>
-                                    <Button
-                                      size="small"
-                                      icon={<LockOutlined />}
-                                      loading={closing}
-                                      onClick={() => handleClose(challan.id)}
-                                      style={{ borderRadius: 6, fontWeight: 600 }}
-                                    >
-                                      Close Challan
-                                    </Button>
-                                    <Tooltip title="Undo the gate receipt and put this challan back to open">
-                                      <Button
-                                        size="small"
-                                        type="text"
-                                        icon={<UndoOutlined />}
-                                        loading={unreceiving}
-                                        onClick={() => handleUnmarkReceived(challan.id)}
-                                      />
-                                    </Tooltip>
-                                  </>
-                                )}
-
-                                {challan.status === 'open' && canDelete && (
-                                  <Tooltip title="Delete this challan and reopen its requests">
-                                    <Button
-                                      size="small"
-                                      type="text"
-                                      danger
-                                      icon={<DeleteOutlined />}
-                                      onClick={() => handleDeleteChallan(challan)}
-                                    />
-                                  </Tooltip>
-                                )}
-
-                                {challan.status === 'closed' && (
-                                  <Tag
-                                    color="success"
-                                    icon={<CheckCircleOutlined />}
-                                    style={{ margin: 0, padding: '2px 8px', borderRadius: 6 }}
-                                  >
-                                    Reconciled
-                                  </Tag>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Summary Bar */}
-                            <div className="cf-challan-stats-bar">
-                              <div className="cf-challan-metric-items">
-                                <div className="cf-mini-stat">
-                                  <span className="cf-mini-label">Items</span>
-                                  <span className="cf-mini-val">{challan.items.length}</span>
-                                </div>
-                                <div className="cf-mini-stat">
-                                  <span className="cf-mini-label">Dispatched</span>
-                                  <span className="cf-mini-val">{totalDisp} pcs</span>
-                                </div>
-                                <div className="cf-mini-stat">
-                                  <span className="cf-mini-label">Received</span>
-                                  <span className="cf-mini-val cf-val-green">{totalRecv} pcs</span>
-                                </div>
-                                <div className="cf-mini-stat">
-                                  <span className="cf-mini-label">Outstanding</span>
-                                  <span
-                                    className={`cf-mini-val ${totalOut > 0 ? 'cf-val-amber' : ''}`}
-                                  >
-                                    {totalOut} pcs
-                                  </span>
-                                </div>
-                                <div className="cf-mini-stat">
-                                  <span className="cf-mini-label">Total Cost</span>
-                                  <span className="cf-mini-val cf-val-highlight">
-                                    ₹{totalAmt.toLocaleString()}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="cf-challan-progress-col">
-                                <div className="cf-progress-text-row">
-                                  <span>Fulfillment</span>
-                                  <span>{pct}%</span>
-                                </div>
-                                <Progress
-                                  percent={pct}
-                                  showInfo={false}
-                                  strokeColor={pct === 100 ? '#10B981' : '#0289C3'}
-                                  size="small"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Items Section */}
-                            <div className="cf-challan-items-wrap">
-                              <div className="cf-items-section-title">
-                                <ShoppingOutlined /> Dispatched Work Breakdown
-                              </div>
-
-                              {challan.items.map(item => {
-                                const isFullyReceived =
-                                  Number(item.outstandingQty) <= 0 ||
-                                  (Number(item.receivedQty) >= Number(item.dispatchedQty) &&
-                                    Number(item.dispatchedQty) > 0) ||
-                                  challan.status === 'closed'
-
-                                return (
-                                  <div key={item.id} className="cf-challan-item-row">
-                                    <div className="cf-item-col-jobcard">
-                                      <span className="cf-item-jobcard-name">
-                                        {jobCardLabel(item.jobCardId)}
-                                      </span>
-                                      <Tag color="cyan" className="cf-item-process-tag">
-                                        {item.processName}
-                                      </Tag>
-                                    </div>
-
-                                    <div className="cf-item-col-quantities">
-                                      <div className="cf-qty-pill">
-                                        <span className="cf-qty-pill-label">Dispatched</span>
-                                        <span className="cf-qty-pill-num">
-                                          {item.dispatchedQty}
-                                        </span>
-                                      </div>
-                                      <div className="cf-qty-pill cf-qty-pill-received">
-                                        <span className="cf-qty-pill-label">Received</span>
-                                        <span className="cf-qty-pill-num">{item.receivedQty}</span>
-                                      </div>
-                                      <div className="cf-qty-pill cf-qty-pill-pending">
-                                        <span className="cf-qty-pill-label">Outstanding</span>
-                                        <span className="cf-qty-pill-num">
-                                          {item.outstandingQty}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    <div className="cf-item-col-commercials">
-                                      <span className="cf-rate-text">₹{item.rate ?? 0} / unit</span>
-                                      <span className="cf-amount-text">
-                                        ₹
-                                        {(
-                                          item.amount ??
-                                          Number(item.rate || 0) * Number(item.dispatchedQty || 0)
-                                        ).toLocaleString()}
-                                      </span>
-                                    </div>
-
-                                    <div className="cf-item-col-action">
-                                      {isFullyReceived ? (
-                                        <Tag
-                                          color="success"
-                                          icon={<CheckOutlined />}
-                                          style={{
-                                            padding: '4px 10px',
-                                            borderRadius: 6,
-                                            fontWeight: 600,
-                                          }}
-                                        >
-                                          Accepted
-                                        </Tag>
-                                      ) : (
-                                        <Button
-                                          type="primary"
-                                          size="small"
-                                          icon={<InboxOutlined />}
-                                          onClick={() => setAcceptTarget({ challan, item })}
-                                          style={{ borderRadius: 6, fontWeight: 600 }}
-                                        >
-                                          Accept Goods
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              ),
-            },
-            {
-              key: 'pending',
-              label: `Pending Requests (${pendingRequests.length})`,
-              children: (
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 12,
-                      padding: '10px 14px',
-                      background: '#F8FAFC',
-                      borderRadius: 8,
-                      border: '1px solid #E2E8F0',
-                    }}
-                  >
-                    <span style={{ fontSize: 13, color: '#475569' }}>
-                      Select production job card operations to generate an outgoing vendor challan.
-                    </span>
-
-                    {selectedRequestIds.length > 0 && (
-                      <Tag color="processing" style={{ fontWeight: 600 }}>
-                        {selectedRequestIds.length} request(s) selected
-                      </Tag>
-                    )}
-                  </div>
-
-                  <DataTable<ChallanRequest>
-                    columns={requestColumns}
-                    dataSource={pendingRequests}
-                    rowKey="id"
-                    loading={requestsLoading}
-                    pagination={false}
-                    totalLabel="pending requests"
-                    rowSelection={{
-                      selectedRowKeys: selectedRequestIds,
-                      onChange: keys => setSelectedRequestIds(keys as string[]),
-                    }}
-                  />
-                </div>
-              ),
-            },
-          ]}
-        />
+                Clear Filters
+              </Button>
+            )}
+          </Empty>
+        ) : (
+          <DataTable<OutsourceRow>
+            columns={outsourceColumns}
+            dataSource={filteredRows}
+            rowKey="key"
+            loading={challansLoading || requestsLoading}
+            pagination={{ pageSize: 15 }}
+            totalLabel="records"
+            scroll={{ x: 'max-content' }}
+            rowActions={row =>
+              row.kind === 'request' ? requestActions(row.request) : challanActions(row.challan)
+            }
+          />
+        )}
       </Card>
 
       {/* ====================================================================
@@ -892,7 +552,7 @@ export const OutsourceList = () => {
           ==================================================================== */}
       <Drawer
         open={!!drawerChallan}
-        onClose={() => setDrawerChallan(undefined)}
+        onClose={() => setDrawerChallanId(undefined)}
         title={
           drawerChallan ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -912,7 +572,7 @@ export const OutsourceList = () => {
                   type="primary"
                   size="small"
                   icon={<CheckOutlined />}
-                  loading={markingReceived}
+                  loading={markingReceived && markingId === drawerChallan.id}
                   onClick={() => handleMarkReceived(drawerChallan.id)}
                 >
                   Mark Received
@@ -923,7 +583,7 @@ export const OutsourceList = () => {
                   <Button
                     size="small"
                     icon={<LockOutlined />}
-                    loading={closing}
+                    loading={closing && closingId === drawerChallan.id}
                     onClick={() => handleClose(drawerChallan.id)}
                   >
                     Close Challan
@@ -931,7 +591,7 @@ export const OutsourceList = () => {
                   <Button
                     size="small"
                     icon={<UndoOutlined />}
-                    loading={unreceiving}
+                    loading={unreceiving && unreceivingId === drawerChallan.id}
                     onClick={() => handleUnmarkReceived(drawerChallan.id)}
                   >
                     Undo Receive
@@ -1096,14 +756,16 @@ export const OutsourceList = () => {
         )}
       </Drawer>
 
-      {/* Create Challan Modal */}
-      <CreateChallanModal
+      {/* Create Challan — seeded with the row acted on, other pending requests
+          can be bundled onto the same vendor challan from inside. */}
+      <CreateChallanDrawer
         open={createChallanOpen}
         onClose={() => {
           setCreateChallanOpen(false)
-          setSelectedRequestIds([])
+          setSeedRequestId(undefined)
         }}
-        requests={selectedRequests}
+        requests={pendingRequests}
+        seedRequestId={seedRequestId}
         jobCardLabel={jobCardLabel}
       />
 

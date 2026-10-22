@@ -42,6 +42,9 @@ export function computeStepProgress(
   logs: ProcessLog[],
   movements: JobCardMovement[],
   orderedQty: number,
+  /** Qty already pulled into store as a production receipt. Only the last step
+   *  settles this way, so it nets out there rather than against a movement. */
+  receivedQty = 0,
 ): StepProgress[] {
   const sorted = [...routes].sort((a, b) => a.sequenceNo - b.sequenceNo)
 
@@ -98,10 +101,13 @@ export function computeStepProgress(
       loggedQty,
       availableQty,
       pendingQty: Math.max(availableQty - loggedQty, 0),
-      // The last step's OK qty goes straight to stock as a production receipt
-      // the moment it's logged — there's no next process for it to move to,
-      // so it's never "ready to move" regardless of how much is OK here.
-      readyToMoveQty: isLast ? 0 : Math.max(totals.ok - (movedOut[step.processId] ?? 0), 0),
+      // The last step has no next process, so its OK qty settles by being
+      // received into store rather than by a movement. ERP-BE stopped posting
+      // that stock automatically on logging, so the qty waits here as
+      // ready-to-move until someone receives it, exactly like any other step.
+      readyToMoveQty: isLast
+        ? Math.max(totals.ok - receivedQty, 0)
+        : Math.max(totals.ok - (movedOut[step.processId] ?? 0), 0),
       isFirst,
       isLast,
       isCurrent: false,

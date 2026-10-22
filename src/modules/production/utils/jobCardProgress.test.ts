@@ -137,7 +137,10 @@ describe('computeStepProgress', () => {
     expect(progress[2].isLast).toBe(true)
   })
 
-  it('never shows the last step as ready to move — its OK qty goes straight to stock', () => {
+  // ERP-BE used to post finished-goods stock the moment the last step was logged,
+  // so that step could never be "ready to move". Receiving is now its own action,
+  // and the qty waits here until it happens — exactly like a movement elsewhere.
+  it('leaves the last step ready to move until its qty is received into store', () => {
     const progress = computeStepProgress(
       routes,
       [log('10', 20, 0), log('20', 20, 0), log('30', 20, 0)],
@@ -151,7 +154,37 @@ describe('computeStepProgress', () => {
     const inspection = progress[2]
     expect(inspection.isLast).toBe(true)
     expect(inspection.okQty).toBe(20)
-    expect(inspection.readyToMoveQty).toBe(0)
+    expect(inspection.readyToMoveQty).toBe(20)
+  })
+
+  it('nets a partial receipt out of the last step', () => {
+    const progress = computeStepProgress(
+      routes,
+      [log('10', 20, 0), log('20', 20, 0), log('30', 20, 0)],
+      [
+        movement('10', '20', 20, [{ acceptedQty: 20 }]),
+        movement('20', '30', 20, [{ acceptedQty: 20 }]),
+      ],
+      20,
+      15,
+    )
+
+    expect(progress[2].readyToMoveQty).toBe(5)
+  })
+
+  it('shows nothing left to move once everything is received', () => {
+    const progress = computeStepProgress(
+      routes,
+      [log('10', 20, 0), log('20', 20, 0), log('30', 20, 0)],
+      [
+        movement('10', '20', 20, [{ acceptedQty: 20 }]),
+        movement('20', '30', 20, [{ acceptedQty: 20 }]),
+      ],
+      20,
+      20,
+    )
+
+    expect(progress[2].readyToMoveQty).toBe(0)
   })
 
   it('keeps a rework movement out of the first pass numbers', () => {

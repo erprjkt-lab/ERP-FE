@@ -36,6 +36,15 @@ export interface JobCardBomRequirement {
   returnedQty: number
 }
 
+export interface ProductionReceipt {
+  id: string
+  itemName: string
+  storeLocationId: string
+  storeLocationName: string
+  receivedQty: number
+  receivedAt: string
+}
+
 export interface MaterialSummaryRow {
   componentItemId: string
   componentName: string

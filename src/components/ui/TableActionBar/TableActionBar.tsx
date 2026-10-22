@@ -1,3 +1,4 @@
+import { LoadingOutlined } from '@ant-design/icons'
 import { Tooltip } from 'antd'
 import type { TableColumnType } from 'antd'
 import type { FC, MouseEvent, ReactNode } from 'react'
@@ -52,6 +53,7 @@ export const TableActionButton: FC<TableActionButtonProps> = ({
     'erp-table-action-btn',
     `erp-table-action-btn--${resolvedVariant}`,
     disabled ? 'is-disabled' : null,
+    loading ? 'is-loading' : null,
     className,
   ]
     .filter(Boolean)
@@ -64,14 +66,18 @@ export const TableActionButton: FC<TableActionButtonProps> = ({
       onClick={handleClick}
       disabled={disabled || loading}
       aria-label={label}
+      aria-busy={loading || undefined}
     >
-      {icon}
+      {/* A loading action used to keep its normal icon and simply stop
+          responding, which reads as a dead button on a slow request. Swapping in
+          the spinner is the only feedback that the click registered. */}
+      {loading ? <LoadingOutlined /> : icon}
     </button>
   )
 
   return (
     <Tooltip
-      title={label}
+      title={loading ? `${label}…` : label}
       placement={tooltipPlacement}
       arrow={{ pointAtCenter: true }}
       mouseEnterDelay={0.06}

@@ -32,6 +32,47 @@ describe('TableActionBar', () => {
     expect(onEdit).toHaveBeenCalledTimes(1)
   })
 
+  // A slow request used to leave the button looking untouched while silently
+  // ignoring clicks, so people clicked again. It now shows it is working and
+  // refuses the repeat.
+  it('shows a busy action as disabled so a slow request cannot be fired twice', async () => {
+    const user = userEvent.setup()
+    const onReceive = vi.fn()
+
+    render(
+      <TableActionBar
+        actions={[
+          {
+            key: 'receive',
+            label: 'Mark Received',
+            icon: <CheckOutlined />,
+            loading: true,
+            onClick: onReceive,
+          },
+        ]}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Mark Received' })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAttribute('aria-busy', 'true')
+
+    await user.click(button)
+    expect(onReceive).not.toHaveBeenCalled()
+  })
+
+  it('leaves a non-busy action clickable and unmarked', () => {
+    render(
+      <TableActionBar
+        actions={[{ key: 'receive', label: 'Mark Received', icon: <CheckOutlined /> }]}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Mark Received' })
+    expect(button).toBeEnabled()
+    expect(button).not.toHaveAttribute('aria-busy')
+  })
+
   it('stops event propagation on click to avoid triggering row clicks', async () => {
     const user = userEvent.setup()
     const onRowClick = vi.fn()
