@@ -10,6 +10,7 @@ import {
   EmployeeDetail,
   EmployeeForm,
   EmployeeList,
+  AttendanceList,
   ShiftList,
   UserPermissionList,
 } from '@/modules/hr'
@@ -123,6 +124,7 @@ const IMPLEMENTED_PATHS = new Set([
   '/hr/designations',
   '/hr/shifts',
   '/hr/user-permissions',
+  '/hr/attendance',
   '/masters/customers',
   '/masters/units',
   '/masters/suppliers',
@@ -194,6 +196,7 @@ function App() {
                 <Route path="/hr/designations" element={<DesignationList />} />
                 <Route path="/hr/shifts" element={<ShiftList />} />
                 <Route path="/hr/user-permissions" element={<UserPermissionList />} />
+                <Route path="/hr/attendance" element={<AttendanceList />} />
 
                 <Route path="/masters/customers" element={<CustomerList />} />
                 <Route path="/masters/customers/new" element={<CustomerForm />} />

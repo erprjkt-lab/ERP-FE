@@ -55,6 +55,7 @@ export const MODULE_PAGES: Record<string, { path: string; label: string }[]> = {
   designations: [{ path: '/hr/designations', label: 'Designations' }],
   shifts: [{ path: '/hr/shifts', label: 'Shifts' }],
   permissions: [{ path: '/hr/user-permissions', label: 'Permissions' }],
+  attendance: [{ path: '/hr/attendance', label: 'Attendance' }],
 
   customers: [{ path: '/masters/customers', label: 'Customers' }],
   suppliers: [{ path: '/masters/suppliers', label: 'Suppliers' }],
