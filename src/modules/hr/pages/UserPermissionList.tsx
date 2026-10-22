@@ -3,7 +3,7 @@ import { App, Button, Card, Checkbox, Col, Empty, Row, Select, Typography } from
 import type { TableColumnsType } from 'antd'
 import type { FC, Key } from 'react'
 import { useState } from 'react'
-import { useModulePermission } from '@/store/permissionStore'
+import { usePermissionStore } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -38,11 +38,14 @@ export const UserPermissionList: FC = () => {
   const { message } = App.useApp()
   // EmployeeController puts grantMenuPermissionsBulk behind `modify menus` (not
   // `modify employees`), and GET /employees/{id}/menus behind `read menus`.
-  // NOTE: ERP-BE's config/rbac_modules.php has no `menus` module, so those two
-  // permissions are never generated and nobody — super-admins included — holds
-  // them. Until BE adds that module this screen cannot load or save. Gating on
-  // the real requirement rather than a near-miss keeps the FE honest about it.
-  const { canModify: canGrant } = useModulePermission('menus')
+  // `menus` is not a module in ERP-BE's config/rbac_modules.php, so it has no
+  // sidebar node and never appears in the module map that useModulePermission
+  // reads — asking that map about it always answered false, which disabled the
+  // whole grid even for someone holding the grant. The flat token list from the
+  // login response (EmployeeResource: getAllPermissions()->pluck('name')) does
+  // carry non-module permissions, so ask it for the exact grant BE requires.
+  const hasPermission = usePermissionStore(state => state.hasPermission)
+  const canGrant = hasPermission('modify menus')
   const [employeeId, setEmployeeId] = useState<string>()
   // Only the menus the user actually touched; everything else falls back to what the
   // BE reports as granted, so switching employee just means clearing this.
