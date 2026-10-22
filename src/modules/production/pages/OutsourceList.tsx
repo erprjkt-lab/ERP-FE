@@ -18,6 +18,8 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   CheckOutlined,
+  DeleteOutlined,
+  UndoOutlined,
   ExportOutlined,
   EyeOutlined,
   InboxOutlined,
@@ -36,11 +38,13 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { AcceptChallanItemModal } from '../components/AcceptChallanItemModal'
 import { CreateChallanModal } from '../components/CreateChallanModal'
-import { usePendingChallanRequests } from '../hooks/useChallanRequests'
+import { useDeleteChallanRequest, usePendingChallanRequests } from '../hooks/useChallanRequests'
 import {
   useAllChallans,
   useCloseChallan,
+  useDeleteChallan,
   useMarkChallanReceived,
+  useUnmarkChallanReceived,
 } from '../hooks/useJobCardChallans'
 import { useJobCards } from '../hooks/useJobCards'
 import type { Challan, ChallanItem, ChallanRequest, ChallanStatus } from '@/types/production'
@@ -49,8 +53,8 @@ import { formatDateTime } from '@/utils/date'
 import './Outsource.css'
 
 export const OutsourceList = () => {
-  const { message } = App.useApp()
-  const { canWrite, canModify } = usePagePermission()
+  const { message, modal } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const { data: jobCards = [] } = useJobCards()
   const {
     data: pendingRequests = [],
@@ -65,6 +69,9 @@ export const OutsourceList = () => {
   } = useAllChallans()
   const { mutateAsync: markReceived, isPending: markingReceived } = useMarkChallanReceived()
   const { mutateAsync: closeChallanMutation, isPending: closing } = useCloseChallan()
+  const { mutateAsync: unmarkReceived, isPending: unreceiving } = useUnmarkChallanReceived()
+  const { mutateAsync: deleteChallanMutation } = useDeleteChallan()
+  const { mutateAsync: deleteRequestMutation } = useDeleteChallanRequest()
 
   const [activeTab, setActiveTab] = useState<'challans' | 'pending'>('challans')
   const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([])
@@ -89,6 +96,19 @@ export const OutsourceList = () => {
     }
   }
 
+  // The undo of Receive, for a gate entry recorded against the wrong challan.
+  const handleUnmarkReceived = async (challanId: string) => {
+    try {
+      await unmarkReceived(challanId)
+      message.success('Challan reverted to open')
+      if (drawerChallan?.id === challanId) {
+        setDrawerChallan(prev => (prev ? { ...prev, status: 'open' } : undefined))
+      }
+    } catch (error) {
+      message.error(getErrorMessage(error))
+    }
+  }
+
   const handleClose = async (challanId: string) => {
     try {
       await closeChallanMutation(challanId)
@@ -99,6 +119,46 @@ export const OutsourceList = () => {
     } catch (error) {
       message.error(getErrorMessage(error))
     }
+  }
+
+  // ERP-BE allows a delete only while nothing has been received/consumed against
+  // the record, and refuses with a message saying what to reverse first; we relay it.
+  const handleDeleteChallan = (challan: Challan) => {
+    modal.confirm({
+      title: `Delete challan ${challan.challanNumber}?`,
+      content:
+        'The dispatched qty goes back to the outsource requests it was raised from. Refused once anything has been received back against it.',
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await deleteChallanMutation(challan.id)
+          message.success('Challan deleted and its requests reopened')
+          if (drawerChallan?.id === challan.id) setDrawerChallan(undefined)
+        } catch (error) {
+          message.error(getErrorMessage(error))
+        }
+      },
+    })
+  }
+
+  const handleDeleteRequest = (request: ChallanRequest) => {
+    modal.confirm({
+      title: `Delete the outsource request for ${request.requestedQty} at ${request.processName}?`,
+      content:
+        'The qty goes back to pending at that process. Refused once any of it has been dispatched or consumed.',
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await deleteRequestMutation(request.id)
+          setSelectedRequestIds(prev => prev.filter(reqId => reqId !== request.id))
+          message.success('Outsource request deleted')
+        } catch (error) {
+          message.error(getErrorMessage(error))
+        }
+      },
+    })
   }
 
   const jobCardsById = useMemo(() => new Map(jobCards.map(jc => [jc.id, jc])), [jobCards])
@@ -201,6 +261,27 @@ export const OutsourceList = () => {
       width: 120,
       render: formatDateTime,
     },
+    ...(canDelete
+      ? [
+          {
+            title: '',
+            key: 'delete',
+            width: 50,
+            align: 'right' as const,
+            render: (_: unknown, r: ChallanRequest) => (
+              <Tooltip title="Delete this outsource request">
+                <Button
+                  size="small"
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDeleteRequest(r)}
+                />
+              </Tooltip>
+            ),
+          },
+        ]
+      : []),
   ]
 
   // Columns for Compact Table View of Challans
@@ -336,15 +417,38 @@ export const OutsourceList = () => {
           )}
 
           {c.status === 'received' && canModify && (
-            <Button
-              size="small"
-              icon={<LockOutlined />}
-              loading={closing}
-              onClick={() => handleClose(c.id)}
-              style={{ borderRadius: 6 }}
-            >
-              Close
-            </Button>
+            <>
+              <Button
+                size="small"
+                icon={<LockOutlined />}
+                loading={closing}
+                onClick={() => handleClose(c.id)}
+                style={{ borderRadius: 6 }}
+              >
+                Close
+              </Button>
+              <Tooltip title="Undo the gate receipt and put this challan back to open">
+                <Button
+                  size="small"
+                  type="text"
+                  icon={<UndoOutlined />}
+                  loading={unreceiving}
+                  onClick={() => handleUnmarkReceived(c.id)}
+                />
+              </Tooltip>
+            </>
+          )}
+
+          {c.status === 'open' && canDelete && (
+            <Tooltip title="Delete this challan and reopen its requests">
+              <Button
+                size="small"
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteChallan(c)}
+              />
+            </Tooltip>
           )}
         </Space>
       ),
@@ -540,7 +644,7 @@ export const OutsourceList = () => {
                               <div className="cf-challan-actions-cluster">
                                 <StatusBadge status={challan.status} />
 
-                                {challan.status === 'open' && (
+                                {challan.status === 'open' && canModify && (
                                   <Button
                                     type="primary"
                                     size="small"
@@ -553,16 +657,39 @@ export const OutsourceList = () => {
                                   </Button>
                                 )}
 
-                                {challan.status === 'received' && (
-                                  <Button
-                                    size="small"
-                                    icon={<LockOutlined />}
-                                    loading={closing}
-                                    onClick={() => handleClose(challan.id)}
-                                    style={{ borderRadius: 6, fontWeight: 600 }}
-                                  >
-                                    Close Challan
-                                  </Button>
+                                {challan.status === 'received' && canModify && (
+                                  <>
+                                    <Button
+                                      size="small"
+                                      icon={<LockOutlined />}
+                                      loading={closing}
+                                      onClick={() => handleClose(challan.id)}
+                                      style={{ borderRadius: 6, fontWeight: 600 }}
+                                    >
+                                      Close Challan
+                                    </Button>
+                                    <Tooltip title="Undo the gate receipt and put this challan back to open">
+                                      <Button
+                                        size="small"
+                                        type="text"
+                                        icon={<UndoOutlined />}
+                                        loading={unreceiving}
+                                        onClick={() => handleUnmarkReceived(challan.id)}
+                                      />
+                                    </Tooltip>
+                                  </>
+                                )}
+
+                                {challan.status === 'open' && canDelete && (
+                                  <Tooltip title="Delete this challan and reopen its requests">
+                                    <Button
+                                      size="small"
+                                      type="text"
+                                      danger
+                                      icon={<DeleteOutlined />}
+                                      onClick={() => handleDeleteChallan(challan)}
+                                    />
+                                  </Tooltip>
                                 )}
 
                                 {challan.status === 'closed' && (
@@ -780,7 +907,7 @@ export const OutsourceList = () => {
         extra={
           drawerChallan && (
             <Space>
-              {drawerChallan.status === 'open' && (
+              {drawerChallan.status === 'open' && canModify && (
                 <Button
                   type="primary"
                   size="small"
@@ -791,14 +918,34 @@ export const OutsourceList = () => {
                   Mark Received
                 </Button>
               )}
-              {drawerChallan.status === 'received' && (
+              {drawerChallan.status === 'received' && canModify && (
+                <>
+                  <Button
+                    size="small"
+                    icon={<LockOutlined />}
+                    loading={closing}
+                    onClick={() => handleClose(drawerChallan.id)}
+                  >
+                    Close Challan
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<UndoOutlined />}
+                    loading={unreceiving}
+                    onClick={() => handleUnmarkReceived(drawerChallan.id)}
+                  >
+                    Undo Receive
+                  </Button>
+                </>
+              )}
+              {drawerChallan.status === 'open' && canDelete && (
                 <Button
                   size="small"
-                  icon={<LockOutlined />}
-                  loading={closing}
-                  onClick={() => handleClose(drawerChallan.id)}
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDeleteChallan(drawerChallan)}
                 >
-                  Close Challan
+                  Delete
                 </Button>
               )}
             </Space>

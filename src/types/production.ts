@@ -36,6 +36,31 @@ export interface JobCardBomRequirement {
   returnedQty: number
 }
 
+export interface MaterialSummaryRow {
+  componentItemId: string
+  componentName: string
+  componentCode: string
+  requiredQty: number
+  issuedQty: number
+  /** Consumed by production so far — derived by ERP-BE, cannot be returned. */
+  usedQty: number
+  returnedQty: number
+  /** Issued but neither used nor returned: the most that may still be returned. */
+  pendingUsedQty: number
+}
+
+export interface MaterialReturn {
+  id: string
+  componentItemId?: string
+  componentName: string
+  storeLocationId: string
+  storeLocationName: string
+  batchNo?: string
+  heatNo?: string
+  returnedQty: number
+  returnDate: string
+}
+
 export interface MaterialIssue {
   id: string
   componentItemId?: string

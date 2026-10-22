@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { acceptMovement, createMovement, listMovements } from '@/api/jobCardMovements'
+import {
+  acceptMovement,
+  createMovement,
+  deleteAcceptance,
+  deleteMovement,
+  listMovements,
+} from '@/api/jobCardMovements'
 import type {
   AcceptMovementPayload,
   ApiJobCardMovement,
@@ -58,6 +64,22 @@ export function useAcceptMovement(jobCardId: string | undefined) {
   return useMutation({
     mutationFn: ({ movementId, payload }: { movementId: string; payload: AcceptMovementPayload }) =>
       acceptMovement(Number(movementId), payload),
+    onSuccess: invalidate,
+  })
+}
+
+export function useDeleteMovement(jobCardId: string | undefined) {
+  const invalidate = useMovementInvalidation(jobCardId)
+  return useMutation({
+    mutationFn: (movementId: string) => deleteMovement(Number(movementId)),
+    onSuccess: invalidate,
+  })
+}
+
+export function useDeleteAcceptance(jobCardId: string | undefined) {
+  const invalidate = useMovementInvalidation(jobCardId)
+  return useMutation({
+    mutationFn: (acceptanceId: string) => deleteAcceptance(Number(acceptanceId)),
     onSuccess: invalidate,
   })
 }

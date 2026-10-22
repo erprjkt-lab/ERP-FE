@@ -1,5 +1,7 @@
 import {
   CheckOutlined,
+  DeleteOutlined,
+  RollbackOutlined,
   EditOutlined,
   ExportOutlined,
   InboxOutlined,
@@ -7,6 +9,7 @@ import {
 } from '@ant-design/icons'
 import {
   Alert,
+  App,
   Button,
   Card,
   Col,
@@ -30,51 +33,93 @@ import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { JobCardInspectionReports } from '@/modules/quality/components/JobCardInspectionReports'
-import type { JobCardMovement, MaterialIssue, ProcessLog } from '@/types/production'
+import type { JobCardMovement, MaterialIssue, MaterialReturn, ProcessLog } from '@/types/production'
 import { AcceptProductionModal } from '../components/AcceptProductionModal'
 import { MetaItem, SummaryStat } from '../components/JobCardStats'
 import { LogProductionModal } from '../components/LogProductionModal'
 import { MoveForwardModal } from '../components/MoveForwardModal'
 import { RequestOutsourceModal } from '../components/RequestOutsourceModal'
+import { ReturnMaterialModal } from '../components/ReturnMaterialModal'
 import { useItemBom } from '../hooks/useItemBom'
 import { useJobCard } from '../hooks/useJobCards'
-import { useBomRequirements, useMaterialIssues } from '../hooks/useJobCardMaterials'
-import { useJobCardMovements } from '../hooks/useJobCardMovements'
-import { useProcessLogs } from '../hooks/useProcessLogs'
+import {
+  useBomRequirements,
+  useDeleteMaterialIssue,
+  useDeleteMaterialReturn,
+  useMaterialIssues,
+  useMaterialReturns,
+  useMaterialSummary,
+} from '../hooks/useJobCardMaterials'
+import {
+  useDeleteAcceptance,
+  useDeleteMovement,
+  useJobCardMovements,
+} from '../hooks/useJobCardMovements'
+import { useDeleteProcessLog, useProcessLogs } from '../hooks/useProcessLogs'
 import { useReworkReviewsForJobCard } from '../hooks/useRejections'
 import { computeJobCardTotals, computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
 import { computeReworkBatches } from '../utils/reworkProgress'
+import { getErrorMessage } from '@/api/client'
 import { formatDateTime } from '@/utils/date'
+
+/** One acceptance, flattened out of the movement it belongs to, so it can be
+ *  listed and reversed on its own. */
+interface AcceptanceRow {
+  id: string
+  movementId: string
+  fromProcessName: string
+  toProcessName: string
+  isRework: boolean
+  acceptedQty: number
+  shortQty: number
+  acceptedAt: string
+}
 
 interface MaterialRow {
   key: string
   componentName: string
   requiredQty: number
   issuedQty: number
+  /** Consumed by production - derived by ERP-BE, 0 until something is issued. */
+  usedQty: number
+  returnedQty: number
+  /** Issued but neither used nor returned: the most that may still be returned. */
+  pendingUsedQty: number
+  /** Still to be issued against the requirement. */
   pendingQty: number
 }
 
 export const JobCardDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { canModify } = usePagePermission()
+  const { canWrite, canModify, canDelete } = usePagePermission()
+  const { message, modal } = App.useApp()
   const { canWrite: canWriteChallans } = useModulePermission('job-card-challans')
 
   const [activeStepId, setActiveStepId] = useState<string>()
   // Set while the open modal belongs to a rework batch rather than the first pass.
   const [activeReworkReviewId, setActiveReworkReviewId] = useState<string>()
   const [drawer, setDrawer] = useState<'accept' | 'log' | 'move' | 'outsource'>()
+  const [returnOpen, setReturnOpen] = useState(false)
 
   const { data: jobCard, isLoading } = useJobCard(id)
   const { data: logs = [], isLoading: logsLoading } = useProcessLogs(id)
   const { data: movements = [] } = useJobCardMovements(id)
   const { data: requirements = [] } = useBomRequirements(id)
   const { data: issues = [], isLoading: issuesLoading } = useMaterialIssues(id)
+  const { data: materialSummary = [], isLoading: summaryLoading } = useMaterialSummary(id)
+  const { data: materialReturns = [], isLoading: returnsLoading } = useMaterialReturns(id)
   const { data: bomLines = [] } = useItemBom(jobCard?.itemId)
+  const { mutateAsync: removeLog } = useDeleteProcessLog(id)
+  const { mutateAsync: removeMovement } = useDeleteMovement(id)
+  const { mutateAsync: removeAcceptance } = useDeleteAcceptance(id)
+  const { mutateAsync: removeIssue } = useDeleteMaterialIssue(id)
+  const { mutateAsync: removeReturn } = useDeleteMaterialReturn(id)
   const {
     data: reworkReviews,
     allReviews: rejectionReviews,
+    rejections,
     isLoading: reworkLoading,
   } = useReworkReviewsForJobCard(id)
 
@@ -141,15 +186,114 @@ export const JobCardDetail: FC = () => {
     setActiveReworkReviewId(undefined)
   }
 
+  // Every reversal is one of three near-identical confirms, and ERP-BE is the one
+  // that decides whether the entry may go (it refuses out-of-order reversals with
+  // a message naming what to undo first), so this just relays what it says.
+  const confirmDelete = (opts: {
+    title: string
+    content: string
+    run: () => Promise<unknown>
+    success: string
+  }) => {
+    modal.confirm({
+      title: opts.title,
+      content: opts.content,
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await opts.run()
+          message.success(opts.success)
+        } catch (error) {
+          message.error(getErrorMessage(error))
+        }
+      },
+    })
+  }
+
+  // A log's rejected qty raises a rejection, and reviewing it writes rows that
+  // ERP-BE's own delete path does not account for: rejection_reviews.rejection_id
+  // is an ON DELETE RESTRICT foreign key, so deleting the log would fail at the
+  // database with a 500 rather than a readable validation error. Block it here
+  // until ERP-BE guards it properly.
+  const reviewedQtyForLog = (processLogId: string) => {
+    const rejectionIds = rejections
+      .filter(rejection => rejection.processLogId === processLogId)
+      .map(rejection => rejection.id)
+
+    return rejectionReviews
+      .filter(review => rejectionIds.includes(review.rejectionId))
+      .reduce((sum, review) => sum + review.reviewedQty, 0)
+  }
+
+  const acceptanceRows: AcceptanceRow[] = movements.flatMap(movement =>
+    movement.acceptances.map(acceptance => ({
+      id: acceptance.id,
+      movementId: movement.id,
+      fromProcessName: movement.fromProcessName,
+      toProcessName: movement.toProcessName,
+      isRework: movement.isRework,
+      acceptedQty: acceptance.acceptedQty,
+      shortQty: acceptance.shortQty,
+      acceptedAt: acceptance.acceptedAt,
+    })),
+  )
+
+  // `blockedBy` is for the cases ERP-BE does NOT guard: it either errors at the
+  // database instead of validating, or lets the delete through and leaves
+  // something unrecoverable behind. Everything ERP-BE does check is left to it,
+  // so its own message is what the user sees.
+  const deleteColumn = <T,>(
+    build: (record: T) => {
+      title: string
+      content: string
+      run: () => Promise<unknown>
+      success: string
+      blockedBy?: string
+    },
+  ) => ({
+    title: '',
+    key: 'delete',
+    width: 50,
+    align: 'right' as const,
+    render: (_: unknown, record: T) => {
+      const { blockedBy } = build(record)
+      return (
+        <Tooltip
+          title={isClosed ? 'Job card is closed' : (blockedBy ?? 'Delete and revert this entry')}
+        >
+          <Button
+            size="small"
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            disabled={isClosed || !!blockedBy}
+            onClick={() => confirmDelete(build(record))}
+          />
+        </Tooltip>
+      )
+    },
+  })
+
+  // material-summary carries the server's own required/issued/used/returned/pending
+  // per component, but only once something has been issued (the requirement rows
+  // it reads are created lazily by the first issue), so the planned figures still
+  // fall back to the item's BOM before that.
   const materialRows: MaterialRow[] = bomLines.map(line => {
+    const summaryRow = materialSummary.find(r => r.componentItemId === line.componentItemId)
     const requirement = requirements.find(req => req.componentItemId === line.componentItemId)
-    const requiredQty = requirement?.requiredQty ?? line.quantityPerUnit * orderedQty
-    const issuedQty = requirement?.issuedQty ?? 0
+    const requiredQty =
+      summaryRow?.requiredQty ?? requirement?.requiredQty ?? line.quantityPerUnit * orderedQty
+    const issuedQty = summaryRow?.issuedQty ?? requirement?.issuedQty ?? 0
     return {
       key: line.componentItemId,
-      componentName: line.componentName || requirement?.componentName || '',
+      componentName:
+        line.componentName || summaryRow?.componentName || requirement?.componentName || '',
       requiredQty,
       issuedQty,
+      usedQty: summaryRow?.usedQty ?? 0,
+      returnedQty: summaryRow?.returnedQty ?? 0,
+      pendingUsedQty: summaryRow?.pendingUsedQty ?? 0,
       pendingQty: Math.max(requiredQty - issuedQty, 0),
     }
   })
@@ -243,9 +387,24 @@ export const JobCardDetail: FC = () => {
 
   const materialColumns: TableColumnsType<MaterialRow> = [
     { title: 'Component', dataIndex: 'componentName', key: 'componentName' },
-    { title: 'Required', dataIndex: 'requiredQty', key: 'requiredQty', width: 110 },
-    { title: 'Issued', dataIndex: 'issuedQty', key: 'issuedQty', width: 110 },
-    { title: 'Pending', dataIndex: 'pendingQty', key: 'pendingQty', width: 110 },
+    { title: 'Required', dataIndex: 'requiredQty', key: 'requiredQty', width: 100 },
+    { title: 'Issued', dataIndex: 'issuedQty', key: 'issuedQty', width: 95 },
+    {
+      title: 'To Issue',
+      dataIndex: 'pendingQty',
+      key: 'pendingQty',
+      width: 95,
+      render: value => (value > 0 ? <Tag color="orange">{value}</Tag> : <span>0</span>),
+    },
+    { title: 'Used', dataIndex: 'usedQty', key: 'usedQty', width: 90 },
+    { title: 'Returned', dataIndex: 'returnedQty', key: 'returnedQty', width: 100 },
+    {
+      title: 'Returnable',
+      dataIndex: 'pendingUsedQty',
+      key: 'pendingUsedQty',
+      width: 110,
+      render: value => (value > 0 ? <Tag color="blue">{value}</Tag> : <span>{value}</span>),
+    },
   ]
 
   const issueColumns: TableColumnsType<MaterialIssue> = [
@@ -254,6 +413,43 @@ export const JobCardDetail: FC = () => {
     { title: 'Store', dataIndex: 'storeLocationName', key: 'storeLocationName', width: 150 },
     { title: 'Batch', dataIndex: 'batchNo', key: 'batchNo', width: 110 },
     { title: 'Date', dataIndex: 'issueDate', key: 'issueDate', width: 110, render: formatDateTime },
+    ...(canDelete
+      ? [
+          deleteColumn<MaterialIssue>(issue => ({
+            title: `Delete the issue of ${issue.issuedQty} ${issue.componentName}?`,
+            content:
+              'Puts the material back into store stock. Refused once production has been logged on this job card, or once any of this component has been returned.',
+            run: () => removeIssue(issue.id),
+            success: 'Material issue deleted and stock returned',
+          })),
+        ]
+      : []),
+  ]
+
+  const returnColumns: TableColumnsType<MaterialReturn> = [
+    { title: 'Component', dataIndex: 'componentName', key: 'componentName' },
+    { title: 'Qty', dataIndex: 'returnedQty', key: 'returnedQty', width: 90 },
+    { title: 'Store', dataIndex: 'storeLocationName', key: 'storeLocationName', width: 150 },
+    { title: 'Batch', dataIndex: 'batchNo', key: 'batchNo', width: 110, render: v => v || '-' },
+    { title: 'Heat', dataIndex: 'heatNo', key: 'heatNo', width: 100, render: v => v || '-' },
+    {
+      title: 'Date',
+      dataIndex: 'returnDate',
+      key: 'returnDate',
+      width: 110,
+      render: formatDateTime,
+    },
+    ...(canDelete
+      ? [
+          deleteColumn<MaterialReturn>(entry => ({
+            title: `Delete the return of ${entry.returnedQty} ${entry.componentName}?`,
+            content:
+              'Takes the material back out of store stock and onto the job card again. Refused if the returned stock has since been consumed elsewhere.',
+            run: () => removeReturn(entry.id),
+            success: 'Material return deleted and reverted',
+          })),
+        ]
+      : []),
   ]
 
   const logColumns: TableColumnsType<ProcessLog> = [
@@ -263,6 +459,28 @@ export const JobCardDetail: FC = () => {
     { title: 'Shift', dataIndex: 'shiftName', key: 'shiftName', width: 100 },
     { title: 'OK', dataIndex: 'okQty', key: 'okQty', width: 70 },
     { title: 'Rejected', dataIndex: 'rejectedQty', key: 'rejectedQty', width: 90 },
+    ...(canDelete
+      ? [
+          deleteColumn<ProcessLog>(log => {
+            const reviewedQty = reviewedQtyForLog(log.id)
+            return {
+              title: `Delete this ${log.processName} log?`,
+              content:
+                'Reverses everything the log posted: finished-goods stock, the received qty on its source challan, the qty it consumed from an outsource request, and the rejection its rejected qty raised.',
+              run: () => removeLog(log.id),
+              success: 'Production log deleted and reverted',
+              // Until the rejection queries land, reviewedQtyForLog reads 0 for
+              // every log, so the guard below would wave through exactly the
+              // delete it exists to stop. Stay disabled until it can answer.
+              blockedBy: reworkLoading
+                ? 'Checking rejection reviews…'
+                : reviewedQty > 0
+                  ? `Cannot delete: ${reviewedQty} of this log's rejected qty has already been reviewed. Reverse the rejection review first.`
+                  : undefined,
+            }
+          }),
+        ]
+      : []),
   ]
 
   const movementColumns: TableColumnsType<JobCardMovement> = [
@@ -289,6 +507,61 @@ export const JobCardDetail: FC = () => {
       render: (_, record) =>
         record.acceptances.reduce((sum, acceptance) => sum + acceptance.acceptedQty, 0),
     },
+    ...(canDelete
+      ? [
+          deleteColumn<JobCardMovement>(movement => ({
+            title: `Delete the move of ${movement.movedQty} to ${movement.toProcessName}?`,
+            content:
+              'The qty goes back to being ready-to-move at the earlier process. Refused while any of it is still accepted at the next step — delete the acceptance first.',
+            run: () => removeMovement(movement.id),
+            success: 'Movement deleted and reverted',
+            // ERP-BE creates this row itself when a Rework review is approved, and
+            // only on approval — a review cannot be approved twice, so there is no
+            // way to put the movement back. Deleting it would strand the approved
+            // review with nothing to redo against.
+            blockedBy: movement.reworkReviewId
+              ? 'Cannot delete: this movement was created by an approved rework review and cannot be recreated.'
+              : undefined,
+          })),
+        ]
+      : []),
+  ]
+
+  const acceptanceColumns: TableColumnsType<AcceptanceRow> = [
+    {
+      title: 'Date',
+      dataIndex: 'acceptedAt',
+      key: 'acceptedAt',
+      width: 110,
+      render: formatDateTime,
+    },
+    { title: 'From', dataIndex: 'fromProcessName', key: 'fromProcessName' },
+    { title: 'At', dataIndex: 'toProcessName', key: 'toProcessName' },
+    {
+      title: 'Type',
+      key: 'type',
+      width: 100,
+      render: (_, record) => (record.isRework ? <Tag color="red">Rework</Tag> : <Tag>Regular</Tag>),
+    },
+    { title: 'Accepted', dataIndex: 'acceptedQty', key: 'acceptedQty', width: 95 },
+    {
+      title: 'Short',
+      dataIndex: 'shortQty',
+      key: 'shortQty',
+      width: 85,
+      render: value => (value > 0 ? <Tag color="orange">{value}</Tag> : <span>0</span>),
+    },
+    ...(canDelete
+      ? [
+          deleteColumn<AcceptanceRow>(row => ({
+            title: `Delete the acceptance of ${row.acceptedQty} at ${row.toProcessName}?`,
+            content:
+              'The qty goes back to unaccepted at this process. Refused once anything has been logged or outsourced against it — reverse those first.',
+            run: () => removeAcceptance(row.id),
+            success: 'Acceptance deleted and reverted',
+          })),
+        ]
+      : []),
   ]
 
   return (
@@ -310,6 +583,25 @@ export const JobCardDetail: FC = () => {
                 Issue Material
               </Button>
             </Tooltip>
+            {canWrite && (
+              <Tooltip
+                title={
+                  isClosed
+                    ? 'Job card is closed'
+                    : hasMaterial
+                      ? 'Send unused issued material back to store'
+                      : 'Nothing issued on this job card yet'
+                }
+              >
+                <Button
+                  icon={<RollbackOutlined />}
+                  disabled={isClosed || !hasMaterial}
+                  onClick={() => setReturnOpen(true)}
+                >
+                  Return Material
+                </Button>
+              </Tooltip>
+            )}
           </Space>
         }
       />
@@ -451,8 +743,10 @@ export const JobCardDetail: FC = () => {
                   columns={materialColumns}
                   dataSource={materialRows}
                   rowKey="key"
+                  loading={summaryLoading}
                   pagination={false}
                   size="small"
+                  scroll={{ x: 'max-content' }}
                   totalLabel="components"
                 />
               ),
@@ -469,6 +763,22 @@ export const JobCardDetail: FC = () => {
                   pagination={false}
                   size="small"
                   totalLabel="issues"
+                />
+              ),
+            },
+            {
+              key: 'returns',
+              label: `Material Returns (${materialReturns.length})`,
+              children: (
+                <DataTable<MaterialReturn>
+                  columns={returnColumns}
+                  dataSource={materialReturns}
+                  rowKey="id"
+                  loading={returnsLoading}
+                  pagination={false}
+                  size="small"
+                  scroll={{ x: 'max-content' }}
+                  totalLabel="returns"
                 />
               ),
             },
@@ -498,6 +808,20 @@ export const JobCardDetail: FC = () => {
                   pagination={false}
                   size="small"
                   totalLabel="movements"
+                />
+              ),
+            },
+            {
+              key: 'acceptances',
+              label: `Acceptances (${acceptanceRows.length})`,
+              children: (
+                <DataTable<AcceptanceRow>
+                  columns={acceptanceColumns}
+                  dataSource={acceptanceRows}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  totalLabel="acceptances"
                 />
               ),
             },
@@ -571,6 +895,11 @@ export const JobCardDetail: FC = () => {
             outputLocationName={jobCard.outputLocationName}
             hasMaterialIssued={hasMaterial}
             reworkReviewId={activeReworkReviewId}
+          />
+          <ReturnMaterialModal
+            open={returnOpen}
+            onClose={() => setReturnOpen(false)}
+            jobCardId={jobCard.id}
           />
           <MoveForwardModal
             open={drawer === 'move'}

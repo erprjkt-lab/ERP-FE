@@ -18,6 +18,16 @@ export function markChallanReceived(challanId: number): Promise<ApiEnvelope<ApiJ
   return apiRequest(`/api/v1/challans/${challanId}/received`, { method: 'PATCH' })
 }
 
+// The undo of markChallanReceived: ERP-BE allows it only while the challan is
+// still RECEIVED (nothing closed against it yet).
+export function unmarkChallanReceived(challanId: number): Promise<ApiEnvelope<ApiJobCardChallan>> {
+  return apiRequest(`/api/v1/challans/${challanId}/unreceived`, { method: 'PATCH' })
+}
+
 export function closeChallan(challanId: number): Promise<ApiEnvelope<ApiJobCardChallan>> {
   return apiRequest(`/api/v1/challans/${challanId}/close`, { method: 'PATCH' })
+}
+
+export function deleteChallan(challanId: number): Promise<void> {
+  return apiRequest(`/api/v1/challans/${challanId}`, { method: 'DELETE' })
 }

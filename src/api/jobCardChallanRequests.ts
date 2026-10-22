@@ -21,3 +21,7 @@ export function createChallanRequest(
 export function listPendingChallanRequests(): Promise<ApiEnvelope<ApiJobCardChallanRequest[]>> {
   return apiRequest('/api/v1/challan-requests/pending')
 }
+
+export function deleteChallanRequest(requestId: number): Promise<void> {
+  return apiRequest(`/api/v1/challan-requests/${requestId}`, { method: 'DELETE' })
+}

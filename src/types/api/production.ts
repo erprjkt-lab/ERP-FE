@@ -162,6 +162,46 @@ export interface ApiJobCardBomRequirement {
   returned_qty: number
 }
 
+/** GET job-cards/{id}/bom-requirements/material-summary. used_qty is derived by
+ *  ERP-BE (ok+rejected logged at the first route step, scaled by
+ *  required_qty/ordered_qty), not a stored column, and pending_used_qty is the
+ *  ceiling a new material return may not exceed. */
+export interface ApiMaterialSummaryRow {
+  component_item_id: number
+  component_name: string | null
+  component_code: string | null
+  required_qty: number
+  issued_qty: number
+  used_qty: number
+  returned_qty: number
+  pending_used_qty: number
+}
+
+export interface ApiMaterialReturn {
+  id: number
+  job_card_bom_requirement_id: number
+  component_item_id: number | null
+  component_name: string | null
+  store_location_id: number
+  store_location_name: string | null
+  batch_no: string | null
+  heat_no: string | null
+  returned_qty: number
+  return_date: string | null
+  returned_by: number | null
+  stock_movement_id: number | null
+  created_at?: string | null
+}
+
+export interface CreateMaterialReturnPayload {
+  component_item_id: number
+  store_location_id: number
+  batch_no?: string | null
+  heat_no?: string | null
+  returned_qty: number
+  return_date?: string | null
+}
+
 export interface ApiMaterialIssue {
   id: number
   job_card_bom_requirement_id: number

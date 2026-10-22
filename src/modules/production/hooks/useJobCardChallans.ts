@@ -2,8 +2,10 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import {
   closeChallan,
   createChallan,
+  deleteChallan,
   listChallansForJobCard,
   markChallanReceived,
+  unmarkChallanReceived,
 } from '@/api/jobCardChallans'
 import type {
   ApiJobCardChallan,
@@ -109,10 +111,31 @@ export function useMarkChallanReceived() {
   })
 }
 
+export function useUnmarkChallanReceived() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (challanId: string) => unmarkChallanReceived(Number(challanId)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production', 'challans'] }),
+  })
+}
+
 export function useCloseChallan() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (challanId: string) => closeChallan(Number(challanId)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production', 'challans'] }),
+  })
+}
+
+// Deleting an open challan hands its dispatched qty back to the requests it was
+// built from, so the pending-request list has to be refetched too.
+export function useDeleteChallan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (challanId: string) => deleteChallan(Number(challanId)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
+      queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] })
+    },
   })
 }
