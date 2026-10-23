@@ -28,11 +28,8 @@ export function createChallan(
   return apiRequest('/api/v1/challans', { method: 'POST', body: payload })
 }
 
-export function markChallanReceived(challanId: number): Promise<ApiEnvelope<ApiJobCardChallan>> {
-  return apiRequest(`/api/v1/challans/${challanId}/received`, { method: 'PATCH' })
-}
-
-// The undo of markChallanReceived: ERP-BE allows it only while the challan is
+// Reopens a challan ERP-BE advanced to Received when its last line was
+// accepted. ERP-BE allows it only while the challan is
 // still RECEIVED (nothing closed against it yet).
 export function unmarkChallanReceived(challanId: number): Promise<ApiEnvelope<ApiJobCardChallan>> {
   return apiRequest(`/api/v1/challans/${challanId}/unreceived`, { method: 'PATCH' })

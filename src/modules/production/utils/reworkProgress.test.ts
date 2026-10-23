@@ -49,6 +49,35 @@ function log(
   }
 }
 
+// A forward hop inside the redo: moved on and accepted at the next step.
+function movedAndAccepted(
+  fromProcessId: string,
+  toProcessId: string,
+  movedQty: number,
+  acceptedQty = movedQty,
+): JobCardMovement {
+  return {
+    id: `mv-${fromProcessId}-${toProcessId}-${movedQty}`,
+    fromProcessId,
+    fromProcessName: '',
+    toProcessId,
+    toProcessName: '',
+    reworkReviewId: null,
+    isRework: true,
+    movedQty,
+    movedAt: '2026-10-07',
+    acceptances: [
+      {
+        id: `acc-${fromProcessId}-${toProcessId}`,
+        movementId: `mv-${fromProcessId}-${toProcessId}-${movedQty}`,
+        acceptedQty,
+        shortQty: 0,
+        acceptedAt: '2026-10-07',
+      },
+    ],
+  }
+}
+
 // A receive: a rework-bucket movement out of a process with no next process.
 function movedToStore(fromProcessId: string, movedQty: number): JobCardMovement {
   return {
@@ -92,7 +121,21 @@ describe('computeReworkSummary', () => {
     expect(summary.outstandingQty).toBe(10)
   })
 
-  it('carries OK qty on to the next step, whichever review logged it', () => {
+  it('does not hand qty to the next step until it is moved and accepted', () => {
+    const reviews = [review('rev-1', 1, '20')]
+    const logs = [log('20', 1)]
+
+    // Logged OK at Machining, but never moved on: Inspection has nothing.
+    const beforeMove = computeReworkSummary(routes, reviews, logs)
+    expect(beforeMove.steps[0]).toMatchObject({ okQty: 1, readyToMoveQty: 1 })
+    expect(beforeMove.steps[1]).toMatchObject({ availableQty: 0, pendingQty: 0 })
+
+    const afterMove = computeReworkSummary(routes, reviews, logs, [movedAndAccepted('20', '30', 1)])
+    expect(afterMove.steps[0].readyToMoveQty).toBe(0)
+    expect(afterMove.steps[1]).toMatchObject({ availableQty: 1, pendingQty: 1 })
+  })
+
+  it('pools what several reviews logged at one process', () => {
     const reviews = [review('rev-2', 4, '20'), review('rev-1', 6, '20')]
     const summary = computeReworkSummary(routes, reviews, [
       log('20', 6, 0, 'rev-1'),
@@ -101,20 +144,21 @@ describe('computeReworkSummary', () => {
 
     // 10 arrived, 10 logged (9 ok + 1 rejected), nothing left to redo here.
     expect(summary.steps[0]).toMatchObject({ okQty: 9, rejectedQty: 1, pendingQty: 0 })
-    // Inspection gets the 9 that came out OK.
-    expect(summary.steps[1]).toMatchObject({ availableQty: 9, pendingQty: 9 })
-    expect(summary.outstandingQty).toBe(9)
+    expect(summary.outstandingQty).toBe(0)
   })
 
   it('makes the final step receivable and drops it once received', () => {
     const reviews = [review('rev-1', 3, '20')]
     const logs = [log('20', 3), log('30', 3)]
 
-    const before = computeReworkSummary(routes, reviews, logs)
+    const before = computeReworkSummary(routes, reviews, logs, [movedAndAccepted('20', '30', 3)])
     expect(before.finishedQty).toBe(3)
     expect(before.steps[1].readyToMoveQty).toBe(3)
 
-    const after = computeReworkSummary(routes, reviews, logs, [movedToStore('30', 3)])
+    const after = computeReworkSummary(routes, reviews, logs, [
+      movedAndAccepted('20', '30', 3),
+      movedToStore('30', 3),
+    ])
     expect(after.steps[1].readyToMoveQty).toBe(0)
   })
 
@@ -135,8 +179,7 @@ describe('computeReworkSummary', () => {
     // keyed off the review id it would vanish from both tables.
     const summary = computeReworkSummary(routes, reviews, [log('20', 5, 0, undefined)])
 
-    expect(summary.steps[0]).toMatchObject({ okQty: 5, pendingQty: 0 })
-    expect(summary.steps[1].availableQty).toBe(5)
+    expect(summary.steps[0]).toMatchObject({ okQty: 5, pendingQty: 0, readyToMoveQty: 5 })
   })
 
   it('returns nothing to show when no review points at a route step', () => {

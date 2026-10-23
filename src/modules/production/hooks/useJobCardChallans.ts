@@ -5,7 +5,6 @@ import {
   deleteChallan,
   listChallans,
   listChallansForJobCard,
-  markChallanReceived,
   unmarkChallanReceived,
 } from '@/api/jobCardChallans'
 import type {
@@ -89,14 +88,6 @@ export function useCreateChallan() {
       queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
       queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] })
     },
-  })
-}
-
-export function useMarkChallanReceived() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (challanId: string) => markChallanReceived(Number(challanId)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production', 'challans'] }),
   })
 }
 

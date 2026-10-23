@@ -25,7 +25,6 @@ import {
   useAllChallans,
   useCloseChallan,
   useDeleteChallan,
-  useMarkChallanReceived,
   useUnmarkChallanReceived,
 } from '../hooks/useJobCardChallans'
 import { useJobCards } from '../hooks/useJobCards'
@@ -60,11 +59,6 @@ export const OutsourceList = () => {
   // narrows the spinner to the row that was clicked instead of every row sharing
   // the mutation.
   const {
-    mutateAsync: markReceived,
-    isPending: markingReceived,
-    variables: markingId,
-  } = useMarkChallanReceived()
-  const {
     mutateAsync: closeChallanMutation,
     isPending: closing,
     variables: closingId,
@@ -97,16 +91,8 @@ export const OutsourceList = () => {
   // than a copy taken when it was opened.
   const [drawerChallanId, setDrawerChallanId] = useState<string>()
 
-  const handleMarkReceived = async (challanId: string) => {
-    try {
-      await markReceived(challanId)
-      message.success('Challan marked as received at factory gate')
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
-  }
-
-  // The undo of Receive, for a gate entry recorded against the wrong challan.
+  // Reopens a challan ERP-BE advanced to Received, to accept more against it or
+  // to undo a receipt logged against the wrong one.
   const handleUnmarkReceived = async (challanId: string) => {
     try {
       await unmarkReceived(challanId)
@@ -184,52 +170,66 @@ export const OutsourceList = () => {
   )
   const closedCount = useMemo(() => challans.filter(c => c.status === 'closed').length, [challans])
 
-  const challanActions = (challan: Challan): TableActionItem[] => [
-    {
-      key: 'details',
-      label: 'View Details',
-      icon: <EyeOutlined />,
-      variant: 'default',
-      onClick: () => setDrawerChallanId(challan.id),
-    },
-    {
-      key: 'receive',
-      label: 'Mark Received',
-      icon: <CheckOutlined />,
-      variant: 'success',
-      hidden: challan.status !== 'open' || !canModify,
-      loading: markingReceived && markingId === challan.id,
-      onClick: () => handleMarkReceived(challan.id),
-    },
-    {
-      key: 'close',
-      label: 'Close Challan',
-      icon: <LockOutlined />,
-      variant: 'primary',
-      hidden: challan.status !== 'received' || !canModify,
-      loading: closing && closingId === challan.id,
-      onClick: () => handleClose(challan.id),
-    },
-    {
-      key: 'unreceive',
-      label: 'Undo Receive',
-      icon: <UndoOutlined />,
-      variant: 'warning',
-      hidden: challan.status !== 'received' || !canModify,
-      loading: unreceiving && unreceivingId === challan.id,
-      onClick: () => handleUnmarkReceived(challan.id),
-    },
-    {
-      key: 'delete',
-      label: 'Delete Challan',
-      icon: <DeleteOutlined />,
-      variant: 'danger',
-      danger: true,
-      hidden: challan.status !== 'open' || !canDelete,
-      loading: deletingChallan && deletingChallanId === challan.id,
-      onClick: () => handleDeleteChallan(challan),
-    },
-  ]
+  const challanActions = (challan: Challan): TableActionItem[] => {
+    // Accepting a line is the only thing that records qty: it writes the process
+    // log and credits the job card. ERP-BE advances the challan to Received by
+    // itself once every line is in, so there is no manual "mark received" to
+    // offer — it only ever flipped the status, leaving challans sitting at
+    // "Received, 0 of 10" with nothing recorded anywhere.
+    const outstandingQty = challan.items.reduce((sum, item) => sum + item.outstandingQty, 0)
+    const outstandingItems = challan.items.filter(item => item.outstandingQty > 0)
+
+    return [
+      {
+        key: 'details',
+        label: 'View Details',
+        icon: <EyeOutlined />,
+        variant: 'default',
+        onClick: () => setDrawerChallanId(challan.id),
+      },
+      {
+        key: 'accept',
+        label: 'Accept Returned Qty',
+        icon: <InboxOutlined />,
+        variant: 'primary',
+        hidden: outstandingQty <= 0 || challan.status === 'closed' || !canModify,
+        // One line to receive: straight into the accept form. Several, and the
+        // challan has to be opened to say which line came back.
+        onClick: () =>
+          outstandingItems.length === 1
+            ? setAcceptTarget({ challan, item: outstandingItems[0] })
+            : setDrawerChallanId(challan.id),
+      },
+      {
+        key: 'close',
+        label: 'Close Challan',
+        icon: <LockOutlined />,
+        variant: 'primary',
+        hidden: challan.status !== 'received' || !canModify,
+        loading: closing && closingId === challan.id,
+        onClick: () => handleClose(challan.id),
+      },
+      {
+        key: 'unreceive',
+        label: 'Undo Receive',
+        icon: <UndoOutlined />,
+        variant: 'warning',
+        hidden: challan.status !== 'received' || !canModify,
+        loading: unreceiving && unreceivingId === challan.id,
+        onClick: () => handleUnmarkReceived(challan.id),
+      },
+      {
+        key: 'delete',
+        label: 'Delete Challan',
+        icon: <DeleteOutlined />,
+        variant: 'danger',
+        danger: true,
+        hidden: challan.status !== 'open' || !canDelete,
+        loading: deletingChallan && deletingChallanId === challan.id,
+        onClick: () => handleDeleteChallan(challan),
+      },
+    ]
+  }
 
   const requestActions = (request: ChallanRequest): TableActionItem[] => [
     {
@@ -567,17 +567,6 @@ export const OutsourceList = () => {
         extra={
           drawerChallan && (
             <Space>
-              {drawerChallan.status === 'open' && canModify && (
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<CheckOutlined />}
-                  loading={markingReceived && markingId === drawerChallan.id}
-                  onClick={() => handleMarkReceived(drawerChallan.id)}
-                >
-                  Mark Received
-                </Button>
-              )}
               {drawerChallan.status === 'received' && canModify && (
                 <>
                   <Button

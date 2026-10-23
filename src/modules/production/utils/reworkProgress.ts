@@ -87,23 +87,35 @@ export function computeReworkSummary(
         0,
       )
 
+  // Qty accepted into a step from the step before it in the redo. The review's
+  // own send-back is not counted here — entryQty already stands for it — so a
+  // step's queue never counts the same qty twice.
+  const acceptedForwardAt = (processId: string) =>
+    arrivals
+      .filter(movement => movement.toProcessId === processId && !movement.reworkReviewId)
+      .reduce(
+        (sum, movement) =>
+          sum + movement.acceptances.reduce((total, acc) => total + acc.acceptedQty, 0),
+        0,
+      )
+
   const movedOutAt = (processId: string) =>
     departures
       .filter(movement => movement.fromProcessId === processId)
       .reduce((sum, movement) => sum + movement.movedQty, 0)
 
-  let carriedQty = 0
   const steps: StepProgress[] = slice.map((step, index) => {
     const okQty = sumBy(step.processId, log => log.okQty)
     const rejectedQty = sumBy(step.processId, log => log.rejectedQty)
     const bypassedQty = sumBy(step.processId, log => log.bypassedQty)
     const loggedQty = okQty + rejectedQty + bypassedQty
-    // What arrived here to be redone: whatever a review sent back to this
-    // process, plus whatever the previous step of the redo finished.
-    const availableQty = (entryQty[step.processId] ?? 0) + carriedQty
+    // What is actually here to redo: what a review sent back to this process,
+    // plus what the previous step moved on AND this one accepted. Producing OK
+    // qty upstream does not put it here — it has to be moved and accepted,
+    // exactly like the first pass.
+    const availableQty = (entryQty[step.processId] ?? 0) + acceptedForwardAt(step.processId)
     const nextStep = slice[index + 1]
     const isLast = step.processId === lastProcessId || !nextStep
-    carriedQty = okQty
 
     return {
       step,
@@ -115,14 +127,10 @@ export function computeReworkSummary(
       loggedQty,
       availableQty,
       pendingQty: Math.max(availableQty - loggedQty, 0),
-      // The last step settles into store, so what it may still send onward is
-      // its OK qty less what the rework bucket has already moved out of it.
-      readyToMoveQty: isLast
-        ? Math.max(okQty - movedOutAt(step.processId), 0)
-        : Math.max(
-            okQty - sumBy(nextStep.processId, log => log.okQty + log.rejectedQty + log.bypassedQty),
-            0,
-          ),
+      // Same rule at every step, last one included: OK qty less whatever the
+      // rework bucket has already moved out of here. The last step's "move" is
+      // the receipt into store.
+      readyToMoveQty: Math.max(okQty - movedOutAt(step.processId), 0),
       // Never the first pass: the material was issued and consumed on the
       // original run, so the first-step material gate must not block a redo.
       isFirst: false,
