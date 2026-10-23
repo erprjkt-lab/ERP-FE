@@ -38,8 +38,22 @@ export function computeReworkSummary(
   movements: JobCardMovement[] = [],
 ): ReworkSummary {
   const sorted = [...routes].sort((a, b) => a.sequenceNo - b.sequenceNo)
-  const reworkLogs = logs.filter(log => log.inboundReworkReviewId != null)
-  const reworkMovements = movements.filter(movement => movement.isRework)
+  // `is_rework`, not the review id: ERP-BE stopped requiring a review to be
+  // cited, so a redo logged at a later step carries the flag and no id. Keying
+  // this off the id dropped those logs out of both tables at once — the first
+  // pass excludes anything flagged rework, and this would have excluded
+  // anything without an id.
+  const reworkLogs = logs.filter(log => log.isRework || log.inboundReworkReviewId != null)
+  // ERP-BE excludes two kinds of rework movement from these figures, and the
+  // same exclusions have to hold here or the columns drift apart:
+  //  - a send-back to the rejecting process itself (from === to) never left the
+  //    process, so it is not new incoming qty;
+  //  - the auto-created send-back out of a process draws down its rejected pool,
+  //    not the OK qty that "to move" tracks.
+  const isSelfLoop = (movement: JobCardMovement) =>
+    !!movement.reworkReviewId && movement.fromProcessId === movement.toProcessId
+  const arrivals = movements.filter(movement => movement.isRework && !isSelfLoop(movement))
+  const departures = movements.filter(movement => movement.isRework && !movement.reworkReviewId)
 
   // Oldest first: a log at a process cites the review that has been waiting
   // longest there, so partial redos close out in the order they were raised.
@@ -60,12 +74,12 @@ export function computeReworkSummary(
     reworkLogs.filter(log => log.processId === processId).reduce((sum, log) => sum + pick(log), 0)
 
   const movedInAt = (processId: string) =>
-    reworkMovements
+    arrivals
       .filter(movement => movement.toProcessId === processId)
       .reduce((sum, movement) => sum + movement.movedQty, 0)
 
   const settledAt = (processId: string) =>
-    reworkMovements
+    arrivals
       .filter(movement => movement.toProcessId === processId)
       .reduce(
         (sum, movement) =>
@@ -74,7 +88,7 @@ export function computeReworkSummary(
       )
 
   const movedOutAt = (processId: string) =>
-    reworkMovements
+    departures
       .filter(movement => movement.fromProcessId === processId)
       .reduce((sum, movement) => sum + movement.movedQty, 0)
 

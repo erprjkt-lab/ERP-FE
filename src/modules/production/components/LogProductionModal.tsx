@@ -24,6 +24,10 @@ export interface LogProductionModalProps {
   outputLocationName?: string
   hasMaterialIssued: boolean
   /** Set when logging a redo: tags the log as this approved Rework review's qty. */
+  /** True when logging the redo rather than the first pass. ERP-BE keys the
+   *  whole rework behaviour off this; the review id below is a label only. */
+  isRework?: boolean
+  /** Optional classification tag when the step has exactly one review waiting. */
   reworkReviewId?: string
 }
 
@@ -48,6 +52,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
   nextProcessName,
   outputLocationName,
   hasMaterialIssued,
+  isRework = false,
   reworkReviewId,
 }) => {
   const { message } = App.useApp()
@@ -107,7 +112,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
         rejected_qty: values.rejectedQty ?? 0,
         bypassed_qty: values.bypassedQty ?? 0,
         inbound_rework_review_id: reworkReviewId ? Number(reworkReviewId) : undefined,
-        is_rework: !!reworkReviewId,
+        is_rework: isRework,
         production_seconds: values.productionMinutes ? values.productionMinutes * 60 : 0,
         downtime_seconds: values.downtimeMinutes ? values.downtimeMinutes * 60 : 0,
         remark: values.remark || undefined,
@@ -134,7 +139,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
     <Modal
       title={
         <Space wrap>
-          <span>{reworkReviewId ? 'Log Rework' : 'Log Production'}</span>
+          <span>{isRework ? 'Log Rework' : 'Log Production'}</span>
           {step && <Tag color="blue">{step.step.processName}</Tag>}
           <Tag color={pendingQty > 0 ? 'orange' : 'default'}>Pending: {pendingQty}</Tag>
         </Space>

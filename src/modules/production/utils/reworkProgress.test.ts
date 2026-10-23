@@ -26,7 +26,12 @@ function review(id: string, reviewedQty: number, reworkProcessId: string, reason
   } as RejectionReview
 }
 
-function log(processId: string, ok: number, rejected = 0, reviewId = 'rev-1'): ProcessLog {
+function log(
+  processId: string,
+  ok: number,
+  rejected = 0,
+  reviewId: string | undefined = 'rev-1',
+): ProcessLog {
   return {
     id: `log-${processId}-${ok}-${rejected}-${reviewId}`,
     processId,
@@ -122,6 +127,16 @@ describe('computeReworkSummary', () => {
 
     expect(summary.reviewsByProcess.get('20')?.map(r => r.id)).toEqual(['rev-1', 'rev-2'])
     expect(summary.reasons).toEqual(['Cutting not done'])
+  })
+
+  it('counts a redo logged without a review id — ERP-BE no longer requires one', () => {
+    const reviews = [review('rev-1', 5, '20')]
+    // The first pass table drops anything flagged rework, so if this one were
+    // keyed off the review id it would vanish from both tables.
+    const summary = computeReworkSummary(routes, reviews, [log('20', 5, 0, undefined)])
+
+    expect(summary.steps[0]).toMatchObject({ okQty: 5, pendingQty: 0 })
+    expect(summary.steps[1].availableQty).toBe(5)
   })
 
   it('returns nothing to show when no review points at a route step', () => {

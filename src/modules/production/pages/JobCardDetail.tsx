@@ -106,7 +106,7 @@ export const JobCardDetail: FC = () => {
 
   const [activeStepId, setActiveStepId] = useState<string>()
   // Set while the open modal belongs to a rework batch rather than the first pass.
-  const [activeReworkReviewId, setActiveReworkReviewId] = useState<string>()
+  const [activeRework, setActiveRework] = useState<{ reviewId?: string }>()
   const [drawer, setDrawer] = useState<'accept' | 'log' | 'move' | 'outsource' | 'receive'>()
   const [returnOpen, setReturnOpen] = useState(false)
   // The lower tabs each have their own endpoint; only the one on screen fetches.
@@ -157,7 +157,7 @@ export const JobCardDetail: FC = () => {
   const reviewForStep = (processId: string | undefined) =>
     (processId ? reworkReviews.filter(r => r.reworkProcessId === processId) : []).at(0) ??
     reworkReviews.at(-1)
-  const activeBatch = activeReworkReviewId ? rework : undefined
+  const activeBatch = activeRework ? rework : undefined
   const activeRows = activeBatch?.steps ?? progress
   const currentStep = progress.find(row => row.isCurrent)
   const activeStep =
@@ -196,19 +196,22 @@ export const JobCardDetail: FC = () => {
   const openDrawer = (
     step: StepProgress,
     which: 'accept' | 'log' | 'move' | 'outsource' | 'receive',
-    reworkReviewId?: string,
+    rework?: { reviewId?: string },
   ) => {
     setActiveStepId(step.step.processId)
-    setActiveReworkReviewId(reworkReviewId)
+    setActiveRework(rework)
     setDrawer(which)
   }
 
-  // Which bucket the open modal is acting on: a Rework row sets the review id.
-  const isReworkAction = !!activeReworkReviewId
+  // Which bucket the open modal is acting on. ERP-BE keys rework off is_rework
+  // alone now, so a row from the rework table counts even when it has no review
+  // of its own to cite (a later step of the redo).
+  const isReworkAction = !!activeRework
+  const activeReworkReviewId = activeRework?.reviewId
 
   const closeDrawer = () => {
     setDrawer(undefined)
-    setActiveReworkReviewId(undefined)
+    setActiveRework(undefined)
   }
 
   // Every reversal is one of three near-identical confirms, and ERP-BE is the one
@@ -323,7 +326,7 @@ export const JobCardDetail: FC = () => {
   })
 
   const makeProcessColumns = (
-    reworkReviewIdFor?: (record: StepProgress) => string | undefined,
+    reworkFor?: (record: StepProgress) => { reviewId?: string } | undefined,
   ): TableColumnsType<StepProgress> => [
     {
       title: '#',
@@ -350,7 +353,10 @@ export const JobCardDetail: FC = () => {
       width: 110,
       render: value => (value > 0 ? <Tag color="orange">{value}</Tag> : <span>0</span>),
     },
-    { title: 'In', dataIndex: 'availableQty', key: 'availableQty', width: 80 },
+    // Not "what was moved in" — that is Unaccepted + this. ERP-BE's
+    // process-summary calls its moved-in figure `in`, so the label says
+    // Available to keep the two apart: qty this step may actually work on.
+    { title: 'Available', dataIndex: 'availableQty', key: 'availableQty', width: 100 },
     { title: 'OK', dataIndex: 'okQty', key: 'okQty', width: 80 },
     { title: 'Rejected', dataIndex: 'rejectedQty', key: 'rejectedQty', width: 95 },
     { title: 'Pending', dataIndex: 'pendingQty', key: 'pendingQty', width: 90 },
@@ -409,7 +415,7 @@ export const JobCardDetail: FC = () => {
                 type={action.key === primary ? 'primary' : 'default'}
                 icon={action.icon}
                 disabled={!action.enabled || isClosed}
-                onClick={() => openDrawer(record, action.key, reworkReviewIdFor?.(record))}
+                onClick={() => openDrawer(record, action.key, reworkFor?.(record))}
                 style={{ fontSize: 12, paddingInline: 6 }}
               >
                 {action.label}
@@ -768,9 +774,9 @@ export const JobCardDetail: FC = () => {
                       </Tag>
                     </Space>
                     <DataTable<StepProgress>
-                      columns={makeProcessColumns(
-                        record => reviewForStep(record.step.processId)?.id,
-                      )}
+                      columns={makeProcessColumns(record => ({
+                        reviewId: reviewForStep(record.step.processId)?.id,
+                      }))}
                       dataSource={rework.steps}
                       rowKey={record => record.step.id}
                       loading={reworkLoading}
@@ -971,6 +977,7 @@ export const JobCardDetail: FC = () => {
               nextProcessName={nextStep?.step.processName}
               outputLocationName={jobCard.outputLocationName}
               hasMaterialIssued={hasMaterial}
+              isRework={isReworkAction}
               reworkReviewId={activeReworkReviewId}
             />
           )}

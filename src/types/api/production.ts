@@ -377,6 +377,11 @@ export interface ApiJobCardChallanItem {
   challan_id: number
   challan_request_id: number
   job_card_id: number
+  /** Carried down from the challan request: this line was sent out to redo
+   *  rejected qty, so the log that receives it back belongs in the rework
+   *  bucket. ERP-BE does not infer it from the challan item — it has to be
+   *  sent on the process log. */
+  is_rework?: boolean
   process_id: number
   process_name: string | null
   dispatched_qty: number

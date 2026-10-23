@@ -27,6 +27,7 @@ function toChallanItem(api: ApiJobCardChallanItem): ChallanItem {
     challanId: String(api.challan_id),
     challanRequestId: String(api.challan_request_id),
     jobCardId: String(api.job_card_id),
+    isRework: api.is_rework ?? false,
     processId: String(api.process_id),
     processName: api.process_name ?? '',
     dispatchedQty: Number(api.dispatched_qty),

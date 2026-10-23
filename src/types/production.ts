@@ -148,6 +148,8 @@ export interface ChallanItem {
   challanId: string
   challanRequestId: string
   jobCardId: string
+  /** Sent out to redo rejected qty rather than to process fresh qty. */
+  isRework: boolean
   processId: string
   processName: string
   dispatchedQty: number
