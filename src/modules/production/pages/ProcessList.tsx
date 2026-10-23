@@ -1,5 +1,6 @@
 import { Tag } from 'antd'
 import type { FC } from 'react'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -13,7 +14,8 @@ import {
 } from '../hooks/useProcesses'
 
 export const ProcessList: FC = () => {
-  const { data: processes = [], isLoading } = useProcesses()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: processes = [], meta, isLoading } = useProcesses(page, pageSize)
   const { mutateAsync: createProcess } = useCreateProcess()
   const { mutateAsync: updateProcess } = useUpdateProcess()
   const { mutateAsync: deleteProcess } = useDeleteProcess()
@@ -27,6 +29,7 @@ export const ProcessList: FC = () => {
       addButtonLabel="Add Process"
       modalWidth={520}
       data={processes}
+      pagination={paginationProps(meta?.total)}
       loading={isLoading}
       columns={[
         { title: 'Process Name', dataIndex: 'processName', key: 'processName' },
@@ -49,7 +52,7 @@ export const ProcessList: FC = () => {
         },
       ]}
       renderFields={() => (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="Process Name"
             name="processName"

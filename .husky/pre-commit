@@ -1,1 +1,4 @@
 npx lint-staged
+# --force: tsc -b skips files its .tsbuildinfo cache thinks are unchanged, which
+# let a real type error through to CI. A full recheck costs seconds, not minutes.
+npx tsc -b --force

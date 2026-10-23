@@ -15,15 +15,15 @@ export const EMPLOYEE_STATUS_OPTIONS = [
   { label: 'Inactive', value: 'inactive' },
 ]
 
-// The backend stores `branch` as a bare integer id with no branches table
-// behind it — this static list is the only definition of what those ids mean.
-export const BRANCH_OPTIONS = [
-  { label: 'Head Office', value: 1 },
-  { label: 'Mumbai', value: 2 },
-  { label: 'Delhi', value: 3 },
-  { label: 'Bangalore', value: 4 },
-]
+/** The four attendance statuses, in the order the floor marks them. `value`
+ *  is ERP-BE's integer status, `code` the letter its monthly report sends back. */
+export const ATTENDANCE_STATUSES = [
+  { value: 1, code: 'P', label: 'Present', color: '#16A34A' },
+  { value: 2, code: 'A', label: 'Absent', color: '#DC2626' },
+  { value: 3, code: 'HD', label: 'Half Day', color: '#D97706' },
+  { value: 4, code: 'L', label: 'Leave', color: '#0289C3' },
+] as const
 
-export function getBranchLabel(branch?: number | null): string | undefined {
-  return BRANCH_OPTIONS.find(option => option.value === branch)?.label
-}
+export const ATTENDANCE_STATUS_BY_CODE = Object.fromEntries(
+  ATTENDANCE_STATUSES.map(status => [status.code, status]),
+) as Record<string, (typeof ATTENDANCE_STATUSES)[number] | undefined>

@@ -1,24 +1,23 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { Customer } from '@/types/masters'
 import { CustomerFormDrawer } from '../components/CustomerFormDrawer'
-import { CUSTOMER_TYPE_OPTIONS, MASTER_STATUS_OPTIONS } from '../constants'
+import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useDeleteCustomer, useCustomers } from '../hooks/useCustomers'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-const getColumns = (
-  onView: (record: Customer) => void,
-  onEdit: (record: Customer) => void,
-  onDelete: (record: Customer) => void,
-): TableColumnsType<Customer> => [
+const getColumns = (): TableColumnsType<Customer> => [
   {
     title: 'Code',
     dataIndex: 'code',
@@ -43,37 +42,49 @@ const getColumns = (
     key: 'status',
     render: status => <StatusBadge status={status} />,
   },
+]
+
+interface CustomerRowActions {
+  onView: (record: Customer) => void
+  onEdit: (record: Customer) => void
+  onDelete: (record: Customer) => void
+  can: { modify: boolean; delete: boolean }
+}
+
+const getCustomerActions = (record: Customer, a: CustomerRowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 120,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
-        </Tooltip>
-        <Tooltip title="Edit">
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-        </Tooltip>
-        <Tooltip title="Delete">
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => onDelete(record)}
-          />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'view',
+    label: 'View',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'edit',
+    label: 'Edit',
+    icon: <EditOutlined />,
+    variant: 'primary',
+    hidden: !a.can.modify,
+    onClick: () => a.onEdit(record),
+  },
+  {
+    key: 'delete',
+    label: 'Delete',
+    icon: <DeleteOutlined />,
+    variant: 'danger',
+    danger: true,
+    hidden: !a.can.delete,
+    onClick: () => a.onDelete(record),
   },
 ]
 
 export const CustomerList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-  const { data: customers = [], isLoading } = useCustomers()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: customers = [], meta, isLoading } = useCustomers(page, pageSize)
   const { mutateAsync: deleteCustomer } = useDeleteCustomer()
   const filters = useMastersStore(s => s.customerFilters)
   const setFilter = useMastersStore(s => s.setCustomerFilter)
@@ -96,18 +107,20 @@ export const CustomerList: FC = () => {
     })
   }
 
-  const columns = getColumns(
-    record => navigate(`/masters/customers/${record.id}`),
-    record => setDrawerState({ mode: 'edit', id: record.id }),
-    handleDelete,
-  )
+  const columns = getColumns()
+
+  const rowActions: CustomerRowActions = {
+    can: { modify: canModify, delete: canDelete },
+    onView: record => navigate(`/masters/customers/${record.id}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+    onDelete: handleDelete,
+  }
 
   const filtered = customers.filter(c => {
     if (filters.search && !c.name.toLowerCase().includes(filters.search.toLowerCase())) {
       return false
     }
     if (filters.status && c.status !== filters.status) return false
-    if (filters.customerType && c.customerType !== filters.customerType) return false
     return true
   })
 
@@ -115,16 +128,18 @@ export const CustomerList: FC = () => {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Customers"
-        subtitle={`${filtered.length} of ${customers.length} customers`}
+        subtitle={`${filtered.length} of ${meta?.total ?? customers.length} customers`}
         breadcrumbs={[{ label: 'Masters', href: '/masters' }, { label: 'Customers' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            Add Customer
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              Add Customer
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -146,16 +161,6 @@ export const CustomerList: FC = () => {
               options={MASTER_STATUS_OPTIONS}
             />
           </Col>
-          <Col xs={24} sm={8} md={4}>
-            <Select
-              placeholder="Type"
-              value={filters.customerType}
-              onChange={v => setFilter('customerType', v)}
-              allowClear
-              style={{ width: '100%' }}
-              options={CUSTOMER_TYPE_OPTIONS}
-            />
-          </Col>
           <Col>
             <Button onClick={resetFilters}>Clear filters</Button>
           </Col>
@@ -174,7 +179,9 @@ export const CustomerList: FC = () => {
           rowKey="id"
           loading={isLoading}
           totalLabel="customers"
+          pagination={paginationProps(meta?.total)}
           fillHeight
+          rowActions={record => getCustomerActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/masters/customers/${record.id}`),
             style: { cursor: 'pointer' },

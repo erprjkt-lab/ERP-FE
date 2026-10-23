@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createDepartment,
   deleteDepartment,
@@ -22,11 +22,17 @@ function toDepartment(api: ApiDepartment): Department {
   }
 }
 
-export function useDepartments() {
-  return useQuery({
-    queryKey: ['departments'],
-    queryFn: async () => (await listDepartments()).data.map(toDepartment),
+export function useDepartments(page = 1, perPage = 100) {
+  const query = useQuery({
+    queryKey: ['departments', page, perPage],
+    queryFn: () => listDepartments(page, perPage),
+    placeholderData: keepPreviousData,
   })
+  return {
+    ...query,
+    data: query.data?.data.map(toDepartment),
+    meta: query.data?.meta,
+  }
 }
 
 export function useCreateDepartment() {

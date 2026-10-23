@@ -105,7 +105,7 @@ export const FullEmployeeForm: Story = {
   render: () => (
     <Card style={{ maxWidth: 600 }}>
       <Form layout="vertical" initialValues={{ isActive: true }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="First Name"
             name="firstName"
@@ -133,7 +133,7 @@ export const FullEmployeeForm: Story = {
           placeholder="Select department"
           rules={[{ required: true }]}
         />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="Salary"
             name="salary"

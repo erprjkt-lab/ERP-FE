@@ -1,26 +1,51 @@
-import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import {
+  AuditOutlined,
+  EditOutlined,
+  EyeOutlined,
+  PlusOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons'
+import { Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { Grn } from '@/types/procurement'
+import { IncomingInspectionDrawer } from '@/modules/quality/components/IncomingInspectionDrawer'
+import type { TableActionItem } from '@/components/ui'
+import type { GrnItemRow, GrnLineStatus } from '@/types/procurement'
 import { GrnFormDrawer } from '../components/GrnFormDrawer'
-import { GRN_STATUS_BADGE, GRN_STATUS_LABELS } from '../constants'
-import { useGrns } from '../hooks/usePurchaseGrns'
+import { GrnQcModal } from '../components/GrnQcModal'
+import {
+  GRN_LINE_STATUS_BADGE,
+  GRN_LINE_STATUS_LABELS,
+  ITEM_TYPE_RAW_MATERIAL,
+  QC_LOCKED_STATUSES,
+} from '../constants'
+import { useGrnItems } from '../hooks/usePurchaseGrns'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
+import { formatDateTime } from '@/utils/date'
 
-const STATUS_OPTIONS = Object.entries(GRN_STATUS_LABELS).map(([value, label]) => ({ value, label }))
+const STATUS_OPTIONS = Object.entries(GRN_LINE_STATUS_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}))
 
 interface RowActions {
-  onView: (record: Grn) => void
-  onEdit: (record: Grn) => void
+  onView: (record: GrnItemRow) => void
+  onEdit: (record: GrnItemRow) => void
+  onIir: (record: GrnItemRow) => void
+  onQc: (record: GrnItemRow) => void
+  /** Opening the IIR drawer is an incoming-inspection action, so it answers to
+   *  the `iir` module rather than this page's. */
+  can: { modify: boolean; iir: boolean }
 }
 
-const getColumns = ({ onView, onEdit }: RowActions): TableColumnsType<Grn> => [
+const getColumns = (): TableColumnsType<GrnItemRow> => [
   {
     title: 'GRN No / Date',
     key: 'grnNo',
@@ -28,101 +53,154 @@ const getColumns = ({ onView, onEdit }: RowActions): TableColumnsType<Grn> => [
     render: (_, record) => (
       <div>
         <div style={{ fontWeight: 600 }}>{record.grnNo}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.grnDate}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+          {formatDateTime(record.grnDate)}
+        </div>
       </div>
     ),
   },
-  { title: 'Supplier', dataIndex: 'supplierName', key: 'supplierName' },
+  { title: 'Supplier', dataIndex: 'supplierName', key: 'supplierName', render: v => v ?? '—' },
+  { title: 'PO No', dataIndex: 'poNumber', key: 'poNumber', render: v => v ?? '—' },
+  { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
+  { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
   {
-    title: 'Item Code',
-    key: 'itemCode',
-    render: (_, record) => {
-      if (!record.items.length) return '—'
-      return record.items[0]?.itemCode ?? '—'
-    },
+    title: 'Received Qty',
+    dataIndex: 'receivedQty',
+    key: 'receivedQty',
+    align: 'right' as const,
+    width: 110,
   },
   {
-    title: 'Item Name',
-    key: 'itemName',
-    render: (_, record) => {
-      if (!record.items.length) return '—'
-      return record.items[0]?.itemName ?? record.items[0]?.itemId ?? '—'
-    },
-  },
-  {
-    title: 'Qty',
-    key: 'qty',
+    title: 'Rate',
+    dataIndex: 'rate',
+    key: 'rate',
     align: 'right' as const,
     width: 80,
-    render: (_, record) => {
-      if (!record.items.length) return '—'
-      const totalQty = record.items.reduce((sum, item) => sum + (item.orderedQty ?? 0), 0)
-      return totalQty > 0 ? totalQty : '—'
-    },
+    render: v => (v ? `₹${v.toFixed(2)}` : '—'),
   },
   {
+    title: 'Accepted',
+    dataIndex: 'acceptedQty',
+    key: 'acceptedQty',
+    align: 'right' as const,
+    width: 90,
+    render: v => v ?? '—',
+  },
+  {
+    title: 'Rejected',
+    dataIndex: 'rejectedQty',
+    key: 'rejectedQty',
+    align: 'right' as const,
+    width: 90,
+    render: v => v ?? '—',
+  },
+  { title: 'Location', dataIndex: 'locationName', key: 'locationName', render: v => v ?? '—' },
+  {
     title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
+    dataIndex: 'lineStatus',
+    key: 'lineStatus',
     render: status => (
       <StatusBadge
-        status={GRN_STATUS_BADGE[status as Grn['status']]}
-        label={GRN_STATUS_LABELS[status as Grn['status']]}
+        status={GRN_LINE_STATUS_BADGE[status as GrnLineStatus]}
+        label={GRN_LINE_STATUS_LABELS[status as GrnLineStatus]}
       />
     ),
   },
+]
+
+const getGrnActions = (record: GrnItemRow, a: RowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 110,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
-        </Tooltip>
-        <Tooltip title="Edit">
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'view',
+    label: 'View GRN',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'edit',
+    label: 'Edit GRN',
+    icon: <EditOutlined />,
+    variant: 'primary',
+    hidden: !a.can.modify,
+    onClick: () => a.onEdit(record),
+  },
+  // IIR only applies to raw-material lines (same rule as the GRN detail page).
+  // item_type arrives as a raw join column, so it can be the int or its string form.
+  ...(Number(record.itemType) === ITEM_TYPE_RAW_MATERIAL && a.can.iir
+    ? [
+        {
+          key: 'iir',
+          label: record.hasInspectionReport ? 'IIR ✓' : 'IIR',
+          icon: <AuditOutlined />,
+          variant: 'default' as const,
+          onClick: () => a.onIir(record),
+        },
+      ]
+    : []),
+  // Only on lines QC can still be recorded against — once the line is QC Done,
+  // Stock Posted or Cancelled there is nothing to record. The raw-material rule
+  // (an approved IIR first) is enforced inside the modal, which can look it up
+  // per line; a row action cannot.
+  {
+    key: 'qc',
+    label: 'Run QC',
+    icon: <SafetyCertificateOutlined />,
+    variant: 'success' as const,
+    hidden: !a.can.modify || QC_LOCKED_STATUSES.has(Number(record.lineStatus)),
+    onClick: () => a.onQc(record),
   },
 ]
 
 export const PurchaseGrnList: FC = () => {
   const navigate = useNavigate()
+  const { canWrite, canModify } = usePagePermission()
+  const { canRead: canReadIir } = useModulePermission('iir')
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-  const { data: grns, isLoading } = useGrns()
+  const [iirRow, setIirRow] = useState<GrnItemRow>()
+  const [qcRow, setQcRow] = useState<GrnItemRow>()
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const filters = useProcurementFilters('grn')
   const setFilter = useProcurementStore(s => s.setFilter)
   const resetFilters = useProcurementStore(s => s.resetFilter)
+  // Status is filtered server-side (line status); search only narrows the loaded page.
+  const {
+    data: items,
+    meta,
+    isLoading,
+    isFetching,
+  } = useGrnItems({ page, perPage: pageSize, status: filters.status })
 
-  const columns = getColumns({
-    onView: record => navigate(`/purchase/grn/${record.id}`),
-    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
-  })
+  const columns = getColumns()
 
-  const filtered = grns.filter(grn => {
-    if (filters.search && !grn.grnNo.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false
-    }
-    if (filters.status && String(grn.status) !== filters.status) return false
-    return true
-  })
+  const rowActions: RowActions = {
+    onView: record => navigate(`/purchase/grn/${record.grnId}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.grnId }),
+    onIir: record => setIirRow(record),
+    onQc: record => setQcRow(record),
+    can: { modify: canModify, iir: canReadIir },
+  }
+
+  const filtered = items.filter(
+    row => !filters.search || row.grnNo.toLowerCase().includes(filters.search.toLowerCase()),
+  )
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Goods Receipt Notes"
-        subtitle={`${filtered.length} of ${grns.length} GRNs`}
+        subtitle={`${meta?.total ?? 0} GRN items`}
         breadcrumbs={[{ label: 'Purchase', href: '/purchase' }, { label: 'GRN' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New GRN
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New GRN
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -138,14 +216,24 @@ export const PurchaseGrnList: FC = () => {
             <Select
               placeholder="Status"
               value={filters.status}
-              onChange={v => setFilter('grn', 'status', v)}
+              onChange={v => {
+                setFilter('grn', 'status', v ?? null)
+                setPage(1)
+              }}
               allowClear
               style={{ width: '100%' }}
               options={STATUS_OPTIONS}
             />
           </Col>
           <Col>
-            <Button onClick={() => resetFilters('grn')}>Clear filters</Button>
+            <Button
+              onClick={() => {
+                resetFilters('grn')
+                setPage(1)
+              }}
+            >
+              Clear filters
+            </Button>
           </Col>
         </Row>
       </PageHeader>
@@ -156,19 +244,40 @@ export const PurchaseGrnList: FC = () => {
           body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
         }}
       >
-        <DataTable<Grn>
+        <DataTable<GrnItemRow>
           columns={columns}
           dataSource={filtered}
           rowKey="id"
-          loading={isLoading}
-          totalLabel="GRNs"
+          loading={isLoading || isFetching}
+          pagination={{
+            current: page,
+            pageSize,
+            total: meta?.total ?? 0,
+            onChange: (nextPage, nextPageSize) => {
+              setPage(nextPage)
+              setPageSize(nextPageSize)
+            },
+          }}
+          totalLabel="GRN items"
           fillHeight
+          rowActions={record => getGrnActions(record, rowActions)}
           onRow={record => ({
-            onClick: () => navigate(`/purchase/grn/${record.id}`),
+            onClick: () => navigate(`/purchase/grn/${record.grnId}`),
             style: { cursor: 'pointer' },
           })}
         />
       </Card>
+
+      <IncomingInspectionDrawer
+        open={!!iirRow}
+        grnItemId={iirRow?.id}
+        itemId={iirRow?.itemId}
+        itemName={iirRow?.itemName ?? iirRow?.itemId}
+        grnNo={iirRow?.grnNo}
+        onClose={() => setIirRow(undefined)}
+      />
+
+      {qcRow && <GrnQcModal line={qcRow} onClose={() => setQcRow(undefined)} />}
 
       <GrnFormDrawer
         open={!!drawerState}

@@ -54,6 +54,9 @@ export function useIssueAgainstRequisition(requisitionId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['stock-requisitions', requisitionId] })
       queryClient.invalidateQueries({ queryKey: ['stock-requisitions'] })
       queryClient.invalidateQueries({ queryKey: ['stock-issues'] })
+      // Issuing moves stock out, and ItemLotAllocator reads this to show what is
+      // available per lot — stale here means the next issue over-allocates.
+      queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
     },
   })
 }
@@ -71,6 +74,9 @@ export function useCreateDirectStockIssue() {
   return useMutation({
     mutationFn: async (payload: DirectIssuePayload) =>
       (await createDirectStockIssue(payload)).data.map(toIssue),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['stock-issues'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock-issues'] })
+      queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
+    },
   })
 }

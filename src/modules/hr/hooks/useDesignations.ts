@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createDesignation,
   deleteDesignation,
@@ -10,17 +10,19 @@ import type { Designation } from '@/types/hr'
 import { useHRLocalStore } from '../store/hrLocalStore'
 import { useDepartments } from './useDepartments'
 
-export function useDesignations() {
+export function useDesignations(page = 1, perPage = 100) {
   const designationExtras = useHRLocalStore(state => state.designationExtras)
+  // Unpaged on purpose: this only resolves the department name shown per row.
   const departmentsQuery = useDepartments()
   const query = useQuery({
-    queryKey: ['designations'],
-    queryFn: async () => (await listDesignations()).data,
+    queryKey: ['designations', page, perPage],
+    queryFn: () => listDesignations(page, perPage),
+    placeholderData: keepPreviousData,
   })
 
   const departmentsById = new Map((departmentsQuery.data ?? []).map(d => [d.id, d]))
 
-  const data: Designation[] | undefined = query.data?.map(api => {
+  const data: Designation[] | undefined = query.data?.data.map(api => {
     const id = String(api.id)
     const departmentId = designationExtras[id]?.departmentId ?? null
     return {
@@ -34,7 +36,12 @@ export function useDesignations() {
     }
   })
 
-  return { ...query, data, isLoading: query.isLoading || departmentsQuery.isLoading }
+  return {
+    ...query,
+    data,
+    meta: query.data?.meta,
+    isLoading: query.isLoading || departmentsQuery.isLoading,
+  }
 }
 
 export function useCreateDesignation() {

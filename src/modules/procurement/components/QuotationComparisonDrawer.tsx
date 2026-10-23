@@ -4,6 +4,7 @@ import { App, Button, Card, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { Drawer } from '@/components/ui/Drawer'
 import { usePurchaseEnquiry, useQuotationComparison } from '../hooks/usePurchaseEnquiries'
@@ -13,6 +14,7 @@ import type {
 } from '../hooks/usePurchaseEnquiries'
 import { useSelectSupplierForEnquiry } from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface QuotationComparisonDrawerProps {
   open: boolean
@@ -20,11 +22,14 @@ export interface QuotationComparisonDrawerProps {
   enquiryId?: string
 }
 
-export const QuotationComparisonDrawer: FC<QuotationComparisonDrawerProps> = ({
+const QuotationComparisonDrawerInner: FC<QuotationComparisonDrawerProps> = ({
   open,
   onClose,
   enquiryId,
 }) => {
+  // ERP-BE's PurchaseEnquiryController requires `write purchase-enquiries` for
+  // selectSupplier (the module has no `approve` action at all).
+  const { canWrite: canSelectSupplier } = useModulePermission('purchase-enquiries')
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const { data: enquiry } = usePurchaseEnquiry(enquiryId)
@@ -137,12 +142,18 @@ export const QuotationComparisonDrawer: FC<QuotationComparisonDrawerProps> = ({
     {
       title: 'Action',
       key: 'action',
-      render: (_, q) =>
-        isSupplierSelected(q.supplierId) ? (
-          <Tag icon={<CheckCircleOutlined />} color="green">
-            Selected
-          </Tag>
-        ) : (
+      render: (_, q) => {
+        if (isSupplierSelected(q.supplierId)) {
+          return (
+            <Tag icon={<CheckCircleOutlined />} color="green">
+              Selected
+            </Tag>
+          )
+        }
+
+        if (!canSelectSupplier) return '—'
+
+        return (
           <Button
             size="small"
             type="primary"
@@ -152,7 +163,8 @@ export const QuotationComparisonDrawer: FC<QuotationComparisonDrawerProps> = ({
           >
             Select
           </Button>
-        ),
+        )
+      },
     },
   ]
 
@@ -208,3 +220,5 @@ export const QuotationComparisonDrawer: FC<QuotationComparisonDrawerProps> = ({
     </Drawer>
   )
 }
+
+export const QuotationComparisonDrawer = deferMount(QuotationComparisonDrawerInner)

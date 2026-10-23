@@ -1,13 +1,10 @@
 import type { BaseEntity, ID, Status } from './index'
 
-export type CustomerType = 'retail' | 'wholesale' | 'distributor' | 'corporate' | 'government'
 export type GstType = 'regular' | 'composition' | 'unregistered' | 'sez' | 'consumer'
-export type VendorType = 'service' | 'contractor' | 'consultant' | 'transporter' | 'other'
 
 export interface Customer extends BaseEntity {
   code: string
   name: string
-  customerType: CustomerType | null
   status: Status
   contactPerson: string
   mobile: string
@@ -64,7 +61,6 @@ export interface Supplier extends BaseEntity {
 export interface Vendor extends BaseEntity {
   code: string
   name: string
-  vendorType: VendorType | null
   contactPerson: string
   mobile: string
   email: string
@@ -259,4 +255,16 @@ export interface HsnCode extends BaseEntity {
   igstRate?: number
   cessRate?: number
   status: Status
+}
+
+export interface StoreLocation {
+  id: string
+  code: string
+  name: string
+  parentLocationId: string | null
+  /** >0 marks a backend-generated row: locked from edit, deactivate and delete. */
+  locationType: number
+  isActive: boolean
+  isSystem: boolean
+  createdAt: string
 }

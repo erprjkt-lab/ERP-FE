@@ -1,13 +1,16 @@
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Alert, Button, Card, Col, Form, Row, Space, Tag, Typography } from 'antd'
 import type { FC } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useCustomers } from '@/modules/masters/hooks/useCustomers'
 import { useFinishedGoods } from '@/modules/masters/hooks/useFinishedGoods'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
+import { useSalesOrderItems } from '@/modules/sales/hooks/useSalesOrders'
 import { MANUFACTURING_ROUTE_CODE, useCreateJobCard } from '../hooks/useJobCards'
 import { useItemProcessRoute } from '../hooks/useItemProcessRoute'
 import { useProcesses } from '../hooks/useProcesses'
@@ -39,6 +42,7 @@ interface JobCardFormValues {
 
 export const JobCardForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm<JobCardFormValues>()
 
@@ -51,6 +55,17 @@ export const JobCardForm: FC = () => {
   const itemId = Form.useWatch('itemId', form) as string | undefined
   const overrideRoute = Form.useWatch('overrideRoute', form) as boolean | undefined
   const { data: activeRoute, isLoading: loadingRoute } = useItemProcessRoute(itemId)
+  const { data: salesOrderLines } = useSalesOrderItems({
+    itemId,
+    status: 'CONFIRMED',
+    perPage: 100,
+  })
+
+  // The line list is item-scoped, so a stale selection from a previous item
+  // would otherwise be submitted against the new one.
+  useEffect(() => {
+    form.setFieldValue('salesOrderLineId', undefined)
+  }, [itemId, form])
 
   const itemOptions = finishedGoods.map(item => ({
     label: `${item.code} · ${item.name}`,
@@ -59,6 +74,13 @@ export const JobCardForm: FC = () => {
   const locationOptions = locations.map(loc => ({ label: loc.name, value: loc.id }))
   const customerOptions = (customers ?? []).map(c => ({ label: c.name, value: c.id }))
   const processOptions = processes.map(p => ({ label: p.processName, value: p.id }))
+  // The sales-orders index doesn't eager-load lines, so the picker reads the
+  // flat sales-order-items listing instead, narrowed to the item chosen above
+  // and to CONFIRMED orders (DRAFT isn't committed; CLOSED/CANCELLED are done).
+  const salesOrderLineOptions = salesOrderLines.map(line => ({
+    label: `${line.orderNumber} · ${line.partyName ?? ''} (Qty: ${line.qty})`,
+    value: line.id,
+  }))
 
   const handleFinish = async (values: JobCardFormValues) => {
     if (!overrideRoute && itemId && !loadingRoute && activeRoute.length === 0) {
@@ -104,9 +126,11 @@ export const JobCardForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/production/work-orders')}>Cancel</Button>
-            <Button type="primary" loading={saving} onClick={() => form.submit()}>
-              Save Job Card
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={saving} onClick={() => form.submit()}>
+                Save Job Card
+              </Button>
+            )}
           </Space>
         }
       />
@@ -135,9 +159,13 @@ export const JobCardForm: FC = () => {
                   label="Sales Order"
                   name="salesOrderLineId"
                   fieldType="select"
-                  options={[]}
-                  disabled
-                  placeholder="Sales module not integrated yet"
+                  options={salesOrderLineOptions}
+                  disabled={!itemId}
+                  placeholder={
+                    itemId
+                      ? 'Optional — select a confirmed sales order line'
+                      : 'Select an item first'
+                  }
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>

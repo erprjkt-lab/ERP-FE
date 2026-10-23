@@ -18,3 +18,7 @@ export function createProcessLog(
     body: payload,
   })
 }
+
+export function deleteProcessLog(processLogId: number): Promise<void> {
+  return apiRequest(`/api/v1/process-logs/${processLogId}`, { method: 'DELETE' })
+}

@@ -10,6 +10,7 @@ import {
   useUpdateGaugeInstrument,
 } from '../../hooks/useGaugeInstruments'
 import { useItemCategories } from '../../hooks/useItemCategories'
+import { formatDateTime } from '@/utils/date'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
@@ -37,7 +38,12 @@ export const GaugeInstrumentList: FC = () => {
         { title: 'Name', dataIndex: 'name', key: 'name' },
         { title: 'Gauge Type', dataIndex: 'gaugeType', key: 'gaugeType' },
         { title: 'Manufacturer', dataIndex: 'manufacturer', key: 'manufacturer' },
-        { title: 'Calibration Due', dataIndex: 'calibrationDueDate', key: 'calibrationDueDate' },
+        {
+          title: 'Calibration Due',
+          dataIndex: 'calibrationDueDate',
+          key: 'calibrationDueDate',
+          render: formatDateTime,
+        },
         { title: 'Price', dataIndex: 'price', key: 'price', width: 100 },
       ]}
       getInitialValues={record => ({
@@ -47,7 +53,7 @@ export const GaugeInstrumentList: FC = () => {
           : undefined,
       })}
       renderFields={() => (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="Name"
             name="name"

@@ -1,5 +1,6 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, DatePicker, Form, Input, InputNumber, Radio, Select, Typography } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
@@ -16,6 +17,7 @@ import {
   SUPPLIER_STATUS_BADGE,
   SUPPLIER_STATUS_LABELS,
 } from '../constants'
+import { useUoms } from '@/modules/masters/hooks/useUoms'
 import { useProcurementItems } from '../hooks/useProcurementItems'
 import {
   useCreatePurchaseEnquiryFromRequisitions,
@@ -33,6 +35,8 @@ import {
   usePurchaseRequisitionsByIds,
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
+import { deferMount } from '@/components/ui/deferMount'
 
 type Mode = 'manual' | 'fromRequisitions'
 
@@ -48,6 +52,7 @@ interface ManualItemRowValues {
   itemId: string
   itemDescription?: string
   requiredQty: number
+  uomId?: string
   requiredDate?: dayjs.Dayjs
   preferredDeliveryDate?: dayjs.Dayjs
   remarks?: string
@@ -62,7 +67,7 @@ export interface PurchaseEnquiryFormDrawerProps {
   fromRequisitionId?: string
 }
 
-export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
+const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
   open,
   onClose,
   enquiryId,
@@ -81,10 +86,11 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
     if (open && !isEdit) setMode(fromRequisitionId ? 'fromRequisitions' : 'manual')
   }
 
-  const { data: enquiry } = usePurchaseEnquiry(enquiryId)
+  const { data: enquiry, isLoading: loadingRecord } = usePurchaseEnquiry(enquiryId)
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: requisitions } = usePurchaseRequisitions()
+  const { data: uoms = [] } = useUoms()
   const selectedReqIds = Form.useWatch('requisitionIds', form) as string[] | undefined
   const { mutateAsync: createManual, isPending: creatingManual } = useCreatePurchaseEnquiryManual()
   const { mutateAsync: createFromRequisitions, isPending: creatingFromPr } =
@@ -105,9 +111,9 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
 
   // Fully blocked — LOCKED_STATUSES on ERP-BE rejects update entirely.
   const isLocked = isEdit && !!enquiry && LOCKED_STATUSES.includes(enquiry.status)
-  // Once sent, items/supplier_ids can no longer be included in the update payload at all,
+  // Items/supplier_ids can only be changed while the enquiry is still SENT; past that
   // only header fields (date/due-date/priority/remarks) stay editable.
-  const itemsEditable = !isEdit || enquiry?.status === 'DRAFT'
+  const itemsEditable = !isEdit || enquiry?.status === 'SENT'
 
   const buildSuppliers = (supplierIds: string[]): PurchaseEnquirySupplierInput[] =>
     supplierIds.map(id => {
@@ -118,14 +124,15 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
   const buildItemRows = (rows: ManualItemRowValues[]): PurchaseEnquiryItemInput[] =>
     rows.map(row => {
       const item = items.find(i => i.id === row.itemId)
+      const uom = uoms.find(u => String(u.id) === String(row.uomId))
       return {
         itemId: row.itemId,
         itemCode: item?.code,
         itemName: item?.name,
         itemDescription: row.itemDescription,
         requiredQty: row.requiredQty,
-        uomId: item?.uomId ?? null,
-        uomName: item?.uomName,
+        uomId: row.uomId ?? item?.uomId ?? null,
+        uomName: uom?.name ?? item?.uomName,
         requiredDate: row.requiredDate ? row.requiredDate.format('YYYY-MM-DD') : null,
         preferredDeliveryDate: row.preferredDeliveryDate
           ? row.preferredDeliveryDate.format('YYYY-MM-DD')
@@ -146,6 +153,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
           itemId: item.itemId,
           itemDescription: item.itemDescription,
           requiredQty: item.requiredQty,
+          uomId: item.uomId ?? undefined,
           requiredDate: item.requiredDate ? dayjs(item.requiredDate) : undefined,
           preferredDeliveryDate: item.preferredDeliveryDate
             ? dayjs(item.preferredDeliveryDate)
@@ -231,6 +239,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Purchase Enquiry' : 'New Purchase Enquiry'}
       status={isEdit && enquiry ? ENQUIRY_STATUS_BADGE[enquiry.status] : undefined}
       statusLabel={isEdit && enquiry ? ENQUIRY_STATUS_LABELS[enquiry.status] : undefined}
@@ -263,7 +272,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
               </Form.Item>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+            <div className="erp-form-grid is-3col">
               <Form.Item
                 label="Enquiry Date"
                 name="enquiryDate"
@@ -292,7 +301,19 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
               <Form.Item
                 label="Suppliers"
                 name="supplierIds"
-                rules={[{ required: true, message: 'Add at least one supplier' }]}
+                rules={[
+                  { required: true, message: 'Add at least one supplier' },
+                  {
+                    validator: (_, value) => {
+                      if (!value || value.length === 0) return Promise.resolve()
+                      const unique = new Set(value)
+                      if (unique.size !== value.length) {
+                        return Promise.reject(new Error('Duplicate suppliers not allowed'))
+                      }
+                      return Promise.resolve()
+                    },
+                  },
+                ]}
               >
                 <Select
                   mode="multiple"
@@ -361,7 +382,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                           title: 'Required Date',
                           dataIndex: 'requiredDate',
                           key: 'requiredDate',
-                          render: (v: string | null) => v ?? '—',
+                          render: formatDateTime,
                         },
                       ]}
                       dataSource={previewItems}
@@ -384,66 +405,98 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                     {
                       validator: async (_, v) => {
                         if (!v || v.length === 0) throw new Error('Add at least one item')
+                        const itemIds = v
+                          .map((row: ManualItemRowValues) => row.itemId)
+                          .filter(Boolean)
+                        const unique = new Set(itemIds)
+                        if (unique.size !== itemIds.length) {
+                          throw new Error('Duplicate items not allowed')
+                        }
                       },
                     },
                   ]}
                 >
                   {(fields, { add, remove }, { errors }) => (
                     <>
-                      {fields.map(field => (
-                        <div
-                          key={field.key}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '2fr 1fr 100px 130px 130px 1fr 32px',
-                            gap: '0 8px',
-                            alignItems: 'start',
-                          }}
-                        >
-                          <Form.Item
-                            name={[field.name, 'itemId']}
-                            rules={[{ required: true, message: 'Required' }]}
-                          >
-                            <Select
-                              placeholder="Select item"
-                              options={itemOptions}
-                              showSearch
-                              filterOption={(input, option) =>
-                                String(option?.label ?? '')
-                                  .toLowerCase()
-                                  .includes(input.toLowerCase())
-                              }
-                            />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'itemDescription']}>
-                            <Input placeholder="Description" />
-                          </Form.Item>
-                          <Form.Item
-                            name={[field.name, 'requiredQty']}
-                            rules={[{ required: true, message: 'Required' }]}
-                          >
-                            <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'requiredDate']}>
-                            <DatePicker placeholder="Required by" style={{ width: '100%' }} />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'preferredDeliveryDate']}>
-                            <DatePicker
-                              placeholder="Preferred delivery"
-                              style={{ width: '100%' }}
-                            />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'remarks']}>
-                            <Input placeholder="Remarks" />
-                          </Form.Item>
-                          <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                            onClick={() => remove(field.name)}
-                          />
+                      <div
+                        style={{
+                          overflowX: 'auto',
+                          maxWidth: '100%',
+                          WebkitOverflowScrolling: 'touch',
+                          paddingBottom: 4,
+                        }}
+                      >
+                        <div style={{ minWidth: 840 }}>
+                          {fields.map(field => (
+                            <div
+                              key={field.key}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '2fr 1fr 100px 90px 130px 130px 1fr 32px',
+                                gap: '0 8px',
+                                alignItems: 'start',
+                              }}
+                            >
+                              <Form.Item
+                                name={[field.name, 'itemId']}
+                                rules={[{ required: true, message: 'Required' }]}
+                              >
+                                <Select
+                                  placeholder="Select item"
+                                  options={itemOptions}
+                                  popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                                  showSearch
+                                  filterOption={(input, option) =>
+                                    String(option?.label ?? '')
+                                      .toLowerCase()
+                                      .includes(input.toLowerCase())
+                                  }
+                                />
+                              </Form.Item>
+                              <Form.Item name={[field.name, 'itemDescription']}>
+                                <Input placeholder="Description" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, 'requiredQty']}
+                                rules={[{ required: true, message: 'Required' }]}
+                              >
+                                <InputNumber
+                                  placeholder="Qty"
+                                  min={0.0001}
+                                  style={{ width: '100%' }}
+                                />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, 'uomId']}
+                                rules={[{ required: true, message: 'Required' }]}
+                              >
+                                <Select
+                                  placeholder="UOM"
+                                  options={uoms.map(u => ({ label: u.name, value: u.id }))}
+                                />
+                              </Form.Item>
+                              <Form.Item name={[field.name, 'requiredDate']}>
+                                <DatePicker placeholder="Required by" style={{ width: '100%' }} />
+                              </Form.Item>
+                              <Form.Item name={[field.name, 'preferredDeliveryDate']}>
+                                <DatePicker
+                                  placeholder="Preferred delivery"
+                                  style={{ width: '100%' }}
+                                />
+                              </Form.Item>
+                              <Form.Item name={[field.name, 'remarks']}>
+                                <Input placeholder="Remarks" />
+                              </Form.Item>
+                              <Button
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => remove(field.name)}
+                              />
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
                       <Form.ErrorList errors={errors} />
                       <Button
                         type="dashed"
@@ -471,7 +524,7 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
                       title: 'Required Date',
                       dataIndex: 'requiredDate',
                       key: 'requiredDate',
-                      render: (v: string | null) => v ?? '—',
+                      render: formatDateTime,
                     },
                   ]}
                   dataSource={enquiry?.items ?? []}
@@ -487,3 +540,5 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const PurchaseEnquiryFormDrawer = deferMount(PurchaseEnquiryFormDrawerInner)

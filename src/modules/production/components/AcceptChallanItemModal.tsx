@@ -65,6 +65,9 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
         ok_qty: values.okQty,
         rejected_qty: values.rejectedQty ?? 0,
         inbound_challan_item_id: Number(item.id),
+        // A challan raised for a rework redo returns into the rework bucket.
+        // ERP-BE reads this off the log, not off the challan item.
+        is_rework: item.isRework,
         remark: values.remark || undefined,
       })
       message.success(`Accepted ${values.okQty} back from ${challan.destinationPartyName}`)
@@ -96,7 +99,7 @@ export const AcceptChallanItemModal: FC<AcceptChallanItemModalProps> = ({
       }}
       width={620}
     >
-      <Descriptions size="small" column={2} bordered style={{ marginBottom: 16 }}>
+      <Descriptions size="small" column={{ xs: 1, sm: 2 }} bordered style={{ marginBottom: 16 }}>
         <Descriptions.Item label="Job Card">{jobCardLabel}</Descriptions.Item>
         <Descriptions.Item label="Vendor">{challan?.destinationPartyName}</Descriptions.Item>
         <Descriptions.Item label="Dispatched">{item?.dispatchedQty}</Descriptions.Item>

@@ -1,8 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { rawMaterialsApi } from '@/api/items'
 import type { ApiItemCategory, ApiItemMaster, ApiMaterialGrade, ApiUom } from '@/types/api/masters'
 import type { RawMaterial } from '@/types/masters'
-import { useMastersLocalStore } from '../store/mastersLocalStore'
 import type { RawMaterialInput } from '../store/mastersStore'
 import { useItemCategories } from './useItemCategories'
 import { useMaterialGrades } from './useMaterialGrades'
@@ -17,7 +16,6 @@ function toRawMaterial(
   categoriesById: Map<string, ApiItemCategory>,
   uomsById: Map<string, ApiUom>,
   materialGradesById: Map<string, ApiMaterialGrade>,
-  imageUrl: string | undefined,
 ): RawMaterial {
   const categoryId = idOrNull(api.category_id)
   const uomId = idOrNull(api.uom_id)
@@ -38,7 +36,7 @@ function toRawMaterial(
     gstPercent: api.gst_percent ?? undefined,
     description: api.description ?? undefined,
     status: api.status === 0 ? 'inactive' : 'active',
-    imageUrl,
+    imageUrl: api.image ?? undefined,
     materialGradeId,
     materialGrade: materialGradeId
       ? materialGradesById.get(materialGradeId)?.material_grade
@@ -71,6 +69,9 @@ function toPayload(input: Partial<RawMaterialInput>) {
     gst_percent: input.gstPercent,
     description: input.description,
     status: input.status === 'inactive' ? 0 : 1,
+    batch_tracking: input.batchTracking,
+    heat_tracking: input.heatTracking,
+    serial_tracking: input.serialTracking,
     material_grade: input.materialGradeId ? Number(input.materialGradeId) : null,
     material_type: input.materialType,
     shape: input.shape,
@@ -84,10 +85,10 @@ function toPayload(input: Partial<RawMaterialInput>) {
   }
 }
 
-function useLookupMaps() {
-  const { data: categories } = useItemCategories()
-  const { data: uoms } = useUoms()
-  const { data: materialGrades } = useMaterialGrades()
+function useLookupMaps(enabled: boolean) {
+  const { data: categories } = useItemCategories(1, 200, enabled)
+  const { data: uoms } = useUoms(1, 200, enabled)
+  const { data: materialGrades } = useMaterialGrades(1, 200, enabled)
   return {
     categoriesById: new Map(categories.map(c => [String(c.id), c])),
     uomsById: new Map(uoms.map(u => [String(u.id), u])),
@@ -95,24 +96,26 @@ function useLookupMaps() {
   }
 }
 
-export function useRawMaterials() {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
-  const itemImages = useMastersLocalStore(s => s.itemImages)
+/** `withNames` resolves category/uom/material-grade ids to names, which costs a
+ *  fetch of each of those masters. A picker that shows only code and name
+ *  passes false and skips all of them. */
+export function useRawMaterials(page = 1, perPage = 100, withNames = true) {
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(withNames)
   const query = useQuery({
-    queryKey: ['rawMaterials'],
-    queryFn: async () => (await rawMaterialsApi.list()).data,
+    queryKey: ['rawMaterials', page, perPage],
+    queryFn: () => rawMaterialsApi.list(page, perPage),
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(api =>
-    toRawMaterial(api, categoriesById, uomsById, materialGradesById, itemImages[String(api.id)]),
+  const data = query.data?.data.map(api =>
+    toRawMaterial(api, categoriesById, uomsById, materialGradesById),
   )
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useRawMaterial(id: string | undefined) {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
-  const itemImages = useMastersLocalStore(s => s.itemImages)
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(true)
   const query = useQuery({
     queryKey: ['rawMaterials', id],
     queryFn: () => rawMaterialsApi.get(Number(id)),
@@ -121,7 +124,7 @@ export function useRawMaterial(id: string | undefined) {
 
   const data =
     query.data && id
-      ? toRawMaterial(query.data.data, categoriesById, uomsById, materialGradesById, itemImages[id])
+      ? toRawMaterial(query.data.data, categoriesById, uomsById, materialGradesById)
       : undefined
 
   return { ...query, data, isLoading: query.isLoading }
@@ -129,12 +132,9 @@ export function useRawMaterial(id: string | undefined) {
 
 export function useCreateRawMaterial() {
   const queryClient = useQueryClient()
-  const setItemImage = useMastersLocalStore(s => s.setItemImage)
   return useMutation({
     mutationFn: async (input: RawMaterialInput) => {
-      const result = await rawMaterialsApi.create(toPayload(input))
-      setItemImage(String(result.data.id), input.imageUrl)
-      return result
+      return await rawMaterialsApi.create(toPayload(input))
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rawMaterials'] }),
   })
@@ -142,12 +142,9 @@ export function useCreateRawMaterial() {
 
 export function useUpdateRawMaterial() {
   const queryClient = useQueryClient()
-  const setItemImage = useMastersLocalStore(s => s.setItemImage)
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<RawMaterialInput> }) => {
-      const result = await rawMaterialsApi.update(Number(id), toPayload(payload))
-      if ('imageUrl' in payload) setItemImage(id, payload.imageUrl)
-      return result
+      return await rawMaterialsApi.update(Number(id), toPayload(payload))
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['rawMaterials'] })
@@ -158,12 +155,8 @@ export function useUpdateRawMaterial() {
 
 export function useDeleteRawMaterial() {
   const queryClient = useQueryClient()
-  const removeItemImage = useMastersLocalStore(s => s.removeItemImage)
   return useMutation({
-    mutationFn: async (id: string) => {
-      await rawMaterialsApi.remove(Number(id))
-      removeItemImage(id)
-    },
+    mutationFn: (id: string) => rawMaterialsApi.remove(Number(id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rawMaterials'] }),
   })
 }

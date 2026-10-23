@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import type { FC } from 'react'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import type { Shift } from '@/types/hr'
@@ -8,7 +9,8 @@ import { useCreateShift, useDeleteShift, useShifts, useUpdateShift } from '../ho
 const TIME_FORMAT = 'HH:mm'
 
 export const ShiftList: FC = () => {
-  const { data: shifts = [], isLoading } = useShifts()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: shifts = [], meta, isLoading } = useShifts(page, pageSize)
   const { mutateAsync: createShift } = useCreateShift()
   const { mutateAsync: updateShift } = useUpdateShift()
   const { mutateAsync: deleteShift } = useDeleteShift()
@@ -21,6 +23,7 @@ export const ShiftList: FC = () => {
       totalLabel="shifts"
       addButtonLabel="Add Shift"
       data={shifts}
+      pagination={paginationProps(meta?.total)}
       loading={isLoading}
       columns={[
         { title: 'Name', dataIndex: 'name', key: 'name' },

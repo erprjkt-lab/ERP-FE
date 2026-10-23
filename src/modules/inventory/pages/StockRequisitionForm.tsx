@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useDepartments } from '@/modules/hr/hooks/useDepartments'
@@ -45,6 +46,9 @@ export const StockRequisitionForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: requisition } = useStockRequisition(id)
   const { data: departments } = useDepartments()
@@ -74,12 +78,7 @@ export const StockRequisitionForm: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, requisition?.id, form])
 
-  if (
-    isEdit &&
-    requisition &&
-    requisition.status !== 'DRAFT' &&
-    requisition.status !== 'PENDING_APPROVAL'
-  ) {
+  if (isEdit && requisition && requisition.status !== 'PENDING_APPROVAL') {
     return (
       <div>
         <PageHeader
@@ -91,7 +90,7 @@ export const StockRequisitionForm: FC = () => {
         />
         <Card>
           <Typography.Text>
-            Only DRAFT and PENDING APPROVAL requisitions can be edited. This requisition is{' '}
+            Only requisitions pending approval can be edited. This requisition is{' '}
             {requisition.status}.
           </Typography.Text>
         </Card>
@@ -156,9 +155,11 @@ export const StockRequisitionForm: FC = () => {
             <Button onClick={() => navigate('/inventory/requisitions')} style={{ marginRight: 8 }}>
               Cancel
             </Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Requisition
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Requisition
+              </Button>
+            )}
           </>
         }
       />
@@ -235,14 +236,25 @@ export const StockRequisitionForm: FC = () => {
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <RequisitionItemRow
-                      key={field.key}
-                      field={field}
-                      items={items}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 640 }}>
+                      {fields.map(field => (
+                        <RequisitionItemRow
+                          key={field.key}
+                          field={field}
+                          items={items}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"

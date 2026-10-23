@@ -5,13 +5,14 @@ import { persist } from 'zustand/middleware'
 // client-only list-filter UI state. Status is the one filter the sales index
 // endpoints support; there is no free-text search parameter on the API, so no
 // search field is kept here.
-type FilterKey = 'enquiry' | 'quotation' | 'order' | 'challan'
+type FilterKey = 'enquiry' | 'quotation' | 'order' | 'challan' | 'invoice'
 
 interface SalesFilterState {
   enquiryStatus: string | null
   quotationStatus: string | null
   orderStatus: string | null
   challanStatus: string | null
+  invoiceStatus: string | null
   setStatus: (list: FilterKey, value: string | null) => void
 }
 
@@ -22,6 +23,7 @@ export const useSalesStore = create<SalesFilterState>()(
       quotationStatus: null,
       orderStatus: null,
       challanStatus: null,
+      invoiceStatus: null,
 
       setStatus: (list, value) =>
         set(() => {
@@ -34,6 +36,8 @@ export const useSalesStore = create<SalesFilterState>()(
               return { orderStatus: value }
             case 'challan':
               return { challanStatus: value }
+            case 'invoice':
+              return { invoiceStatus: value }
           }
         }),
     }),
@@ -52,5 +56,7 @@ export const useSalesStatusFilter = (list: FilterKey): string | null =>
         return s.orderStatus
       case 'challan':
         return s.challanStatus
+      case 'invoice':
+        return s.invoiceStatus
     }
   })

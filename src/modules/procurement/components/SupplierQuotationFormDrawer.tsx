@@ -10,10 +10,12 @@ import { SUPPLIER_STATUS_LABELS } from '../constants'
 import { usePurchaseEnquiry } from '../hooks/usePurchaseEnquiries'
 import {
   useRecordSupplierQuotation,
+  useUpdateSupplierQuotation,
   useSupplierQuotationByPeSupplier,
 } from '../hooks/useSupplierQuotations'
 import type { SupplierQuotationItemInput } from '../hooks/useSupplierQuotations'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   quotedQty: number
@@ -42,7 +44,7 @@ export interface SupplierQuotationFormDrawerProps {
   initialPeSupplierId?: string
 }
 
-export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> = ({
+const SupplierQuotationFormDrawerInner: FC<SupplierQuotationFormDrawerProps> = ({
   open,
   onClose,
   enquiryId,
@@ -67,13 +69,15 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
     queryClient.invalidateQueries({ queryKey: ['purchase-enquiries', enquiryId, 'quotations'] })
   }, [open, enquiryId, queryClient])
 
-  const { data: enquiry } = usePurchaseEnquiry(enquiryId)
+  const { data: enquiry, isLoading: loadingRecord } = usePurchaseEnquiry(enquiryId)
   const activePeSupplierId = manualPeSupplierId ?? initialPeSupplierId ?? enquiry?.suppliers[0]?.id
   const { data: existingQuotation } = useSupplierQuotationByPeSupplier(
     enquiryId,
     activePeSupplierId,
   )
-  const { mutateAsync: recordQuotation, isPending: saving } = useRecordSupplierQuotation()
+  const { mutateAsync: recordQuotation, isPending: recording } = useRecordSupplierQuotation()
+  const { mutateAsync: updateQuotation, isPending: updating } = useUpdateSupplierQuotation()
+  const saving = recording || updating
 
   const peSupplier = enquiry?.suppliers.find(sup => sup.id === activePeSupplierId)
   const isLocked = !!enquiry && LOCKED_STATUSES.includes(enquiry.status)
@@ -152,21 +156,31 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
       }
     })
 
+    const input = {
+      purchaseEnquiryId: enquiry.id,
+      purchaseEnquirySupplierId: peSupplier.id,
+      quotationNumber: values.quotationNumber,
+      quotationDate: values.quotationDate.format('YYYY-MM-DD'),
+      validUntil: values.validUntil ? values.validUntil.format('YYYY-MM-DD') : null,
+      paymentTerms: values.paymentTerms,
+      deliveryTerms: values.deliveryTerms,
+      freightAmount: values.freightAmount ?? 0,
+      otherCharges: values.otherCharges ?? 0,
+      remarks: values.remarks,
+      items,
+    }
+
     try {
-      await recordQuotation({
-        purchaseEnquiryId: enquiry.id,
-        purchaseEnquirySupplierId: peSupplier.id,
-        quotationNumber: values.quotationNumber,
-        quotationDate: values.quotationDate.format('YYYY-MM-DD'),
-        validUntil: values.validUntil ? values.validUntil.format('YYYY-MM-DD') : null,
-        paymentTerms: values.paymentTerms,
-        deliveryTerms: values.deliveryTerms,
-        freightAmount: values.freightAmount ?? 0,
-        otherCharges: values.otherCharges ?? 0,
-        remarks: values.remarks,
-        items,
-      })
-      message.success('Supplier quotation recorded')
+      // ERP-BE allows one quotation per enquiry+supplier pair and rejects a
+      // second POST, so an existing one is edited in place — which is what the
+      // drawer has been titled and labelled for all along.
+      if (existingQuotation) {
+        await updateQuotation({ quotationId: existingQuotation.id, input })
+        message.success('Supplier quotation updated')
+      } else {
+        await recordQuotation(input)
+        message.success('Supplier quotation recorded')
+      }
       handleClose()
     } catch (error) {
       message.error(getErrorMessage(error))
@@ -177,6 +191,7 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={`${existingQuotation ? 'Edit' : 'Record'} Quotation${enquiry ? ` — ${enquiry.enquiryNumber}` : ''}`}
       open={open}
       width={960}
@@ -214,7 +229,7 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
           )}
           <Form form={form} layout="vertical">
             <FormSection title="Quotation Details">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+              <div className="erp-form-grid is-3col">
                 <Form.Item
                   label="Quotation Number"
                   name="quotationNumber"
@@ -236,7 +251,7 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
             </FormSection>
 
             <FormSection title="Terms & Charges">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <div className="erp-form-grid">
                 <Form.Item label="Payment Terms" name="paymentTerms">
                   <Input />
                 </Form.Item>
@@ -258,56 +273,67 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
             <FormSection title="Items">
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
-                  gap: '0 8px',
-                  fontSize: 12,
-                  color: 'rgba(0,0,0,0.45)',
-                  marginBottom: 4,
+                  overflowX: 'auto',
+                  maxWidth: '100%',
+                  WebkitOverflowScrolling: 'touch',
+                  paddingBottom: 4,
                 }}
               >
-                <div>Item</div>
-                <div>Qty</div>
-                <div>Rate</div>
-                <div>Disc %</div>
-                <div>Tax %</div>
-                <div>Delivery Date</div>
-                <div>Remarks</div>
-              </div>
-              {(enquiry?.items ?? []).map((peItem, index) => (
-                <div
-                  key={peItem.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
-                    gap: '0 8px',
-                    alignItems: 'start',
-                  }}
-                >
-                  <div style={{ paddingTop: 8 }}>
-                    {peItem.itemName}{' '}
-                    <span style={{ color: 'rgba(0,0,0,0.45)' }}>({peItem.uomName})</span>
+                <div style={{ minWidth: 750 }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
+                      gap: '0 8px',
+                      fontSize: 12,
+                      color: 'rgba(0,0,0,0.45)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    <div>Item</div>
+                    <div>Qty</div>
+                    <div>Rate</div>
+                    <div>Disc %</div>
+                    <div>Tax %</div>
+                    <div>Delivery Date</div>
+                    <div>Remarks</div>
                   </div>
-                  <Form.Item name={['items', index, 'quotedQty']} rules={[{ required: true }]}>
-                    <InputNumber min={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'rate']} rules={[{ required: true }]}>
-                    <InputNumber min={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'discountPercent']}>
-                    <InputNumber min={0} max={100} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'taxPercent']}>
-                    <InputNumber min={0} max={100} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'deliveryDate']}>
-                    <DatePicker style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name={['items', index, 'remarks']}>
-                    <Input />
-                  </Form.Item>
+                  {(enquiry?.items ?? []).map((peItem, index) => (
+                    <div
+                      key={peItem.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr',
+                        gap: '0 8px',
+                        alignItems: 'start',
+                      }}
+                    >
+                      <div style={{ paddingTop: 8 }}>
+                        {peItem.itemName}{' '}
+                        <span style={{ color: 'rgba(0,0,0,0.45)' }}>({peItem.uomName})</span>
+                      </div>
+                      <Form.Item name={['items', index, 'quotedQty']} rules={[{ required: true }]}>
+                        <InputNumber min={0} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'rate']} rules={[{ required: true }]}>
+                        <InputNumber min={0} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'discountPercent']}>
+                        <InputNumber min={0} max={100} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'taxPercent']}>
+                        <InputNumber min={0} max={100} style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'deliveryDate']}>
+                        <DatePicker style={{ width: '100%' }} />
+                      </Form.Item>
+                      <Form.Item name={['items', index, 'remarks']}>
+                        <Input />
+                      </Form.Item>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </FormSection>
           </Form>
         </>
@@ -315,3 +341,5 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
     </FormDrawer>
   )
 }
+
+export const SupplierQuotationFormDrawer = deferMount(SupplierQuotationFormDrawerInner)

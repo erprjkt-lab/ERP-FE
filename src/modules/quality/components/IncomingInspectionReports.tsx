@@ -2,6 +2,7 @@ import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Sp
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { FormSection } from '@/components/ui/FormSection'
 import { useInspectionParameters } from '@/modules/production/hooks/useInspectionParameters'
@@ -30,6 +31,7 @@ export const IncomingInspectionReports: FC<IncomingInspectionReportsProps> = ({
   grnItemId,
   itemId,
 }) => {
+  const { canWrite: canCreate } = useModulePermission('iir')
   const { message } = App.useApp()
   const [activeReportId, setActiveReportId] = useState<string>()
   const [form] = Form.useForm<CreateFormValues>()
@@ -67,7 +69,7 @@ export const IncomingInspectionReports: FC<IncomingInspectionReportsProps> = ({
           <Select
             value={active.id}
             onChange={setActiveReportId}
-            style={{ width: 280, marginBottom: 16 }}
+            style={{ width: '100%', maxWidth: 280, marginBottom: 16 }}
             options={reports.map(r => ({ label: r.reportNumber, value: r.id }))}
           />
         )}
@@ -111,9 +113,11 @@ export const IncomingInspectionReports: FC<IncomingInspectionReportsProps> = ({
         </FormSection>
       </Form>
       <Space style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-        <Button type="primary" loading={creating} onClick={handleCreate}>
-          Create IIR
-        </Button>
+        {canCreate && (
+          <Button type="primary" loading={creating} onClick={handleCreate}>
+            Create IIR
+          </Button>
+        )}
       </Space>
     </div>
   )

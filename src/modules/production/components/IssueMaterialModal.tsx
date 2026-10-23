@@ -1,4 +1,4 @@
-import { App, Descriptions, Form, InputNumber, Select, Table, Typography } from 'antd'
+import { App, Descriptions, Form, InputNumber, Select, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
+import { DataTable } from '@/components/ui/DataTable'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
 import { useStockBalance, type StockBalanceRow } from '@/modules/inventory/hooks/useStockBalance'
 import { useItemBom } from '../hooks/useItemBom'
@@ -194,7 +195,12 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
               style={{ width: 200 }}
             />
 
-            <Descriptions size="small" column={3} bordered style={{ marginBottom: 16 }}>
+            <Descriptions
+              size="small"
+              column={{ xs: 1, sm: 2, md: 3 }}
+              bordered
+              style={{ marginBottom: 16 }}
+            >
               <Descriptions.Item label="Required">{requiredQty}</Descriptions.Item>
               <Descriptions.Item label="Issued">{issuedQty}</Descriptions.Item>
               <Descriptions.Item label="Remaining">{remainingQty}</Descriptions.Item>
@@ -206,7 +212,7 @@ export const IssueMaterialModal: FC<IssueMaterialModalProps> = ({
             >
               Select how much to issue from each location/batch
             </Typography.Text>
-            <Table<StockBalanceRow>
+            <DataTable<StockBalanceRow>
               size="small"
               columns={columns}
               dataSource={issuableRows}

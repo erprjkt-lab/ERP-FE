@@ -1,8 +1,10 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from 'antd'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { FormField } from '@/components/ui/FormField'
+import { usePermissionStore } from '@/store/permissionStore'
 import { SimpleMasterList } from './SimpleMasterList'
 
 interface Country {
@@ -25,14 +27,25 @@ function buttonByText(text: string): HTMLElement {
   return el as HTMLElement
 }
 
-function iconButton(iconName: 'edit' | 'delete'): HTMLElement {
+function iconButton(iconName: 'edit' | 'delete', rowIndex = 0): HTMLElement {
+  const row = document.querySelectorAll('.ant-table-row')[rowIndex]
+  if (row) {
+    fireEvent.mouseEnter(row)
+  }
   const icon = document.querySelector(`.anticon-${iconName}`)
   const el = icon?.closest('button')
   if (!el) throw new Error(`No <button> ancestor found for icon "${iconName}"`)
   return el as HTMLElement
 }
 
-function renderList(overrides: Partial<Parameters<typeof SimpleMasterList<Country>>[0]> = {}) {
+type Grants = { read: boolean; write: boolean; modify: boolean; delete: boolean; approve: boolean }
+
+const ALL_GRANTS: Grants = { read: true, write: true, modify: true, delete: true, approve: true }
+
+function renderList(
+  overrides: Partial<Parameters<typeof SimpleMasterList<Country>>[0]> = {},
+  grants: Grants = ALL_GRANTS,
+) {
   const onSubmit = vi.fn().mockResolvedValue(undefined)
   const onDelete = vi.fn().mockResolvedValue(undefined)
 
@@ -50,10 +63,28 @@ function renderList(overrides: Partial<Parameters<typeof SimpleMasterList<Countr
     ...overrides,
   }
 
+  // The list reads the current route's permissions to decide which action
+  // buttons to show, so it needs a router and a seeded permission store.
+  usePermissionStore.setState({
+    isLoaded: true,
+    routePermissions: {
+      '/': {
+        id: 1,
+        name: 'countries',
+        moduleKey: 'countries',
+        route: null,
+        icon: null,
+        can: grants,
+      },
+    },
+  })
+
   const utils = render(
-    <App>
-      <SimpleMasterList<Country> {...props} />
-    </App>,
+    <MemoryRouter>
+      <App>
+        <SimpleMasterList<Country> {...props} />
+      </App>
+    </MemoryRouter>,
   )
   return { ...utils, onSubmit, onDelete }
 }
@@ -151,5 +182,15 @@ describe('SimpleMasterList', () => {
     await user.click(confirmCancel)
 
     expect(onDelete).not.toHaveBeenCalled()
+  })
+
+  it('hides the add, edit and delete actions when the user lacks those permissions', () => {
+    renderList({}, { ...ALL_GRANTS, write: false, modify: false, delete: false })
+
+    expect(screen.queryByText('Add Country')).not.toBeInTheDocument()
+    expect(document.querySelector('.anticon-edit')).toBeNull()
+    expect(document.querySelector('.anticon-delete')).toBeNull()
+    // Read access is untouched, so the rows themselves still render.
+    expect(screen.getByText('India')).toBeInTheDocument()
   })
 })

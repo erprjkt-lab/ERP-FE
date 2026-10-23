@@ -10,6 +10,9 @@ export interface RequestOutsourceModalProps {
   open: boolean
   onClose: () => void
   jobCardId: string
+  /** True when outsourcing a rework redo — the challan, its receipt and any log
+   *  against it stay in the rework bucket. */
+  isRework?: boolean
   step?: StepProgress
 }
 
@@ -21,6 +24,7 @@ export const RequestOutsourceModal: FC<RequestOutsourceModalProps> = ({
   open,
   onClose,
   jobCardId,
+  isRework = false,
   step,
 }) => {
   const { message } = App.useApp()
@@ -45,6 +49,7 @@ export const RequestOutsourceModal: FC<RequestOutsourceModalProps> = ({
 
     try {
       await createRequest({
+        is_rework: isRework,
         process_id: Number(step.step.processId),
         requested_qty: values.requestedQty,
       })

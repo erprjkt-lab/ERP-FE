@@ -22,6 +22,9 @@ export const FormSection: FC<FormSectionProps> = ({ title, description, children
         style={{
           display: 'flex',
           alignItems: 'baseline',
+          // Without this the description is squeezed against the title on a
+          // phone and both wrap mid-word; it should drop to its own line.
+          flexWrap: 'wrap',
           gap: 10,
           marginBottom: 10,
           padding: '6px 12px',

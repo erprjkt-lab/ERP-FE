@@ -24,3 +24,11 @@ export function acceptMovement(
 ): Promise<ApiEnvelope<ApiJobCardAcceptance>> {
   return apiRequest(`/api/v1/movements/${movementId}/accept`, { method: 'POST', body: payload })
 }
+
+export function deleteMovement(movementId: number): Promise<void> {
+  return apiRequest(`/api/v1/movements/${movementId}`, { method: 'DELETE' })
+}
+
+export function deleteAcceptance(acceptanceId: number): Promise<void> {
+  return apiRequest(`/api/v1/acceptances/${acceptanceId}`, { method: 'DELETE' })
+}

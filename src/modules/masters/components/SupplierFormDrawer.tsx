@@ -20,8 +20,7 @@ import { useCreateSupplier, useSupplier, useUpdateSupplier } from '../hooks/useS
 import { useStates } from '../hooks/useStates'
 import type { SupplierInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
-
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface SupplierFormDrawerProps {
   open: boolean
@@ -30,12 +29,12 @@ export interface SupplierFormDrawerProps {
   supplierId?: string
 }
 
-export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose, supplierId }) => {
+const SupplierFormDrawerInner: FC<SupplierFormDrawerProps> = ({ open, onClose, supplierId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!supplierId
 
-  const { data: supplier } = useSupplier(supplierId)
+  const { data: supplier, isLoading: loadingRecord } = useSupplier(supplierId)
   const countryId = Form.useWatch('countryId', form) as string | undefined
   const stateId = Form.useWatch('stateId', form) as string | undefined
   const { data: countries = [] } = useCountries()
@@ -46,7 +45,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   useEffect(() => {
     if (!open) return
@@ -61,7 +60,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
         address: supplier.address,
         countryId: supplier.countryId ?? undefined,
         stateId: supplier.stateId ?? undefined,
-        cityId: supplier.cityId ?? undefined,
+        cityName: supplier.cityName,
         pincode: supplier.pincode,
         gstNumber: supplier.gstNumber,
         panNumber: supplier.panNumber,
@@ -111,8 +110,8 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       panNumber: values.panNumber as string | undefined,
@@ -139,6 +138,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Supplier' : 'Add Supplier'}
       status={isEdit ? (supplier?.status ?? 'active') : undefined}
       open={open}
@@ -151,7 +151,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
       <Form form={form} layout="vertical">
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Supplier Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Supplier Name"
               name="name"
@@ -192,7 +192,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
             fieldType="textarea"
             rules={[{ required: true, message: 'Address is required' }]}
           />
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <Form.Item
               label="Country"
               name="countryId"
@@ -210,7 +210,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
                 }
                 onChange={() => {
                   form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
+                  form.setFieldValue('cityName', undefined)
                 }}
               />
             </Form.Item>
@@ -229,12 +229,12 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                onChange={() => form.setFieldValue('cityId', undefined)}
+                onChange={() => form.setFieldValue('cityName', undefined)}
               />
             </Form.Item>
             <FormField
               label="City"
-              name="cityId"
+              name="cityName"
               fieldType="select"
               options={cityOptions}
               rules={[{ required: true, message: 'City is required' }]}
@@ -248,7 +248,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Tax & Terms">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="GST Number"
               name="gstNumber"
@@ -270,7 +270,7 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Banking">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Bank Name" name="bankName" />
             <FormField label="Account Number" name="accountNumber" />
             <FormField
@@ -288,3 +288,5 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
     </FormDrawer>
   )
 }
+
+export const SupplierFormDrawer = deferMount(SupplierFormDrawerInner)

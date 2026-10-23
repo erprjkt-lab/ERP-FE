@@ -1,7 +1,8 @@
-import { CheckOutlined, DownloadOutlined, PlusOutlined, SendOutlined } from '@ant-design/icons'
+import { CheckOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, Card, Descriptions, Drawer, Form, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { downloadInspectionReportPdf } from '@/api/inspectionReports'
 import { DataTable } from '@/components/ui/DataTable'
@@ -18,9 +19,10 @@ import {
   useAddInspectionReading,
   useApproveInspectionReport,
   useInspectionReport,
-  useSubmitInspectionReport,
 } from '../hooks/useInspectionReports'
 import { ReportReadingsFields, toReadingsPayload } from './ReportReadingsFields'
+import { formatDateTime } from '@/utils/date'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface InspectionReportDetailProps {
   reportId?: string
@@ -44,10 +46,15 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
   const [downloading, setDownloading] = useState(false)
   const { data: report, isLoading } = useInspectionReport(reportId)
   const { data: itemParameters = [] } = useInspectionParameters(itemId)
+  // IPR, FIR and IIR are three separate rbac modules; the report says which one
+  // it belongs to, so this works wherever the component is embedded (quality
+  // pages, GRN detail) without the caller passing a module key.
+  const { canWrite, canApprove } = useModulePermission(
+    report ? report.reportType.toLowerCase() : '',
+  )
   const { mutateAsync: addReading, isPending: addingReading } = useAddInspectionReading(
     reportId ?? '',
   )
-  const { mutateAsync: submit, isPending: submitting } = useSubmitInspectionReport()
   const { mutateAsync: approve, isPending: approving } = useApproveInspectionReport()
 
   const parameters = report?.processId
@@ -69,16 +76,6 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
       )
       form.resetFields()
       message.success(readings.length > 1 ? 'Readings recorded' : 'Reading recorded')
-    } catch (error) {
-      message.error(getErrorMessage(error))
-    }
-  }
-
-  const handleSubmit = async () => {
-    if (!reportId) return
-    try {
-      await submit(reportId)
-      message.success('Report submitted for approval')
     } catch (error) {
       message.error(getErrorMessage(error))
     }
@@ -178,17 +175,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
           >
             Download PDF
           </Button>
-          {report?.status === 'DRAFT' && (
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              loading={submitting}
-              onClick={handleSubmit}
-            >
-              Submit for Approval
-            </Button>
-          )}
-          {report?.status === 'SUBMITTED' && (
+          {report?.status === 'SUBMITTED' && canApprove && (
             <Button
               type="primary"
               icon={<CheckOutlined />}
@@ -207,7 +194,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} bordered>
-            <Descriptions.Item label="Date">{report.reportDate ?? '—'}</Descriptions.Item>
+            <Descriptions.Item label="Date">{formatDateTime(report.reportDate)}</Descriptions.Item>
             {report.processName && (
               <Descriptions.Item label="Process">{report.processName}</Descriptions.Item>
             )}
@@ -218,7 +205,9 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
             <Descriptions.Item label="OK Qty">{report.okQty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Rejected Qty">{report.rejectedQty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="Approved By">{report.approvedBy ?? '—'}</Descriptions.Item>
-            <Descriptions.Item label="Approved At">{report.approvedAt ?? '—'}</Descriptions.Item>
+            <Descriptions.Item label="Approved At">
+              {formatDateTime(report.approvedAt)}
+            </Descriptions.Item>
           </Descriptions>
 
           <Card
@@ -239,7 +228,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
             />
           </Card>
 
-          {report.status === 'DRAFT' && unreadParameters.length > 0 && (
+          {report.status === 'SUBMITTED' && unreadParameters.length > 0 && (
             <Card
               size="small"
               title={
@@ -248,15 +237,17 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
                 </Typography.Title>
               }
               extra={
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  loading={addingReading}
-                  onClick={() => form.submit()}
-                >
-                  Save Readings
-                </Button>
+                canWrite ? (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    loading={addingReading}
+                    onClick={() => form.submit()}
+                  >
+                    Save Readings
+                  </Button>
+                ) : null
               }
             >
               <Form form={form} onFinish={handleAddReadings}>
@@ -270,7 +261,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
   )
 }
 
-export const InspectionReportDetailDrawer: FC<InspectionReportDetailDrawerProps> = ({
+const InspectionReportDetailDrawerInner: FC<InspectionReportDetailDrawerProps> = ({
   open,
   onClose,
   ...detailProps
@@ -279,3 +270,5 @@ export const InspectionReportDetailDrawer: FC<InspectionReportDetailDrawerProps>
     <InspectionReportDetail {...detailProps} />
   </Drawer>
 )
+
+export const InspectionReportDetailDrawer = deferMount(InspectionReportDetailDrawerInner)

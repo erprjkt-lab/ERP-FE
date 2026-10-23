@@ -1,8 +1,20 @@
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
-import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as antTheme } from 'antd'
+import {
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Row,
+  Skeleton,
+  Space,
+  Tabs,
+  theme as antTheme,
+} from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ledgerText } from '@/theme/typography'
@@ -12,6 +24,7 @@ import { useCustomer } from '../hooks/useCustomers'
 export const CustomerDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canModify } = usePagePermission()
   const { token } = antTheme.useToken()
   const [editOpen, setEditOpen] = useState(false)
   const { data: customer, isLoading } = useCustomer(id)
@@ -22,7 +35,11 @@ export const CustomerDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/customers')}>
           Back to Customers
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Customer not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Customer not found.</p>
+        )}
       </div>
     )
   }
@@ -42,9 +59,11 @@ export const CustomerDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/customers')}>
               Back
             </Button>
-            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
+            {canModify && (
+              <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
           </Space>
         }
       />
@@ -77,11 +96,8 @@ export const CustomerDetail: FC = () => {
                   key: 'basic',
                   label: 'Basic Info',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Customer Code">{customer.code}</Descriptions.Item>
-                      <Descriptions.Item label="Type" style={{ textTransform: 'capitalize' }}>
-                        {customer.customerType ?? '—'}
-                      </Descriptions.Item>
                       <Descriptions.Item label="Contact Person">
                         {customer.contactPerson}
                       </Descriptions.Item>
@@ -97,7 +113,7 @@ export const CustomerDetail: FC = () => {
                   key: 'address',
                   label: 'Address',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Address" span={2}>
                         {customer.address}
                       </Descriptions.Item>
@@ -116,7 +132,7 @@ export const CustomerDetail: FC = () => {
                   key: 'tax',
                   label: 'Tax & Compliance',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="GST Number">
                         {customer.gstNumber ?? '—'}
                       </Descriptions.Item>
@@ -133,7 +149,7 @@ export const CustomerDetail: FC = () => {
                   key: 'financial',
                   label: 'Financial Terms',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Credit Limit">
                         <span style={ledgerText}>
                           ₹{customer.creditLimit.toLocaleString('en-IN')}
@@ -157,7 +173,7 @@ export const CustomerDetail: FC = () => {
                   key: 'banking',
                   label: 'Banking',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Bank Name">
                         {customer.bankName ?? '—'}
                       </Descriptions.Item>

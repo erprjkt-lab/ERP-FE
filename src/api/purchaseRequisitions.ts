@@ -6,8 +6,11 @@ import type {
   UpdatePurchaseRequisitionPayload,
 } from '@/types/api/procurement'
 
-export function listPurchaseRequisitions(): Promise<PaginatedEnvelope<ApiPurchaseRequisition>> {
-  return apiRequest('/api/v1/purchase-requisitions', { query: { per_page: 100 } })
+export function listPurchaseRequisitions(
+  page = 1,
+  perPage = 100,
+): Promise<PaginatedEnvelope<ApiPurchaseRequisition>> {
+  return apiRequest('/api/v1/purchase-requisitions', { query: { page, per_page: perPage } })
 }
 
 export function getPurchaseRequisition(id: number): Promise<ApiEnvelope<ApiPurchaseRequisition>> {
@@ -29,12 +32,6 @@ export function updatePurchaseRequisition(
 
 export function deletePurchaseRequisition(id: number): Promise<void> {
   return apiRequest(`/api/v1/purchase-requisitions/${id}`, { method: 'DELETE' })
-}
-
-export function submitPurchaseRequisition(
-  id: number,
-): Promise<ApiEnvelope<ApiPurchaseRequisition>> {
-  return apiRequest(`/api/v1/purchase-requisitions/${id}/submit`, { method: 'POST' })
 }
 
 export function approvePurchaseRequisition(

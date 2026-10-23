@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createProcessLog, listProcessLogs } from '@/api/processLogs'
+import { createProcessLog, deleteProcessLog, listProcessLogs } from '@/api/processLogs'
 import type { ApiProcessLog, CreateProcessLogPayload } from '@/types/api/production'
 import type { ProcessLog } from '@/types/production'
 
@@ -18,6 +18,12 @@ function toProcessLog(api: ApiProcessLog): ProcessLog {
     bypassedQty: Number(api.bypassed_qty),
     inboundChallanItemId:
       api.inbound_challan_item_id != null ? String(api.inbound_challan_item_id) : undefined,
+    inboundReworkReviewId:
+      api.inbound_rework_review_id != null ? String(api.inbound_rework_review_id) : undefined,
+    // ERP-BE persists is_rework on the row itself now: a later hop of a redo
+    // carries the flag but no review id, so deriving it from the id would drop
+    // those logs back into the regular bucket.
+    isRework: api.is_rework,
     remark: api.remark ?? undefined,
   }
 }
@@ -31,17 +37,45 @@ export function useProcessLogs(jobCardId: string | undefined) {
   return { ...query, data: query.data ?? [], isLoading: query.isLoading }
 }
 
-export function useCreateProcessLog(jobCardId: string | undefined) {
+/**
+ * Writing or reversing a log touches far more than the log list: it can flip the
+ * card draft -> in progress and move current_process_id, post or reverse
+ * finished-goods stock, change the received qty on an outsource challan and the
+ * consumed qty on its request, and — because ERP-BE derives used_qty from what
+ * was logged at the first route step — shift the material summary's used and
+ * returnable figures. A log with rejected_qty raises a rejection row, and
+ * deleting the log deletes it again, so the rejection lists move too. The
+ * reviews themselves are left alone: a log neither creates nor changes one, and
+ * there is a query per rejection, so refetching them all cost N requests a log.
+ * Create and delete move the same things in opposite directions, so they share
+ * one list.
+ */
+function useProcessLogInvalidation(jobCardId: string | undefined) {
   const queryClient = useQueryClient()
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ['production', 'processLogs', jobCardId] })
+    queryClient.invalidateQueries({ queryKey: ['production', 'materialSummary', jobCardId] })
+    queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
+    queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] })
+    queryClient.invalidateQueries({ queryKey: ['production', 'jobCards'] })
+    queryClient.invalidateQueries({ queryKey: ['rejections'] })
+    queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
+    queryClient.invalidateQueries({ queryKey: ['stock-ledger'] })
+  }
+}
+
+export function useCreateProcessLog(jobCardId: string | undefined) {
+  const invalidate = useProcessLogInvalidation(jobCardId)
   return useMutation({
     mutationFn: (payload: CreateProcessLogPayload) => createProcessLog(Number(jobCardId), payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['production', 'processLogs', jobCardId] })
-      queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
-      queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] })
-      // A log can flip the card draft -> in progress, move current_process_id,
-      // and (at the last step) post finished-goods stock.
-      queryClient.invalidateQueries({ queryKey: ['production', 'jobCards'] })
-    },
+    onSuccess: invalidate,
+  })
+}
+
+export function useDeleteProcessLog(jobCardId: string | undefined) {
+  const invalidate = useProcessLogInvalidation(jobCardId)
+  return useMutation({
+    mutationFn: (processLogId: string) => deleteProcessLog(Number(processLogId)),
+    onSuccess: invalidate,
   })
 }

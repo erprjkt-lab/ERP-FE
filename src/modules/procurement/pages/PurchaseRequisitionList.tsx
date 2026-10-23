@@ -6,16 +6,19 @@ import {
   EyeOutlined,
   FileSearchOutlined,
   PlusOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Space, Tabs, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Tabs } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui/TableActionBar'
+import { useModulePermission } from '@/store/permissionStore'
 import type { PurchaseRequisition } from '@/types/procurement'
 import { PurchaseEnquiryFormDrawer } from '../components/PurchaseEnquiryFormDrawer'
 import { PurchaseRequisitionFormDrawer } from '../components/PurchaseRequisitionFormDrawer'
@@ -29,10 +32,10 @@ import {
   useFetchPurchaseRequisition,
   usePurchaseRequisitions,
   useRejectRequisition,
-  useSubmitRequisitionForApproval,
 } from '../hooks/usePurchaseRequisitions'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_TABS = Object.keys(REQUISITION_STATUS_LABELS) as RequisitionDisplayStatus[]
 
@@ -40,19 +43,82 @@ interface RowActions {
   onView: (record: PurchaseRequisition) => void
   onEdit: (record: PurchaseRequisition) => void
   onDelete: (record: PurchaseRequisition) => void
-  onSubmit: (record: PurchaseRequisition) => void
   onApprove: (record: PurchaseRequisition) => void
   onReject: (record: PurchaseRequisition) => void
   onCreateEnquiry: (record: PurchaseRequisition) => void
+  /** What the signed-in user may do here; drives which row actions render. */
+  can: {
+    modify: boolean
+    delete: boolean
+    approve: boolean
+    createEnquiry: boolean
+  }
 }
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
+const getRequisitionActions = (record: PurchaseRequisition, a: RowActions): TableActionItem[] => {
+  const status = requisitionDisplayStatus(record)
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
 
-const getColumns = (a: RowActions): TableColumnsType<PurchaseRequisition> => [
+  if (status === 'PENDING_APPROVAL') {
+    actions.push(
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        hidden: !a.can.modify,
+        onClick: () => a.onEdit(record),
+      },
+      {
+        key: 'approve',
+        label: 'Approve',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        hidden: !a.can.approve,
+        onClick: () => a.onApprove(record),
+      },
+      {
+        key: 'reject',
+        label: 'Reject',
+        icon: <CloseOutlined />,
+        variant: 'danger',
+        danger: true,
+        hidden: !a.can.approve,
+        onClick: () => a.onReject(record),
+      },
+      {
+        key: 'delete',
+        label: 'Delete',
+        icon: <DeleteOutlined />,
+        variant: 'danger',
+        danger: true,
+        hidden: !a.can.delete,
+        onClick: () => a.onDelete(record),
+      },
+    )
+  } else if (status === 'APPROVED') {
+    actions.push({
+      key: 'create-enquiry',
+      label: 'Create Enquiry',
+      icon: <FileSearchOutlined />,
+      variant: 'accent',
+      hidden: !a.can.createEnquiry,
+      onClick: () => a.onCreateEnquiry(record),
+    })
+  }
+
+  return actions
+}
+
+const getColumns = (): TableColumnsType<PurchaseRequisition> => [
   {
     title: 'P.R. No / Date',
     key: 'prNumber',
@@ -60,7 +126,9 @@ const getColumns = (a: RowActions): TableColumnsType<PurchaseRequisition> => [
     render: (_, record) => (
       <div>
         <div style={{ fontWeight: 600 }}>{record.requisitionNumber}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{record.requisitionDate}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+          {formatDateTime(record.requisitionDate)}
+        </div>
       </div>
     ),
   },
@@ -113,40 +181,20 @@ const getColumns = (a: RowActions): TableColumnsType<PurchaseRequisition> => [
       )
     },
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 140,
-    render: (_, record) => {
-      const status = requisitionDisplayStatus(record)
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {status === 'DRAFT' && [
-            action('Edit', <EditOutlined />, () => a.onEdit(record)),
-            action('Submit for Approval', <SendOutlined />, () => a.onSubmit(record)),
-            action('Delete', <DeleteOutlined />, () => a.onDelete(record), true),
-          ]}
-          {status === 'PENDING_APPROVAL' && [
-            action('Approve', <CheckOutlined />, () => a.onApprove(record)),
-            action('Reject', <CloseOutlined />, () => a.onReject(record), true),
-          ]}
-          {status === 'APPROVED' &&
-            action('Create Enquiry', <FileSearchOutlined />, () => a.onCreateEnquiry(record))}
-        </Space>
-      )
-    },
-  },
 ]
 
 export const PurchaseRequisitionList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
+  // "Create Enquiry" writes into the enquiry module, so it answers to that
+  // module's permission rather than this page's.
+  const { canWrite: canWriteEnquiries } = useModulePermission('purchase-enquiries')
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [createEnquiryFromPrId, setCreateEnquiryFromPrId] = useState<string>()
-  const { data: requisitions, isLoading } = usePurchaseRequisitions()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: requisitions, meta, isLoading } = usePurchaseRequisitions(page, pageSize)
   const { mutateAsync: deleteRequisition } = useDeletePurchaseRequisition()
-  const { mutateAsync: submitForApproval } = useSubmitRequisitionForApproval()
   const { mutateAsync: approve } = useApproveRequisition()
   const { mutateAsync: reject } = useRejectRequisition()
   const fetchRequisition = useFetchPurchaseRequisition()
@@ -162,7 +210,7 @@ export const PurchaseRequisitionList: FC = () => {
     }
   }
 
-  const columns = getColumns({
+  const rowActions: RowActions = {
     onView: record => navigate(`/purchase/requisitions/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
     onDelete: record =>
@@ -173,13 +221,12 @@ export const PurchaseRequisitionList: FC = () => {
         okButtonProps: { danger: true },
         onOk: () => run(() => deleteRequisition(record.id), 'Purchase requisition deleted'),
       }),
-    onSubmit: record =>
-      modal.confirm({
-        title: `Submit ${record.requisitionNumber} for approval?`,
-        content: 'It can no longer be edited once submitted.',
-        okText: 'Submit',
-        onOk: () => run(() => submitForApproval(record.id), 'Requisition submitted for approval'),
-      }),
+    can: {
+      modify: canModify,
+      delete: canDelete,
+      approve: canApprove,
+      createEnquiry: canWriteEnquiries,
+    },
     onApprove: record =>
       modal.confirm({
         title: `Approve ${record.requisitionNumber}?`,
@@ -218,7 +265,9 @@ export const PurchaseRequisitionList: FC = () => {
         message.error(getErrorMessage(error))
       }
     },
-  })
+  }
+
+  const columns = getColumns()
 
   const searched = requisitions.filter(
     pr =>
@@ -240,13 +289,15 @@ export const PurchaseRequisitionList: FC = () => {
         subtitle={`${filtered.length} of ${requisitions.length} requisitions`}
         breadcrumbs={[{ label: 'Purchase', href: '/purchase' }, { label: 'Requisitions' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Requisition
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Requisition
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -284,7 +335,9 @@ export const PurchaseRequisitionList: FC = () => {
           rowKey="id"
           loading={isLoading}
           totalLabel="requisitions"
+          pagination={paginationProps(meta?.total)}
           fillHeight
+          rowActions={record => getRequisitionActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/purchase/requisitions/${record.id}`),
             style: { cursor: 'pointer' },

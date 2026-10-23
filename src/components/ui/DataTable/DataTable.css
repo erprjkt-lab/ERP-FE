@@ -1,0 +1,347 @@
+/* ==========================================================================
+   DataTable - Mobile Application Card/List View & Desktop Table View
+   Ultra-Compact, High-Density 3-Column Enterprise Mobile Layout
+   ========================================================================== */
+
+/* Desktop Table View */
+.erp-desktop-table-view {
+  display: block;
+  width: 100%;
+}
+
+/* Mobile Application Card/List View.
+   No media query here on purpose: useIsMobile() already decides which of the
+   two views mounts, and only one ever exists in the DOM. A second, CSS-side
+   switch at a slightly different breakpoint used to leave 768px exactly with
+   the desktop table mounted but display:none'd and no card view at all. */
+.erp-mobile-card-view {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Mobile Cards Container - Tight 8px gap for maximum vertical density */
+.erp-mobile-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Individual Mobile Card - Sleek, Low-Profile Enterprise Card */
+.erp-mobile-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  position: relative;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.erp-mobile-card.is-clickable {
+  cursor: pointer;
+}
+
+.erp-mobile-card.is-clickable:hover {
+  border-color: #cbd5e1;
+}
+
+.erp-mobile-card.is-clickable:active {
+  background: #f8fafc;
+  transform: scale(0.99);
+  border-color: #00a0e3;
+  box-shadow: 0 2px 6px rgba(0, 160, 227, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Card Header: Low-profile Avatar + Title & Code Pill + Status & Kebab
+   -------------------------------------------------------------------------- */
+.erp-mobile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.erp-mobile-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Compact Initials Avatar Badge (28px) */
+.erp-mobile-card-avatar {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-family:
+    'Space Grotesk',
+    'Inter',
+    -apple-system,
+    sans-serif;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.erp-mobile-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.erp-mobile-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.erp-mobile-card-code-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  height: 18px;
+  line-height: 18px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0289c3;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+.erp-mobile-card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.erp-mobile-card-header-right .ant-tag {
+  margin-inline-end: 0;
+  font-size: 11px;
+  padding: 0 6px;
+  line-height: 20px;
+  border-radius: 4px;
+}
+
+/* Action Kebab Menu */
+.erp-mobile-action-kebab {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.erp-mobile-action-kebab:active {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   Card Body: 3-Part / 3-Column Compact Labeled Attribute Grid
+   Fits 6 fields in just 2 short rows!
+   -------------------------------------------------------------------------- */
+.erp-mobile-card-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px 8px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.erp-mobile-field-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.erp-mobile-field-item.is-span-2 {
+  grid-column: span 2;
+}
+
+.erp-mobile-field-item.is-span-3 {
+  grid-column: span 3;
+}
+
+.erp-mobile-field-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.erp-mobile-field-value {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.erp-mobile-field-value .ant-tag {
+  margin-inline-end: 0;
+  font-size: 10px;
+  padding: 0 4px;
+  line-height: 18px;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Card Actions: buttons a page rendered in an "Action" column.
+   Wraps freely — unlike the field grid, nothing here may be ellipsised away.
+   -------------------------------------------------------------------------- */
+.erp-mobile-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Column renders often lay their buttons out in a fixed grid sized for a wide
+   desktop cell; on a card they should simply flow. */
+.erp-mobile-card-actions > * {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 100%;
+  grid-template-columns: none !important;
+}
+
+.erp-mobile-card-actions .ant-btn {
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Card Footer: Low-profile View Details Link & Sequence Counter
+   -------------------------------------------------------------------------- */
+.erp-mobile-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed #f1f5f9;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.erp-mobile-view-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #00a0e3;
+  font-weight: 600;
+  font-size: 11px;
+  margin-left: auto;
+  transition: transform 0.15s ease;
+}
+
+.erp-mobile-card:active .erp-mobile-view-cue {
+  transform: translateX(2px);
+}
+
+/* Mobile Pagination */
+.erp-mobile-pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0 4px;
+  margin-top: 2px;
+}
+
+.erp-mobile-pagination-wrapper .ant-pagination {
+  margin: 0 !important;
+}
+
+/* Card Selection State */
+.erp-mobile-card.is-selected {
+  border-color: #00a0e3;
+  background-color: #f0f9ff;
+  box-shadow: 0 0 0 1px #00a0e3;
+}
+
+.erp-mobile-card-select {
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.erp-mobile-card-select .ant-checkbox-wrapper,
+.erp-mobile-card-select .ant-radio-wrapper {
+  margin-inline-end: 0;
+}
+
+/* Mobile Expand Button */
+.erp-mobile-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #0289c3;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 4px;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 18px;
+}
+
+.erp-mobile-expand-btn:active {
+  background: #e0f2fe;
+}
+
+/* Expanded Sub-items / Nested Row Container */
+.erp-mobile-card-expanded-content {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #e2e8f0;
+  width: 100%;
+}

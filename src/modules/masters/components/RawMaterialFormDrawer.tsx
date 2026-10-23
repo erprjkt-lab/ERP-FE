@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
-import { UploadField } from '@/components/ui/UploadField'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
@@ -13,11 +12,11 @@ import {
   useRawMaterial,
   useUpdateRawMaterial,
 } from '../hooks/useRawMaterials'
+import { useHsnGstAutofill } from '../hooks/useHsnGstAutofill'
 import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
-
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface RawMaterialFormDrawerProps {
   open: boolean
@@ -26,7 +25,7 @@ export interface RawMaterialFormDrawerProps {
   rawMaterialId?: string
 }
 
-export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
+const RawMaterialFormDrawerInner: FC<RawMaterialFormDrawerProps> = ({
   open,
   onClose,
   rawMaterialId,
@@ -35,11 +34,12 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
   const [form] = Form.useForm()
   const isEdit = !!rawMaterialId
 
-  const { data: rawMaterial } = useRawMaterial(rawMaterialId)
+  const { data: rawMaterial, isLoading: loadingRecord } = useRawMaterial(rawMaterialId)
   const { mutateAsync: createRawMaterial, isPending: creating } = useCreateRawMaterial()
   const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
   const { data: materialGrades = [] } = useMaterialGrades()
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
@@ -63,7 +63,9 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
         gstPercent: rawMaterial.gstPercent,
         description: rawMaterial.description,
         status: rawMaterial.status,
-        imageUrl: rawMaterial.imageUrl,
+        batchTracking: rawMaterial.batchTracking,
+        heatTracking: rawMaterial.heatTracking,
+        serialTracking: rawMaterial.serialTracking,
         materialGradeId: rawMaterial.materialGradeId ?? undefined,
         materialType: rawMaterial.materialType,
         shape: rawMaterial.shape,
@@ -110,7 +112,9 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
+      batchTracking: values.batchTracking as boolean | undefined,
+      heatTracking: values.heatTracking as boolean | undefined,
+      serialTracking: values.serialTracking as boolean | undefined,
       materialGradeId: values.materialGradeId as string | undefined,
       materialGrade: materialGradeOptions.find(o => o.value === values.materialGradeId)?.label,
       materialType: values.materialType as string | undefined,
@@ -139,6 +143,7 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Raw Material' : 'Add Raw Material'}
       status={isEdit ? (rawMaterial?.status ?? 'active') : undefined}
       open={open}
@@ -148,10 +153,15 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
       submitting={creating || updating}
       submitText={isEdit ? 'Update Raw Material' : 'Save Raw Material'}
     >
-      <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ status: 'active' }}
+        onValuesChange={autofillGst}
+      >
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Item Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Item Name"
               name="name"
@@ -178,13 +188,36 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
               fieldType="select"
               options={uomOptions}
             />
-            <FormField label="HSN Code" name="hsnCode" />
+            <FormField
+              label="HSN Code"
+              name="hsnCode"
+              fieldType="select"
+              options={hsnCodeOptions}
+            />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField
               label="Status"
               name="status"
               fieldType="select"
               options={MASTER_STATUS_OPTIONS}
+            />
+            <FormField
+              label="Batch Tracking"
+              name="batchTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Heat Tracking"
+              name="heatTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Serial Tracking"
+              name="serialTracking"
+              fieldType="switch"
+              valuePropName="checked"
             />
           </div>
         </FormSection>
@@ -194,7 +227,7 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
         </FormSection>
 
         <FormSection title="Physical Specs">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Material Grade"
               name="materialGradeId"
@@ -215,13 +248,9 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
         <FormSection title="Price">
           <FormField label="Price" name="price" fieldType="number" />
         </FormSection>
-
-        <FormSection title="Image">
-          <FormField label="Image" name="imageUrl">
-            <UploadField mode="image" accept="image/*" />
-          </FormField>
-        </FormSection>
       </Form>
     </FormDrawer>
   )
 }
+
+export const RawMaterialFormDrawer = deferMount(RawMaterialFormDrawerInner)

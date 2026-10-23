@@ -18,6 +18,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useLocations } from '@/modules/inventory/hooks/useLocations'
@@ -55,6 +56,7 @@ interface PoItemInfo {
 
 export const PurchaseGrnForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
@@ -137,9 +139,11 @@ export const PurchaseGrnForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/purchase/grn')}>Cancel</Button>
-            <Button type="primary" loading={creating} onClick={() => form.submit()}>
-              Save GRN
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating} onClick={() => form.submit()}>
+                Save GRN
+              </Button>
+            )}
           </Space>
         }
       />
@@ -242,14 +246,7 @@ export const PurchaseGrnForm: FC = () => {
                 return (
                   <>
                     <Card size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 2fr auto',
-                          gap: '0 8px',
-                          alignItems: 'end',
-                        }}
-                      >
+                      <div className="erp-form-grid is-toolbar">
                         <div>
                           <Typography.Text type="secondary">Purchase Order</Typography.Text>
                           <Select
@@ -347,82 +344,91 @@ const GrnItemRow: FC<GrnItemRowProps> = ({
 
   return (
     <Card size="small" style={{ marginBottom: 12 }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 32px',
-          gap: '0 8px',
-          alignItems: 'start',
-        }}
-      >
-        <Form.Item name={[field.name, 'poItemId']} hidden>
-          <Input />
-        </Form.Item>
-        <Form.Item name={[field.name, 'itemId']} hidden>
-          <Input />
-        </Form.Item>
-        <div style={{ paddingTop: 6 }}>
-          <Typography.Text strong>{info?.itemName ?? selectedItem?.name}</Typography.Text>
-          <br />
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            Ordered: {info?.orderedQty ?? '—'} {info?.uomName ?? ''}
-          </Typography.Text>
-        </div>
-        <Form.Item
-          name={[field.name, 'receivedQty']}
-          label="Received Qty"
-          rules={[
-            { required: true, message: 'Required' },
-            { type: 'number', min: 0.001, message: 'Must be > 0' },
-            ...(selectedItem?.serialTracking
-              ? [
-                  {
-                    validator: async (_: unknown, v: number) => {
-                      if (!Number.isInteger(v)) {
-                        throw new Error('Must be a whole number for serial-tracked items')
-                      }
+      <div style={{ overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 32px',
+            gap: '0 8px',
+            alignItems: 'start',
+            minWidth: 700,
+          }}
+        >
+          <Form.Item name={[field.name, 'poItemId']} hidden>
+            <Input />
+          </Form.Item>
+          <Form.Item name={[field.name, 'itemId']} hidden>
+            <Input />
+          </Form.Item>
+          <div style={{ paddingTop: 6 }}>
+            <Typography.Text strong>{info?.itemName ?? selectedItem?.name}</Typography.Text>
+            <br />
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              Ordered: {info?.orderedQty ?? '—'} {info?.uomName ?? ''}
+            </Typography.Text>
+          </div>
+          <Form.Item
+            name={[field.name, 'receivedQty']}
+            label="Received Qty"
+            rules={[
+              { required: true, message: 'Required' },
+              { type: 'number', min: 0.001, message: 'Must be > 0' },
+              ...(selectedItem?.serialTracking
+                ? [
+                    {
+                      validator: async (_: unknown, v: number) => {
+                        if (!Number.isInteger(v)) {
+                          throw new Error('Must be a whole number for serial-tracked items')
+                        }
+                      },
                     },
-                  },
-                ]
-              : []),
-          ]}
-        >
-          <InputNumber min={0.001} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item
-          name={[field.name, 'locationId']}
-          label="Location"
-          rules={[{ required: true, message: 'Required' }]}
-        >
-          <Select
-            placeholder="Location"
-            options={locationOptions}
-            showSearch
-            filterOption={(input, option) =>
-              String(option?.label ?? '')
-                .toLowerCase()
-                .includes(input.toLowerCase())
-            }
+                  ]
+                : []),
+            ]}
+          >
+            <InputNumber min={0.001} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            name={[field.name, 'locationId']}
+            label="Location"
+            rules={[{ required: true, message: 'Required' }]}
+          >
+            <Select
+              placeholder="Location"
+              options={locationOptions}
+              showSearch
+              filterOption={(input, option) =>
+                String(option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+            />
+          </Form.Item>
+          <Form.Item name={[field.name, 'gradeId']} label="Grade">
+            <Select placeholder="Grade" options={gradeOptions} allowClear showSearch />
+          </Form.Item>
+          <Form.Item name={[field.name, 'rate']} label="Rate">
+            <InputNumber min={0} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name={[field.name, 'remarks']} label="Remarks">
+            <Input placeholder="Remarks" />
+          </Form.Item>
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={onRemove}
+            style={{ marginTop: 30 }}
           />
-        </Form.Item>
-        <Form.Item name={[field.name, 'gradeId']} label="Grade">
-          <Select placeholder="Grade" options={gradeOptions} allowClear showSearch />
-        </Form.Item>
-        <Form.Item name={[field.name, 'rate']} label="Rate">
-          <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item name={[field.name, 'remarks']} label="Remarks">
-          <Input placeholder="Remarks" />
-        </Form.Item>
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={onRemove}
-          style={{ marginTop: 30 }}
-        />
+        </div>
       </div>
 
+      {/* Each field is offered only when the item master tracks it, because
+          ERP-BE ignores the rest: GrnService stores 'GENERAL'/'NA' for an
+          untracked item whatever was sent, so an input there would record a
+          batch the user can never trace. Tracked fields are required for the
+          same reason in reverse — GrnService throws if one is missing, and
+          catching it here beats a 422 after the whole form is filled in. */}
       {(selectedItem?.batchTracking ||
         selectedItem?.heatTracking ||
         selectedItem?.serialTracking) && (

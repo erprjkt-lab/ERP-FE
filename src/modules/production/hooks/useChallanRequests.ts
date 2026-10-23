@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createChallanRequest,
+  deleteChallanRequest,
   listChallanRequestsForJobCard,
   listPendingChallanRequests,
 } from '@/api/jobCardChallanRequests'
@@ -52,5 +53,15 @@ export function useCreateChallanRequest(jobCardId: string | undefined) {
       })
       queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests', 'pending'] })
     },
+  })
+}
+
+export function useDeleteChallanRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (requestId: string) => deleteChallanRequest(Number(requestId)),
+    // Invalidates both the per-job-card and the pending lists; the caller may be
+    // on either one.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] }),
   })
 }

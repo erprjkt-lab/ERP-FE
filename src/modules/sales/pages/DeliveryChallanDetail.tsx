@@ -1,9 +1,10 @@
 import { ArrowLeftOutlined, DownloadOutlined, StopOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { downloadDeliveryChallanPdf } from '@/api/deliveryChallans'
 import { DataTable } from '@/components/ui/DataTable'
@@ -13,6 +14,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { DeliveryChallanItem, DeliveryChallanItemStock } from '@/types/sales'
 import { CHALLAN_STATUS_BADGE, CHALLAN_STATUS_LABELS } from '../constants'
 import { useCancelDeliveryChallan, useDeliveryChallan } from '../hooks/useDeliveryChallans'
+import { formatDateTime } from '@/utils/date'
 
 const STOCK_COLUMNS: TableColumnsType<DeliveryChallanItemStock> = [
   {
@@ -80,6 +82,7 @@ export const DeliveryChallanDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify } = usePagePermission()
   const { data: challan, isLoading } = useDeliveryChallan(id)
   const { mutateAsync: runCancel, isPending } = useCancelDeliveryChallan()
   const [downloading, setDownloading] = useState(false)
@@ -90,7 +93,11 @@ export const DeliveryChallanDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/delivery-challans')}>
           Back to Delivery Challans
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Delivery challan not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Delivery challan not found.</p>
+        )}
       </div>
     )
   }
@@ -147,15 +154,17 @@ export const DeliveryChallanDetail: FC = () => {
             <Button icon={<DownloadOutlined />} loading={downloading} onClick={handleDownload}>
               Download PDF
             </Button>
-            <Button
-              danger
-              icon={<StopOutlined />}
-              disabled={!isDispatched}
-              loading={isPending}
-              onClick={handleCancel}
-            >
-              Cancel Challan
-            </Button>
+            {canModify && (
+              <Button
+                danger
+                icon={<StopOutlined />}
+                disabled={!isDispatched}
+                loading={isPending}
+                onClick={handleCancel}
+              >
+                Cancel Challan
+              </Button>
+            )}
           </Space>
         }
       />
@@ -170,13 +179,17 @@ export const DeliveryChallanDetail: FC = () => {
                   label={CHALLAN_STATUS_LABELS[challan.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="Challan Date">{challan.challanDate}</Descriptions.Item>
+              <Descriptions.Item label="Challan Date">
+                {formatDateTime(challan.challanDate)}
+              </Descriptions.Item>
               <Descriptions.Item label="Customer">
                 {challan.partyName ?? challan.partyId}
               </Descriptions.Item>
               <Descriptions.Item label="Vehicle No">{challan.vehicleNo || '—'}</Descriptions.Item>
               <Descriptions.Item label="LR No">{challan.lrNo || '—'}</Descriptions.Item>
-              <Descriptions.Item label="LR Date">{challan.lrDate || '—'}</Descriptions.Item>
+              <Descriptions.Item label="LR Date">
+                {formatDateTime(challan.lrDate)}
+              </Descriptions.Item>
               <Descriptions.Item label="Transporter">
                 {challan.transporterName || '—'}
               </Descriptions.Item>

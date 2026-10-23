@@ -3,17 +3,13 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useRoles } from '@/hooks/useRoles'
 import type { CreateEmployeePayload, UpdateEmployeePayload } from '@/types/api/hr'
-import {
-  BRANCH_OPTIONS,
-  EMPLOYEE_STATUS_OPTIONS,
-  EMPLOYMENT_TYPE_OPTIONS,
-  GENDER_OPTIONS,
-} from '../constants'
+import { EMPLOYEE_STATUS_OPTIONS, EMPLOYMENT_TYPE_OPTIONS, GENDER_OPTIONS } from '../constants'
 import { useDepartments } from '../hooks/useDepartments'
 import { useDesignations } from '../hooks/useDesignations'
 import { useCreateEmployee, useEmployee, useUpdateEmployee } from '../hooks/useEmployees'
@@ -29,6 +25,9 @@ export const EmployeeForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: employee } = useEmployee(id)
   const { data: departments = [] } = useDepartments()
@@ -49,7 +48,6 @@ export const EmployeeForm: FC = () => {
         phone: employee.phone,
         gender: employee.gender,
         dateOfBirth: employee.dateOfBirth ? dayjs(employee.dateOfBirth, DATE_FORMAT) : undefined,
-        branch: employee.branch,
         departmentId: employee.departmentId ?? undefined,
         designationId: employee.designationId ?? undefined,
         shiftId: employee.shiftId ?? undefined,
@@ -87,7 +85,6 @@ export const EmployeeForm: FC = () => {
       date_of_birth: values.dateOfBirth
         ? (values.dateOfBirth as dayjs.Dayjs).format(DATE_FORMAT)
         : null,
-      branch: values.branch ? Number(values.branch) : null,
       department_id: values.departmentId ? Number(values.departmentId) : null,
       designation_id: values.designationId ? Number(values.designationId) : null,
       shift_id: values.shiftId ? Number(values.shiftId) : null,
@@ -135,9 +132,11 @@ export const EmployeeForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/hr/employees')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Employee
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Employee
+              </Button>
+            )}
           </Space>
         }
       />
@@ -210,15 +209,6 @@ export const EmployeeForm: FC = () => {
                   fieldType="select"
                   placeholder="Select designation"
                   options={designationOptions}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8}>
-                <FormField
-                  label="Branch"
-                  name="branch"
-                  fieldType="select"
-                  placeholder="Select branch"
-                  options={BRANCH_OPTIONS}
                 />
               </Col>
               <Col xs={24} sm={12} md={8}>

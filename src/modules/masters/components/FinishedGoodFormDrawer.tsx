@@ -12,13 +12,13 @@ import {
   useFinishedGood,
   useUpdateFinishedGood,
 } from '../hooks/useFinishedGoods'
+import { useHsnGstAutofill } from '../hooks/useHsnGstAutofill'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
 import { useUoms } from '../hooks/useUoms'
 import type { FinishedGoodInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
-
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface FinishedGoodFormDrawerProps {
   open: boolean
@@ -27,7 +27,7 @@ export interface FinishedGoodFormDrawerProps {
   finishedGoodId?: string
 }
 
-export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
+const FinishedGoodFormDrawerInner: FC<FinishedGoodFormDrawerProps> = ({
   open,
   onClose,
   finishedGoodId,
@@ -36,10 +36,11 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
   const [form] = Form.useForm()
   const isEdit = !!finishedGoodId
 
-  const { data: finishedGood } = useFinishedGood(finishedGoodId)
+  const { data: finishedGood, isLoading: loadingRecord } = useFinishedGood(finishedGoodId)
   const { data: customers = [] } = useCustomers()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
   const { data: materialGrades = [] } = useMaterialGrades()
   const { mutateAsync: createFinishedGood, isPending: creating } = useCreateFinishedGood()
   const { mutateAsync: updateFinishedGood, isPending: updating } = useUpdateFinishedGood()
@@ -66,7 +67,9 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
         gstPercent: finishedGood.gstPercent,
         description: finishedGood.description,
         status: finishedGood.status,
-        imageUrl: finishedGood.imageUrl,
+        batchTracking: finishedGood.batchTracking,
+        heatTracking: finishedGood.heatTracking,
+        serialTracking: finishedGood.serialTracking,
         customerId: finishedGood.customerId ?? undefined,
         customerPartNo: finishedGood.customerPartNo,
         drawingNo: finishedGood.drawingNo,
@@ -111,7 +114,9 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
+      batchTracking: values.batchTracking as boolean | undefined,
+      heatTracking: values.heatTracking as boolean | undefined,
+      serialTracking: values.serialTracking as boolean | undefined,
       customerId: (values.customerId as string | undefined) ?? null,
       customerName: customerOptions.find(o => o.value === values.customerId)?.label,
       customerPartNo: values.customerPartNo as string | undefined,
@@ -139,6 +144,7 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Finished Good' : 'Add Finished Good'}
       status={isEdit ? (finishedGood?.status ?? 'active') : undefined}
       open={open}
@@ -148,10 +154,15 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
       submitting={creating || updating}
       submitText={isEdit ? 'Update Finished Good' : 'Save Finished Good'}
     >
-      <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ status: 'active' }}
+        onValuesChange={autofillGst}
+      >
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Item Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Item Name"
               name="name"
@@ -178,13 +189,36 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
               fieldType="select"
               options={uomOptions}
             />
-            <FormField label="HSN Code" name="hsnCode" />
+            <FormField
+              label="HSN Code"
+              name="hsnCode"
+              fieldType="select"
+              options={hsnCodeOptions}
+            />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField
               label="Status"
               name="status"
               fieldType="select"
               options={MASTER_STATUS_OPTIONS}
+            />
+            <FormField
+              label="Batch Tracking"
+              name="batchTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Heat Tracking"
+              name="heatTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Serial Tracking"
+              name="serialTracking"
+              fieldType="switch"
+              valuePropName="checked"
             />
           </div>
         </FormSection>
@@ -194,7 +228,7 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
         </FormSection>
 
         <FormSection title="Customer & Drawing">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Customer"
               name="customerId"
@@ -211,24 +245,20 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
         </FormSection>
 
         <FormSection title="Specs">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Material Grade"
               name="materialGradeId"
               fieldType="select"
               options={materialGradeOptions}
             />
-            <FormField label="Weight" name="weight" fieldType="number" />
+            <FormField label="Weight (kg)" name="weight" fieldType="number" />
             <FormField label="Price" name="price" fieldType="number" />
           </div>
-        </FormSection>
-
-        <FormSection title="Image">
-          <FormField label="Image" name="imageUrl">
-            <UploadField mode="image" accept="image/*" />
-          </FormField>
         </FormSection>
       </Form>
     </FormDrawer>
   )
 }
+
+export const FinishedGoodFormDrawer = deferMount(FinishedGoodFormDrawerInner)

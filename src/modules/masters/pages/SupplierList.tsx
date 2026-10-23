@@ -1,12 +1,15 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { Supplier } from '@/types/masters'
 import { SupplierFormDrawer } from '../components/SupplierFormDrawer'
 import { MASTER_STATUS_OPTIONS } from '../constants'
@@ -14,11 +17,7 @@ import { useDeleteSupplier, useSuppliers } from '../hooks/useSuppliers'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
 
-const getColumns = (
-  onView: (record: Supplier) => void,
-  onEdit: (record: Supplier) => void,
-  onDelete: (record: Supplier) => void,
-): TableColumnsType<Supplier> => [
+const getColumns = (): TableColumnsType<Supplier> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   {
     title: 'Name',
@@ -38,37 +37,49 @@ const getColumns = (
     key: 'status',
     render: status => <StatusBadge status={status} />,
   },
+]
+
+interface SupplierRowActions {
+  onView: (record: Supplier) => void
+  onEdit: (record: Supplier) => void
+  onDelete: (record: Supplier) => void
+  can: { modify: boolean; delete: boolean }
+}
+
+const getSupplierActions = (record: Supplier, a: SupplierRowActions): TableActionItem[] => [
   {
-    title: 'Actions',
-    key: 'actions',
-    width: 120,
-    render: (_, record) => (
-      <Space size="small" onClick={e => e.stopPropagation()}>
-        <Tooltip title="View">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => onView(record)} />
-        </Tooltip>
-        <Tooltip title="Edit">
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
-        </Tooltip>
-        <Tooltip title="Delete">
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => onDelete(record)}
-          />
-        </Tooltip>
-      </Space>
-    ),
+    key: 'view',
+    label: 'View',
+    icon: <EyeOutlined />,
+    variant: 'default',
+    onClick: () => a.onView(record),
+  },
+  {
+    key: 'edit',
+    label: 'Edit',
+    icon: <EditOutlined />,
+    variant: 'primary',
+    hidden: !a.can.modify,
+    onClick: () => a.onEdit(record),
+  },
+  {
+    key: 'delete',
+    label: 'Delete',
+    icon: <DeleteOutlined />,
+    variant: 'danger',
+    danger: true,
+    hidden: !a.can.delete,
+    onClick: () => a.onDelete(record),
   },
 ]
 
 export const SupplierList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-  const { data: suppliers = [], isLoading } = useSuppliers()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: suppliers = [], meta, isLoading } = useSuppliers(page, pageSize)
   const { mutateAsync: deleteSupplier } = useDeleteSupplier()
   const filters = useMastersStore(s => s.supplierFilters)
   const setFilter = useMastersStore(s => s.setSupplierFilter)
@@ -91,11 +102,14 @@ export const SupplierList: FC = () => {
     })
   }
 
-  const columns = getColumns(
-    record => navigate(`/masters/suppliers/${record.id}`),
-    record => setDrawerState({ mode: 'edit', id: record.id }),
-    handleDelete,
-  )
+  const columns = getColumns()
+
+  const rowActions: SupplierRowActions = {
+    can: { modify: canModify, delete: canDelete },
+    onView: record => navigate(`/masters/suppliers/${record.id}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+    onDelete: handleDelete,
+  }
 
   const filtered = suppliers.filter(s => {
     if (filters.search && !s.name.toLowerCase().includes(filters.search.toLowerCase())) {
@@ -109,16 +123,18 @@ export const SupplierList: FC = () => {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Suppliers"
-        subtitle={`${filtered.length} of ${suppliers.length} suppliers`}
+        subtitle={`${filtered.length} of ${meta?.total ?? suppliers.length} suppliers`}
         breadcrumbs={[{ label: 'Masters', href: '/masters' }, { label: 'Suppliers' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            Add Supplier
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              Add Supplier
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -158,7 +174,9 @@ export const SupplierList: FC = () => {
           rowKey="id"
           loading={isLoading}
           totalLabel="suppliers"
+          pagination={paginationProps(meta?.total)}
           fillHeight
+          rowActions={record => getSupplierActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/masters/suppliers/${record.id}`),
             style: { cursor: 'pointer' },

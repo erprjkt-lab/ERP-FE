@@ -3,9 +3,10 @@ import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import type { DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { App, Button, Col, Form, Row, Typography } from 'antd'
+import { Alert, App, Button, Col, Form, Row, Skeleton, Typography } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { Drawer } from '@/components/ui/Drawer'
 import { FormField } from '@/components/ui/FormField'
@@ -13,6 +14,7 @@ import { FormSection } from '@/components/ui/FormSection'
 import { useFinishedGood } from '@/modules/masters/hooks/useFinishedGoods'
 import { useDefineItemProcessRoute, useItemProcessRoute } from '../hooks/useItemProcessRoute'
 import { useProcesses } from '../hooks/useProcesses'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface StepFormValue {
   processId?: string
@@ -85,14 +87,6 @@ const SortableStepRow: FC<SortableStepRowProps> = ({
           style={{ marginBottom: 0 }}
         />
       </Col>
-      <Col flex="0 0 110px">
-        <FormField
-          name={[fieldName, 'isOptional']}
-          fieldType="switch"
-          valuePropName="checked"
-          style={{ marginBottom: 0 }}
-        />
-      </Col>
       <Col flex="0 0 40px">
         <Button icon={<MinusCircleOutlined />} size="small" danger onClick={onRemove} />
       </Col>
@@ -106,18 +100,22 @@ export interface ItemProcessRouteDrawerProps {
   itemId?: string
 }
 
-export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
+const ItemProcessRouteDrawerInner: FC<ItemProcessRouteDrawerProps> = ({
   open,
   onClose,
   itemId,
 }) => {
   const { message } = App.useApp()
+  // ERP-BE registers no rbac module for ItemProcessRouteController, so the
+  // closest governed owner of an item's production definition — item-bom, which
+  // also backs this screen's route — gates the save. Flagged as a BE gap.
+  const { canWrite: canSave } = useModulePermission('item-bom')
   const [form] = Form.useForm<{ steps: StepFormValue[] }>()
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const { data: finishedGood } = useFinishedGood(itemId)
   const { data: processes = [] } = useProcesses()
-  const { data: steps, isLoading } = useItemProcessRoute(itemId)
+  const { data: steps, isLoading, error } = useItemProcessRoute(itemId)
   const { mutateAsync: defineRoute, isPending: saving } = useDefineItemProcessRoute(itemId)
 
   const processOptions = processes.map(p => ({ label: p.processName, value: p.id }))
@@ -182,9 +180,11 @@ export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button type="primary" loading={saving} onClick={handleSubmit}>
-            Save Route
-          </Button>
+          {canSave && (
+            <Button type="primary" loading={saving} onClick={handleSubmit}>
+              Save Route
+            </Button>
+          )}
         </div>
       }
     >
@@ -193,7 +193,18 @@ export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
           title="Process Steps"
           description="Drag a row by its handle to reorder. Saving replaces this item's active route — the previous one is kept as history."
         >
-          {isLoading ? null : (
+          {error && (
+            <Alert
+              type="warning"
+              showIcon
+              message="Could not load this item's saved route"
+              description={getErrorMessage(error)}
+              style={{ marginBottom: 12 }}
+            />
+          )}
+          {isLoading ? (
+            <Skeleton active paragraph={{ rows: 3 }} />
+          ) : (
             <Form.List name="steps">
               {(fields, { add, remove, move }) => {
                 const ids = fields.map(field => field.key)
@@ -221,11 +232,6 @@ export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
                             Cycle Time (sec)
                           </Typography.Text>
                         </Col>
-                        <Col flex="0 0 110px">
-                          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                            Optional
-                          </Typography.Text>
-                        </Col>
                         <Col flex="0 0 40px" />
                       </Row>
                     )}
@@ -243,11 +249,7 @@ export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
                         ))}
                       </SortableContext>
                     </DndContext>
-                    <Button
-                      type="dashed"
-                      icon={<PlusOutlined />}
-                      onClick={() => add({ isOptional: false })}
-                    >
+                    <Button type="dashed" icon={<PlusOutlined />} onClick={() => add()}>
                       Add Step
                     </Button>
                   </>
@@ -260,3 +262,5 @@ export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
     </Drawer>
   )
 }
+
+export const ItemProcessRouteDrawer = deferMount(ItemProcessRouteDrawerInner)

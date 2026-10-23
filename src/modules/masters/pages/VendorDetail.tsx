@@ -1,8 +1,20 @@
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
-import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as antTheme } from 'antd'
+import {
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Row,
+  Skeleton,
+  Space,
+  Tabs,
+  theme as antTheme,
+} from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { VendorFormDrawer } from '../components/VendorFormDrawer'
@@ -11,6 +23,7 @@ import { useVendor } from '../hooks/useVendors'
 export const VendorDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canModify } = usePagePermission()
   const { token } = antTheme.useToken()
   const [editOpen, setEditOpen] = useState(false)
   const { data: vendor, isLoading } = useVendor(id)
@@ -21,7 +34,11 @@ export const VendorDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/vendors')}>
           Back to Vendors
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Vendor not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Vendor not found.</p>
+        )}
       </div>
     )
   }
@@ -41,9 +58,11 @@ export const VendorDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/vendors')}>
               Back
             </Button>
-            <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
+            {canModify && (
+              <Button type="primary" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
           </Space>
         }
       />
@@ -76,14 +95,8 @@ export const VendorDetail: FC = () => {
                   key: 'basic',
                   label: 'Basic Info',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Vendor Code">{vendor.code}</Descriptions.Item>
-                      <Descriptions.Item
-                        label="Vendor Type"
-                        style={{ textTransform: 'capitalize' }}
-                      >
-                        {vendor.vendorType ?? '—'}
-                      </Descriptions.Item>
                       <Descriptions.Item label="Contact Person">
                         {vendor.contactPerson}
                       </Descriptions.Item>
@@ -99,7 +112,7 @@ export const VendorDetail: FC = () => {
                   key: 'address',
                   label: 'Address',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Address" span={2}>
                         {vendor.address}
                       </Descriptions.Item>
@@ -116,7 +129,7 @@ export const VendorDetail: FC = () => {
                   key: 'tax',
                   label: 'Tax',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="GST Number">
                         {vendor.gstNumber ?? '—'}
                       </Descriptions.Item>
@@ -127,7 +140,7 @@ export const VendorDetail: FC = () => {
                   key: 'banking',
                   label: 'Banking',
                   children: (
-                    <Descriptions column={2} size="small" bordered>
+                    <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
                       <Descriptions.Item label="Bank Name">
                         {vendor.bankName ?? '—'}
                       </Descriptions.Item>

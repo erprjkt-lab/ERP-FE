@@ -1,9 +1,11 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   closeChallan,
   createChallan,
+  deleteChallan,
+  listChallans,
   listChallansForJobCard,
-  markChallanReceived,
+  unmarkChallanReceived,
 } from '@/api/jobCardChallans'
 import type {
   ApiJobCardChallan,
@@ -11,7 +13,6 @@ import type {
   CreateChallanPayload,
 } from '@/types/api/production'
 import type { Challan, ChallanItem, ChallanStatus } from '@/types/production'
-import { useJobCards } from './useJobCards'
 
 const STATUS_BY_CODE: Record<number, ChallanStatus> = {
   0: 'open',
@@ -25,6 +26,7 @@ function toChallanItem(api: ApiJobCardChallanItem): ChallanItem {
     challanId: String(api.challan_id),
     challanRequestId: String(api.challan_request_id),
     jobCardId: String(api.job_card_id),
+    isRework: api.is_rework ?? false,
     processId: String(api.process_id),
     processName: api.process_name ?? '',
     dispatchedQty: Number(api.dispatched_qty),
@@ -56,32 +58,26 @@ export function useChallansForJobCard(jobCardId: string | undefined) {
   return { ...query, data: query.data ?? [], isLoading: query.isLoading }
 }
 
-// There is no `GET /challans` endpoint on the backend — only
-// `GET /job-cards/{id}/challans` — so a cross-job-card view has to fan out
-// across every job card and de-duplicate (one challan can bundle items from
-// several job cards, so it would otherwise appear once per job card it
-// touches). This is real data from real endpoints, just N requests instead
-// of one; a global list endpoint on the backend would make this cheaper.
+// The Outsource list filters and counts by status across the whole set, so it
+// takes one wide page rather than server-side paging. ERP-BE returns each
+// challan once, however many job cards its items span.
 export function useAllChallans() {
-  const { data: jobCards, isLoading: jobCardsLoading } = useJobCards()
-
-  const results = useQueries({
-    queries: jobCards.map(jobCard => ({
-      queryKey: ['production', 'challans', 'byJobCard', jobCard.id],
-      queryFn: async () => (await listChallansForJobCard(Number(jobCard.id))).data.map(toChallan),
-      enabled: !jobCardsLoading,
-    })),
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    queryKey: ['production', 'challans', 'all'],
+    queryFn: async () => (await listChallans()).data.map(toChallan),
   })
 
-  const isLoading = jobCardsLoading || results.some(r => r.isLoading)
-  const byId = new Map<string, Challan>()
-  for (const result of results) {
-    for (const challan of result.data ?? []) {
-      byId.set(challan.id, challan)
-    }
+  const refetch = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
   }
 
-  return { data: Array.from(byId.values()), isLoading }
+  return {
+    data: query.data ?? [],
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    refetch,
+  }
 }
 
 export function useCreateChallan() {
@@ -95,10 +91,10 @@ export function useCreateChallan() {
   })
 }
 
-export function useMarkChallanReceived() {
+export function useUnmarkChallanReceived() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (challanId: string) => markChallanReceived(Number(challanId)),
+    mutationFn: (challanId: string) => unmarkChallanReceived(Number(challanId)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production', 'challans'] }),
   })
 }
@@ -108,5 +104,18 @@ export function useCloseChallan() {
   return useMutation({
     mutationFn: (challanId: string) => closeChallan(Number(challanId)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production', 'challans'] }),
+  })
+}
+
+// Deleting an open challan hands its dispatched qty back to the requests it was
+// built from, so the pending-request list has to be refetched too.
+export function useDeleteChallan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (challanId: string) => deleteChallan(Number(challanId)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
+      queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] })
+    },
   })
 }

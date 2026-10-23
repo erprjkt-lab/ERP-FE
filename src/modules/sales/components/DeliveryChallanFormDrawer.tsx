@@ -13,6 +13,7 @@ import {
   Typography,
 } from 'antd'
 import type { TableColumnsType } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect, useMemo, useState } from 'react'
@@ -32,6 +33,7 @@ import {
   useSalesOrderDispatchedQtyByItem,
 } from '../hooks/useDeliveryChallans'
 import { useSalesOrder, useSalesOrders } from '../hooks/useSalesOrders'
+import { deferMount } from '@/components/ui/deferMount'
 
 function lotKey(
   row: Pick<StockBalanceRow, 'locationId' | 'batchNo' | 'heatNo' | 'serialNo'>,
@@ -49,6 +51,9 @@ interface ChallanLine {
   discountPercent: number
   taxPercent: number
   itemRemark: string
+  /** What the sales order asked for on this line. Shown as Required Qty, with
+   *  `pendingQty` (order qty less what earlier challans dispatched) beside it. */
+  orderQty: number | null
   pendingQty: number | null
   qtyByLot: Record<string, number>
 }
@@ -71,7 +76,7 @@ export interface DeliveryChallanFormDrawerProps {
   salesOrderId?: string
 }
 
-export const DeliveryChallanFormDrawer: FC<DeliveryChallanFormDrawerProps> = ({
+const DeliveryChallanFormDrawerInner: FC<DeliveryChallanFormDrawerProps> = ({
   open,
   onClose,
   salesOrderId: salesOrderIdProp,
@@ -85,7 +90,7 @@ export const DeliveryChallanFormDrawer: FC<DeliveryChallanFormDrawerProps> = ({
   const [prevOpen, setPrevOpen] = useState(open)
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: confirmedOrders } = useSalesOrders({ status: 'CONFIRMED', perPage: 200 })
   const { data: selectedOrder } = useSalesOrder(salesOrderId)
   const { dispatchedByItemId } = useSalesOrderDispatchedQtyByItem(salesOrderId)
@@ -150,6 +155,7 @@ export const DeliveryChallanFormDrawer: FC<DeliveryChallanFormDrawerProps> = ({
         discountPercent: item.discountPercent,
         taxPercent: item.taxPercent,
         itemRemark: '',
+        orderQty: item.qty,
         pendingQty,
         qtyByLot: {},
       },
@@ -172,6 +178,7 @@ export const DeliveryChallanFormDrawer: FC<DeliveryChallanFormDrawerProps> = ({
         discountPercent: 0,
         taxPercent: 0,
         itemRemark: '',
+        orderQty: null,
         pendingQty: null,
         qtyByLot: {},
       },
@@ -367,7 +374,7 @@ export const DeliveryChallanFormDrawer: FC<DeliveryChallanFormDrawerProps> = ({
                   title: 'Pending Qty',
                   key: 'pendingQty',
                   width: 110,
-                  render: (_, r) => r.pendingQty,
+                  render: (_, r) => <Typography.Text strong>{r.pendingQty}</Typography.Text>,
                 },
                 {
                   title: '',
@@ -397,6 +404,7 @@ export const DeliveryChallanFormDrawer: FC<DeliveryChallanFormDrawerProps> = ({
               value={pendingItemId}
               onChange={setPendingItemId}
               options={itemOptions}
+              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
               showSearch
               filterOption={(input, option) =>
                 String(option?.label ?? '')
@@ -449,7 +457,6 @@ const ChallanLinePanel: FC<ChallanLinePanelProps> = ({
   const { data: rows, isLoading } = useStockBalance(line.itemId)
   const { data: locations } = useLocations()
   const locationNameById = new Map(locations.map(l => [l.id, l.name]))
-  const dispatchQty = Object.values(line.qtyByLot).reduce((sum, q) => sum + q, 0)
 
   const columns: TableColumnsType<StockBalanceRow> = [
     {
@@ -516,14 +523,24 @@ const ChallanLinePanel: FC<ChallanLinePanelProps> = ({
             style={{ width: '100%' }}
           />
         </Col>
-        <Col xs={12} md={6}>
-          <Typography.Text type="secondary">
-            Dispatch Qty{line.pendingQty != null ? ` (pending ${line.pendingQty})` : ''}
-          </Typography.Text>
-          <div>
-            <Typography.Text strong>{dispatchQty}</Typography.Text>
-          </div>
-        </Col>
+        {/* A direct line answers to no sales order, so there is no required qty
+            to show against it — the column is dropped rather than left as a dash. */}
+        {line.salesOrderItemId && (
+          <Col xs={12} md={6}>
+            <Typography.Text type="secondary">Required Qty</Typography.Text>
+            <div>
+              <Typography.Text strong>{line.orderQty ?? line.pendingQty ?? '—'}</Typography.Text>
+              {/* What the order asked for is the number to dispatch against; what
+                  earlier challans already sent is the part still outstanding. */}
+              {line.orderQty != null && line.pendingQty != null && (
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  {' '}
+                  (pending {line.pendingQty})
+                </Typography.Text>
+              )}
+            </div>
+          </Col>
+        )}
         <Col xs={24} md={6}>
           <Typography.Text type="secondary">Remark</Typography.Text>
           <Input value={line.itemRemark} onChange={e => onUpdate({ itemRemark: e.target.value })} />
@@ -541,3 +558,5 @@ const ChallanLinePanel: FC<ChallanLinePanelProps> = ({
     </Card>
   )
 }
+
+export const DeliveryChallanFormDrawer = deferMount(DeliveryChallanFormDrawerInner)

@@ -30,6 +30,7 @@ import {
   useStockRequisition,
   useUpdateStockRequisition,
 } from '../hooks/useStockRequisitions'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -53,7 +54,7 @@ export interface StockRequisitionFormDrawerProps {
   requisitionId?: string
 }
 
-export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = ({
+const StockRequisitionFormDrawerInner: FC<StockRequisitionFormDrawerProps> = ({
   open,
   onClose,
   requisitionId,
@@ -65,13 +66,12 @@ export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = (
   const { data: departments } = useDepartments()
   const { data: employees } = useEmployees()
   const { data: items } = useProcurementItems()
-  const { data: existing } = useStockRequisition(requisitionId)
+  const { data: existing, isLoading: loadingRecord } = useStockRequisition(requisitionId)
   const { mutateAsync: create, isPending: creating } = useCreateStockRequisition()
   const { mutateAsync: update, isPending: updating } = useUpdateStockRequisition()
 
-  // Only DRAFT and PENDING_APPROVAL requisitions can be edited
-  const isLocked =
-    isEdit && !!existing && existing.status !== 'DRAFT' && existing.status !== 'PENDING_APPROVAL'
+  // Only PENDING_APPROVAL requisitions can be edited
+  const isLocked = isEdit && !!existing && existing.status !== 'PENDING_APPROVAL'
 
   const departmentOptions = (departments ?? []).map(d => ({ label: d.name, value: d.id }))
   const employeeOptions = (employees ?? []).map(e => ({ label: e.fullName, value: e.id }))
@@ -144,6 +144,7 @@ export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = (
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={
         isEdit ? `Edit ${existing?.requisitionNumber ?? 'Requisition'}` : 'New Stock Requisition'
       }
@@ -159,7 +160,7 @@ export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = (
     >
       {isLocked ? (
         <Typography.Text type="secondary">
-          Only DRAFT and PENDING APPROVAL requisitions can be edited. This requisition is currently{' '}
+          Only requisitions pending approval can be edited. This requisition is currently{' '}
           <strong>{existing?.status}</strong>.
         </Typography.Text>
       ) : (
@@ -233,14 +234,25 @@ export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = (
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <RequisitionItemRow
-                      key={field.key}
-                      field={field}
-                      items={items}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 640 }}>
+                      {fields.map(field => (
+                        <RequisitionItemRow
+                          key={field.key}
+                          field={field}
+                          items={items}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"
@@ -308,3 +320,5 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({ field, items, onRemov
     </div>
   )
 }
+
+export const StockRequisitionFormDrawer = deferMount(StockRequisitionFormDrawerInner)

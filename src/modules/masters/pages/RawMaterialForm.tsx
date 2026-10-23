@@ -2,10 +2,10 @@ import { App, Button, Card, Col, Form, Row, Space } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { UploadField } from '@/components/ui/UploadField'
 import { MASTER_STATUS_OPTIONS } from '../constants'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
@@ -14,6 +14,7 @@ import {
   useRawMaterial,
   useUpdateRawMaterial,
 } from '../hooks/useRawMaterials'
+import { useHsnGstAutofill } from '../hooks/useHsnGstAutofill'
 import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -24,12 +25,16 @@ export const RawMaterialForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: rawMaterial } = useRawMaterial(id)
   const { mutateAsync: createRawMaterial, isPending: creating } = useCreateRawMaterial()
   const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
   const { data: materialGrades = [] } = useMaterialGrades()
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
@@ -52,7 +57,9 @@ export const RawMaterialForm: FC = () => {
         gstPercent: rawMaterial.gstPercent,
         description: rawMaterial.description,
         status: rawMaterial.status,
-        imageUrl: rawMaterial.imageUrl,
+        batchTracking: rawMaterial.batchTracking,
+        heatTracking: rawMaterial.heatTracking,
+        serialTracking: rawMaterial.serialTracking,
         materialGradeId: rawMaterial.materialGradeId ?? undefined,
         materialType: rawMaterial.materialType,
         shape: rawMaterial.shape,
@@ -85,7 +92,9 @@ export const RawMaterialForm: FC = () => {
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
+      batchTracking: values.batchTracking as boolean | undefined,
+      heatTracking: values.heatTracking as boolean | undefined,
+      serialTracking: values.serialTracking as boolean | undefined,
       materialGradeId: values.materialGradeId as string | undefined,
       materialGrade: materialGradeOptions.find(o => o.value === values.materialGradeId)?.label,
       materialType: values.materialType as string | undefined,
@@ -124,9 +133,11 @@ export const RawMaterialForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/masters/raw-materials')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Raw Material
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Raw Material
+              </Button>
+            )}
           </Space>
         }
       />
@@ -136,6 +147,7 @@ export const RawMaterialForm: FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleFinish}
+          onValuesChange={autofillGst}
           initialValues={{ status: 'active' }}
         >
           <FormSection title="Basic Info">
@@ -178,7 +190,12 @@ export const RawMaterialForm: FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
-                <FormField label="HSN Code" name="hsnCode" />
+                <FormField
+                  label="HSN Code"
+                  name="hsnCode"
+                  fieldType="select"
+                  options={hsnCodeOptions}
+                />
               </Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField label="GST %" name="gstPercent" fieldType="number" />
@@ -189,6 +206,30 @@ export const RawMaterialForm: FC = () => {
                   name="status"
                   fieldType="select"
                   options={MASTER_STATUS_OPTIONS}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Batch Tracking"
+                  name="batchTracking"
+                  fieldType="switch"
+                  valuePropName="checked"
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Heat Tracking"
+                  name="heatTracking"
+                  fieldType="switch"
+                  valuePropName="checked"
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Serial Tracking"
+                  name="serialTracking"
+                  fieldType="switch"
+                  valuePropName="checked"
                 />
               </Col>
             </Row>
@@ -237,12 +278,6 @@ export const RawMaterialForm: FC = () => {
 
           <FormSection title="Price">
             <FormField label="Price" name="price" fieldType="number" />
-          </FormSection>
-
-          <FormSection title="Image">
-            <FormField label="Image" name="imageUrl">
-              <UploadField mode="image" accept="image/*" />
-            </FormField>
           </FormSection>
         </Form>
       </Card>

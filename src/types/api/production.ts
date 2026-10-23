@@ -92,7 +92,8 @@ export interface ApiInspectionParameter {
 }
 
 export interface CreateInspectionParameterPayload {
-  process_id: number
+  /** Omitted for raw materials, which have no process route. */
+  process_id?: number
   param_type: number
   parameter: string
   specification: string
@@ -161,6 +162,62 @@ export interface ApiJobCardBomRequirement {
   returned_qty: number
 }
 
+/** GET job-cards/{id}/bom-requirements/material-summary. used_qty is derived by
+ *  ERP-BE (ok+rejected logged at the first route step, scaled by
+ *  required_qty/ordered_qty), not a stored column, and pending_used_qty is the
+ *  ceiling a new material return may not exceed. */
+/** A pull of last-step OK qty into store. Since ERP-BE made this an explicit
+ *  action it is no longer tied 1:1 to a process log, so process_log_id is null
+ *  on anything created through POST job-cards/{id}/production-receipts. */
+export interface ApiProductionReceipt {
+  id: number
+  job_card_id: number
+  process_log_id: number | null
+  item_id: number
+  item_name: string | null
+  store_location_id: number
+  store_location_name: string | null
+  received_qty: number
+  received_at: string | null
+  stock_movement_id: number | null
+}
+
+export interface ApiMaterialSummaryRow {
+  component_item_id: number
+  component_name: string | null
+  component_code: string | null
+  required_qty: number
+  issued_qty: number
+  used_qty: number
+  returned_qty: number
+  pending_used_qty: number
+}
+
+export interface ApiMaterialReturn {
+  id: number
+  job_card_bom_requirement_id: number
+  component_item_id: number | null
+  component_name: string | null
+  store_location_id: number
+  store_location_name: string | null
+  batch_no: string | null
+  heat_no: string | null
+  returned_qty: number
+  return_date: string | null
+  returned_by: number | null
+  stock_movement_id: number | null
+  created_at?: string | null
+}
+
+export interface CreateMaterialReturnPayload {
+  component_item_id: number
+  store_location_id: number
+  batch_no?: string | null
+  heat_no?: string | null
+  returned_qty: number
+  return_date?: string | null
+}
+
 export interface ApiMaterialIssue {
   id: number
   job_card_bom_requirement_id: number
@@ -214,6 +271,9 @@ export interface ApiProcessLog {
   rejected_qty: number
   bypassed_qty: number
   inbound_challan_item_id: number | null
+  // Set when this log re-processes qty an approved Rework review sent back.
+  inbound_rework_review_id: number | null
+  is_rework: boolean
   weight_kg: number | null
   finished_weight_kg: number | null
   conversion_ratio: number | null
@@ -239,6 +299,8 @@ export interface ApiJobCardMovement {
   from_process_name: string | null
   to_process_id: number
   to_process_name: string | null
+  rejection_review_id: number | null
+  is_rework: boolean
   moved_qty: number
   moved_at: string | null
   moved_by: number | null
@@ -247,9 +309,14 @@ export interface ApiJobCardMovement {
 
 export interface CreateMovementPayload {
   from_process_id: number
-  to_process_id: number
+  /** Omitted when moving out of the last route step — ERP-BE then posts the qty
+   *  into the job card's output store and writes the production receipt. */
+  to_process_id?: number
   moved_qty: number
   moved_at?: string | null
+  /** Keeps a rework redo in its own balance bucket instead of pooling with the
+   *  first pass. ERP-BE validates the two separately end to end. */
+  is_rework?: boolean
 }
 
 export interface AcceptMovementPayload {
@@ -273,6 +340,11 @@ export interface CreateProcessLogPayload {
   rejected_qty?: number
   bypassed_qty?: number
   inbound_challan_item_id?: number | null
+  inbound_rework_review_id?: number | null
+  /** Set for any log against a Rework row. Citing inbound_rework_review_id
+   *  implies it, but send it explicitly so later hops of the redo — which carry
+   *  no review id — stay in the rework bucket. */
+  is_rework?: boolean
   production_seconds?: number | null
   downtime_seconds?: number | null
   remark?: string | null
@@ -291,11 +363,13 @@ export interface ApiJobCardChallanRequest {
   requested_by: number | null
   requested_by_name: string | null
   requested_at: string | null
+  is_rework: boolean
 }
 
 export interface CreateChallanRequestPayload {
   process_id: number
   requested_qty: number
+  is_rework?: boolean
 }
 
 export interface ApiJobCardChallanItem {
@@ -303,6 +377,11 @@ export interface ApiJobCardChallanItem {
   challan_id: number
   challan_request_id: number
   job_card_id: number
+  /** Carried down from the challan request: this line was sent out to redo
+   *  rejected qty, so the log that receives it back belongs in the rework
+   *  bucket. ERP-BE does not infer it from the challan item — it has to be
+   *  sent on the process log. */
+  is_rework?: boolean
   process_id: number
   process_name: string | null
   dispatched_qty: number

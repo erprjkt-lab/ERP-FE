@@ -1,9 +1,10 @@
 import { ArrowLeftOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Table, Tag, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -28,6 +29,7 @@ import {
 import { computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
 import type { Rejection, RejectionReview } from '@/types/production'
+import { formatDateTime } from '@/utils/date'
 
 const PROCESS_COLUMNS: TableColumnsType<StepProgress> = [
   { title: '#', key: 'seq', width: 50, render: (_, r) => r.step.sequenceNo },
@@ -40,6 +42,7 @@ const PROCESS_COLUMNS: TableColumnsType<StepProgress> = [
 
 const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
   const { message } = App.useApp()
+  const { canApprove } = usePagePermission()
   const { data: reviews, isLoading } = useRejectionReviews(rejection.id)
   const { mutateAsync: approve, isPending: approving } = useApproveRejectionReview()
 
@@ -94,7 +97,7 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
       key: 'action',
       width: 100,
       render: (_, r) =>
-        r.status === 'SUBMITTED' ? (
+        r.status === 'SUBMITTED' && canApprove ? (
           <Button
             size="small"
             type="primary"
@@ -124,6 +127,7 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
 }
 
 export const RejectionReviewDetail: FC = () => {
+  const { canWrite } = usePagePermission()
   const { jobCardId } = useParams()
   const navigate = useNavigate()
   const [reviewingRejection, setReviewingRejection] = useState<Rejection>()
@@ -172,22 +176,25 @@ export const RejectionReviewDetail: FC = () => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 160,
-      render: v => v ?? '—',
+      render: formatDateTime,
     },
     {
       title: 'Action',
       key: 'action',
       width: 110,
-      render: (_, r) => (
-        <Button
-          size="small"
-          icon={<EditOutlined />}
-          disabled={!r.pendingQty}
-          onClick={() => setReviewingRejection(r)}
-        >
-          Review
-        </Button>
-      ),
+      render: (_, r) =>
+        canWrite ? (
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            disabled={!r.pendingQty}
+            onClick={() => setReviewingRejection(r)}
+          >
+            Review
+          </Button>
+        ) : (
+          '—'
+        ),
     },
   ]
 
@@ -197,7 +204,11 @@ export const RejectionReviewDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/production/entries')}>
           Back to Production Entry
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Job card not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Job card not found.</p>
+        )}
       </div>
     )
   }
@@ -253,7 +264,7 @@ export const RejectionReviewDetail: FC = () => {
       </Card>
 
       <Card title="Process Detail" style={{ marginBottom: 16 }} styles={{ body: { padding: 0 } }}>
-        <Table<StepProgress>
+        <DataTable<StepProgress>
           columns={PROCESS_COLUMNS}
           dataSource={progress}
           rowKey={record => record.step.id}

@@ -33,3 +33,12 @@ export type { FormDrawerProps } from './FormDrawer'
 
 export { UploadField } from './UploadField'
 export type { UploadFieldProps } from './UploadField'
+
+export { TableActionBar, TableActionButton, createTableActionsColumn } from './TableActionBar'
+export type {
+  TableActionBarProps,
+  TableActionButtonProps,
+  TableActionItem,
+  TableActionVariant,
+  CreateTableActionsColumnOptions,
+} from './TableActionBar'

@@ -5,20 +5,24 @@ import {
   DislikeOutlined,
   EditOutlined,
   EyeOutlined,
+  InboxOutlined,
   LockOutlined,
   PlusOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { StockRequisition } from '@/types/inventory'
+import { RequisitionIssueDrawer } from '../components/RequisitionIssueDrawer'
 import { StockRequisitionFormDrawer } from '../components/StockRequisitionFormDrawer'
 import { STOCK_REQUISITION_STATUS_BADGE, STOCK_REQUISITION_STATUS_LABELS } from '../constants'
 import {
@@ -28,35 +32,43 @@ import {
   useDeleteStockRequisition,
   useRejectStockRequisition,
   useStockRequisitions,
-  useSubmitStockRequisition,
 } from '../hooks/useStockRequisitions'
 import { useInventoryFilters, useInventoryStore } from '../store/inventoryStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(STOCK_REQUISITION_STATUS_LABELS).map(([value, label]) => ({
   value,
   label,
 }))
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
 interface RowActions {
   onView: (record: StockRequisition) => void
   onEdit: (record: StockRequisition) => void
-  onSubmit: (record: StockRequisition) => void
   onApprove: (record: StockRequisition) => void
   onReject: (record: StockRequisition) => void
   onClose: (record: StockRequisition) => void
+  onIssue: (record: StockRequisition) => void
   onCancel: (record: StockRequisition) => void
   onDelete: (record: StockRequisition) => void
+  /** Cancel/close count as modify and reject as approve (ERP-BE's own
+   *  action_overrides for this module); issuing stock writes a stock issue. */
+  can: {
+    modify: boolean
+    delete: boolean
+    approve: boolean
+    issue: boolean
+  }
 }
 
-const getColumns = (a: RowActions): TableColumnsType<StockRequisition> => [
+const getColumns = (): TableColumnsType<StockRequisition> => [
   { title: 'Requisition #', dataIndex: 'requisitionNumber', key: 'requisitionNumber', width: 150 },
-  { title: 'Date', dataIndex: 'requisitionDate', key: 'requisitionDate', width: 110 },
+  {
+    title: 'Date',
+    dataIndex: 'requisitionDate',
+    key: 'requisitionDate',
+    width: 110,
+    render: formatDateTime,
+  },
   {
     title: 'Department',
     dataIndex: 'departmentName',
@@ -95,66 +107,117 @@ const getColumns = (a: RowActions): TableColumnsType<StockRequisition> => [
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 200,
-    render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
-      const isPending = record.status === 'PENDING_APPROVAL'
-      const isApproved = record.status === 'APPROVED'
-      const isFinished =
-        record.status === 'CLOSED' || record.status === 'CANCELLED' || record.status === 'REJECTED'
-
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {(isDraft || isPending) && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Submit for Approval', <SendOutlined />, () => a.onSubmit(record))}
-          {isPending && action('Approve', <CheckOutlined />, () => a.onApprove(record))}
-          {/* Reject = thumbs-down (workflow decision); Cancel = stop sign (abort the document) */}
-          {isPending && action('Reject', <DislikeOutlined />, () => a.onReject(record), true)}
-          {/* Lock = close/seal the requisition; CloseCircle = abort/cancel it */}
-          {isApproved && action('Close Requisition', <LockOutlined />, () => a.onClose(record))}
-          {!isFinished && action('Cancel', <CloseCircleOutlined />, () => a.onCancel(record), true)}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getRequisitionActions = (record: StockRequisition, a: RowActions): TableActionItem[] => {
+  const isPending = record.status === 'PENDING_APPROVAL'
+  const isApproved = record.status === 'APPROVED'
+  const isFinished =
+    record.status === 'CLOSED' || record.status === 'CANCELLED' || record.status === 'REJECTED'
+
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (isPending) {
+    actions.push(
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        variant: 'primary',
+        hidden: !a.can.modify,
+        onClick: () => a.onEdit(record),
+      },
+      {
+        key: 'approve',
+        label: 'Approve',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        hidden: !a.can.approve,
+        onClick: () => a.onApprove(record),
+      },
+      {
+        key: 'reject',
+        label: 'Reject',
+        icon: <DislikeOutlined />,
+        variant: 'danger',
+        danger: true,
+        hidden: !a.can.approve,
+        onClick: () => a.onReject(record),
+      },
+    )
+  }
+
+  if (isApproved) {
+    actions.push({
+      key: 'issue',
+      label: 'Issue Stock',
+      icon: <InboxOutlined />,
+      variant: 'primary',
+      hidden: !a.can.issue,
+      onClick: () => a.onIssue(record),
+    })
+    actions.push({
+      key: 'close',
+      label: 'Close Requisition',
+      icon: <LockOutlined />,
+      variant: 'accent',
+      hidden: !a.can.modify,
+      onClick: () => a.onClose(record),
+    })
+  }
+
+  if (!isFinished) {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel',
+      icon: <CloseCircleOutlined />,
+      variant: 'danger',
+      danger: true,
+      hidden: !a.can.modify,
+      onClick: () => a.onCancel(record),
+    })
+  }
+
+  if (isPending) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      hidden: !a.can.delete,
+      onClick: () => a.onDelete(record),
+    })
+  }
+
+  return actions
+}
 
 export const StockRequisitionList: FC = () => {
   const navigate = useNavigate()
   const { modal, message } = App.useApp()
-  const { data: requisitions, isLoading } = useStockRequisitions()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
+  const { canWrite: canWriteIssues } = useModulePermission('stock-issues')
+  const filters = useInventoryFilters('requisition')
+  const { data: requisitions, isLoading } = useStockRequisitions({ status: filters.status })
   const { mutateAsync: deleteRequisition } = useDeleteStockRequisition()
-  const { mutateAsync: submitForApproval } = useSubmitStockRequisition()
   const { mutateAsync: approve } = useApproveStockRequisition()
   const { mutateAsync: reject } = useRejectStockRequisition()
   const { mutateAsync: close } = useCloseStockRequisition()
   const { mutateAsync: cancel } = useCancelStockRequisition()
-  const filters = useInventoryFilters('requisition')
   const setFilter = useInventoryStore(s => s.setFilter)
   const resetFilters = useInventoryStore(s => s.resetFilter)
 
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
-
-  const handleSubmit = (record: StockRequisition) => {
-    modal.confirm({
-      title: 'Submit for approval?',
-      content: 'The requisition will be sent for approval and can no longer be edited.',
-      okText: 'Submit',
-      onOk: async () => {
-        try {
-          await submitForApproval(record.id)
-          message.success('Requisition submitted for approval')
-        } catch (error) {
-          message.error(getErrorMessage(error))
-        }
-      },
-    })
-  }
+  const [issueRequisitionId, setIssueRequisitionId] = useState<string>()
 
   const handleApprove = (record: StockRequisition) => {
     modal.confirm({
@@ -256,27 +319,31 @@ export const StockRequisitionList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
     onView: record => navigate(`/inventory/requisitions/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
-    onSubmit: handleSubmit,
     onApprove: handleApprove,
     onReject: handleReject,
     onClose: handleClose,
+    onIssue: record => setIssueRequisitionId(record.id),
     onCancel: handleCancel,
     onDelete: handleDelete,
-  })
+    can: {
+      modify: canModify,
+      delete: canDelete,
+      approve: canApprove,
+      issue: canWriteIssues,
+    },
+  }
 
-  const filtered = requisitions.filter(sr => {
-    if (
-      filters.search &&
-      !sr.requisitionNumber.toLowerCase().includes(filters.search.toLowerCase())
-    ) {
-      return false
-    }
-    if (filters.status && sr.status !== filters.status) return false
-    return true
-  })
+  // Status is filtered by ERP-BE (see StockRequisitionListParams); only the
+  // number match stays here, since that endpoint takes no `search` param.
+  const filtered = requisitions.filter(
+    sr =>
+      !filters.search || sr.requisitionNumber.toLowerCase().includes(filters.search.toLowerCase()),
+  )
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -285,13 +352,15 @@ export const StockRequisitionList: FC = () => {
         subtitle={`${filtered.length} of ${requisitions.length} requisitions`}
         breadcrumbs={[{ label: 'Inventory' }, { label: 'Stock Requisitions' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Requisition
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Requisition
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -332,6 +401,7 @@ export const StockRequisitionList: FC = () => {
           loading={isLoading}
           totalLabel="requisitions"
           fillHeight
+          rowActions={record => getRequisitionActions(record, rowActions)}
           onRow={record => ({
             onClick: () => navigate(`/inventory/requisitions/${record.id}`),
             style: { cursor: 'pointer' },
@@ -343,6 +413,12 @@ export const StockRequisitionList: FC = () => {
         open={!!drawerState}
         requisitionId={drawerState?.mode === 'edit' ? drawerState.id : undefined}
         onClose={() => setDrawerState(undefined)}
+      />
+
+      <RequisitionIssueDrawer
+        open={!!issueRequisitionId}
+        requisitionId={issueRequisitionId}
+        onClose={() => setIssueRequisitionId(undefined)}
       />
     </div>
   )

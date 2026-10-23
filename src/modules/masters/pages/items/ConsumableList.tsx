@@ -1,7 +1,7 @@
+import { Form } from 'antd'
 import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
-import { UploadField } from '@/components/ui/UploadField'
 import type { Consumable } from '@/types/masters'
 import { MASTER_STATUS_OPTIONS } from '../../constants'
 import {
@@ -11,6 +11,7 @@ import {
   useUpdateConsumable,
 } from '../../hooks/useConsumables'
 import { useItemCategories } from '../../hooks/useItemCategories'
+import { useHsnGstAutofill } from '../../hooks/useHsnGstAutofill'
 import { useUoms } from '../../hooks/useUoms'
 
 export const ConsumableList: FC = () => {
@@ -20,6 +21,8 @@ export const ConsumableList: FC = () => {
   const { mutateAsync: deleteConsumable } = useDeleteConsumable()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const [form] = Form.useForm()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
 
   const categoryOptions = categories.map(c => ({ label: c.name, value: String(c.id) }))
   const uomOptions = uoms.map(u => ({ label: u.name, value: String(u.id) }))
@@ -32,6 +35,8 @@ export const ConsumableList: FC = () => {
       totalLabel="consumables"
       addButtonLabel="Add Consumable"
       modalWidth={720}
+      form={form}
+      onValuesChange={autofillGst}
       data={consumables}
       loading={isLoading}
       columns={[
@@ -43,7 +48,7 @@ export const ConsumableList: FC = () => {
       ]}
       renderFields={() => (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+          <div className="erp-form-grid">
             <FormField
               label="Item Name"
               name="name"
@@ -70,7 +75,12 @@ export const ConsumableList: FC = () => {
               fieldType="select"
               options={uomOptions}
             />
-            <FormField label="HSN Code" name="hsnCode" />
+            <FormField
+              label="HSN Code"
+              name="hsnCode"
+              fieldType="select"
+              options={hsnCodeOptions}
+            />
             <FormField label="GST %" name="gstPercent" fieldType="number" />
             <FormField label="Price" name="price" fieldType="number" />
             <FormField
@@ -80,11 +90,26 @@ export const ConsumableList: FC = () => {
               options={MASTER_STATUS_OPTIONS}
               initialValue="active"
             />
+            <FormField
+              label="Batch Tracking"
+              name="batchTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Heat Tracking"
+              name="heatTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
+            <FormField
+              label="Serial Tracking"
+              name="serialTracking"
+              fieldType="switch"
+              valuePropName="checked"
+            />
           </div>
           <FormField label="Description" name="description" fieldType="textarea" />
-          <FormField label="Image" name="imageUrl">
-            <UploadField mode="image" accept="image/*" />
-          </FormField>
         </>
       )}
       onSubmit={async (values, editing) => {
@@ -100,7 +125,9 @@ export const ConsumableList: FC = () => {
           gstPercent: values.gstPercent as number | undefined,
           description: values.description as string | undefined,
           status: (values.status as 'active' | 'inactive') ?? 'active',
-          imageUrl: values.imageUrl as string | undefined,
+          batchTracking: values.batchTracking as boolean | undefined,
+          heatTracking: values.heatTracking as boolean | undefined,
+          serialTracking: values.serialTracking as boolean | undefined,
           price: values.price as number | undefined,
         }
         if (editing) {

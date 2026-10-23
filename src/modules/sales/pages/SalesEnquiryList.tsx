@@ -6,25 +6,34 @@ import {
   PlusOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Row, Select, Space, Tooltip } from 'antd'
+import { App, Button, Card, Col, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import type { SalesEnquiry } from '@/types/sales'
+import type { TableActionItem } from '@/components/ui'
+import type { SalesEnquiryItemRow, SalesEnquiryStatus } from '@/types/sales'
 import { SalesEnquiryFormDrawer } from '../components/SalesEnquiryFormDrawer'
 import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
-import { ENQUIRY_STATUS_BADGE, ENQUIRY_STATUS_LABELS } from '../constants'
+import {
+  ENQUIRY_STATUS_BADGE,
+  ENQUIRY_STATUS_LABELS,
+  FEASIBLE_STATUS_BADGE,
+  FEASIBLE_STATUS_LABELS,
+} from '../constants'
 import {
   useCloseSalesEnquiry,
   useDeleteSalesEnquiry,
-  useSalesEnquiries,
+  useSalesEnquiryItems,
 } from '../hooks/useSalesEnquiries'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(ENQUIRY_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -32,25 +41,40 @@ const STATUS_OPTIONS = Object.entries(ENQUIRY_STATUS_LABELS).map(([value, label]
 }))
 
 interface RowActions {
-  onView: (record: SalesEnquiry) => void
-  onEdit: (record: SalesEnquiry) => void
-  onCreateQuotation: (record: SalesEnquiry) => void
-  onClose: (record: SalesEnquiry) => void
-  onDelete: (record: SalesEnquiry) => void
+  onView: (record: SalesEnquiryItemRow) => void
+  onEdit: (record: SalesEnquiryItemRow) => void
+  onCreateQuotation: (record: SalesEnquiryItemRow) => void
+  onClose: (record: SalesEnquiryItemRow) => void
+  onDelete: (record: SalesEnquiryItemRow) => void
+  can: { modify: boolean; delete: boolean; createQuote: boolean }
 }
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
-const getColumns = (a: RowActions): TableColumnsType<SalesEnquiry> => [
+const getColumns = (): TableColumnsType<SalesEnquiryItemRow> => [
   { title: 'Enquiry #', dataIndex: 'enquiryNumber', key: 'enquiryNumber', width: 150 },
-  { title: 'Date', dataIndex: 'enquiryDate', key: 'enquiryDate', width: 120 },
+  {
+    title: 'Date',
+    dataIndex: 'enquiryDate',
+    key: 'enquiryDate',
+    width: 120,
+    render: formatDateTime,
+  },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
-  { title: 'Ref By', dataIndex: 'refBy', key: 'refBy', width: 140, render: v => v || '—' },
-  { title: 'Items', key: 'items', width: 80, render: (_, r) => r.items.length },
+  { title: 'Item Code', dataIndex: 'itemCode', key: 'itemCode', render: v => v ?? '—' },
+  { title: 'Item Name', dataIndex: 'itemName', key: 'itemName', render: v => v ?? '—' },
+  { title: 'Qty', dataIndex: 'qty', key: 'qty', width: 90, align: 'right' },
+  { title: 'UOM', dataIndex: 'uomName', key: 'uomName', width: 80, render: v => v ?? '—' },
+  {
+    title: 'Feasibility',
+    dataIndex: 'feasibleStatus',
+    key: 'feasibleStatus',
+    width: 130,
+    render: v => (
+      <StatusBadge
+        status={FEASIBLE_STATUS_BADGE[v as SalesEnquiryItemRow['feasibleStatus']]}
+        label={FEASIBLE_STATUS_LABELS[v as SalesEnquiryItemRow['feasibleStatus']]}
+      />
+    ),
+  },
   {
     title: 'Status',
     dataIndex: 'status',
@@ -58,36 +82,79 @@ const getColumns = (a: RowActions): TableColumnsType<SalesEnquiry> => [
     width: 120,
     render: status => (
       <StatusBadge
-        status={ENQUIRY_STATUS_BADGE[status as SalesEnquiry['status']]}
-        label={ENQUIRY_STATUS_LABELS[status as SalesEnquiry['status']]}
+        status={ENQUIRY_STATUS_BADGE[status as SalesEnquiryStatus]}
+        label={ENQUIRY_STATUS_LABELS[status as SalesEnquiryStatus]}
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 220,
-    render: (_, record) => {
-      const isOpen = record.status === 'OPEN'
-      const isClosed = record.status === 'CLOSED'
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {/* Backend only allows edits/deletes while the enquiry is still OPEN. */}
-          {isOpen && action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {!isClosed &&
-            action('Create Quotation', <FileTextOutlined />, () => a.onCreateQuotation(record))}
-          {!isClosed && action('Close', <StopOutlined />, () => a.onClose(record), true)}
-          {isOpen && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getEnquiryActions = (record: SalesEnquiryItemRow, a: RowActions): TableActionItem[] => {
+  const isOpen = record.status === 'OPEN'
+  const isClosed = record.status === 'CLOSED'
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (isOpen) {
+    actions.push({
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditOutlined />,
+      variant: 'primary',
+      hidden: !a.can.modify,
+      onClick: () => a.onEdit(record),
+    })
+  }
+
+  if (!isClosed) {
+    actions.push(
+      {
+        key: 'create-quote',
+        label: 'Create Quotation',
+        icon: <FileTextOutlined />,
+        variant: 'accent',
+        hidden: !a.can.createQuote,
+        onClick: () => a.onCreateQuotation(record),
+      },
+      {
+        key: 'close',
+        label: 'Close',
+        icon: <StopOutlined />,
+        variant: 'danger',
+        danger: true,
+        hidden: !a.can.modify,
+        onClick: () => a.onClose(record),
+      },
+    )
+  }
+
+  if (isOpen) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      hidden: !a.can.delete,
+      onClick: () => a.onDelete(record),
+    })
+  }
+
+  return actions
+}
 
 export const SalesEnquiryList: FC = () => {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canWrite, canModify, canDelete } = usePagePermission()
+  const { canWrite: canWriteQuotations } = useModulePermission('sales-quotations')
   const status = useSalesStatusFilter('enquiry')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
@@ -96,11 +163,11 @@ export const SalesEnquiryList: FC = () => {
   const [quoteEnquiryId, setQuoteEnquiryId] = useState<string>()
 
   const {
-    data: enquiries,
+    data: enquiryItems,
     meta,
     isLoading,
     isFetching,
-  } = useSalesEnquiries({ page, perPage: pageSize, status })
+  } = useSalesEnquiryItems({ page, perPage: pageSize, status })
   const { mutateAsync: closeEnquiry } = useCloseSalesEnquiry()
   const { mutateAsync: deleteEnquiry } = useDeleteSalesEnquiry()
 
@@ -112,7 +179,7 @@ export const SalesEnquiryList: FC = () => {
     setPage(1)
   }
 
-  const handleClose = (record: SalesEnquiry) => {
+  const handleClose = (record: SalesEnquiryItemRow) => {
     modal.confirm({
       title: 'Close this enquiry?',
       content: 'A closed enquiry can no longer be edited or quoted against.',
@@ -120,7 +187,7 @@ export const SalesEnquiryList: FC = () => {
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          await closeEnquiry(record.id)
+          await closeEnquiry(record.salesEnquiryId)
           message.success('Sales enquiry closed')
         } catch (error) {
           message.error(getErrorMessage(error))
@@ -133,8 +200,8 @@ export const SalesEnquiryList: FC = () => {
   // already-quoted enquiry (re-quote after a rejection/expiry) rather than
   // force-closing it — so this stays enabled, just confirmed so it's clear
   // it's a new quotation, not a revision of the existing one.
-  const handleCreateQuotation = (record: SalesEnquiry) => {
-    const go = () => setQuoteEnquiryId(record.id)
+  const handleCreateQuotation = (record: SalesEnquiryItemRow) => {
+    const go = () => setQuoteEnquiryId(record.salesEnquiryId)
     if (record.status !== 'QUOTED') {
       go()
       return
@@ -148,7 +215,7 @@ export const SalesEnquiryList: FC = () => {
     })
   }
 
-  const handleDelete = (record: SalesEnquiry) => {
+  const handleDelete = (record: SalesEnquiryItemRow) => {
     modal.confirm({
       title: `Delete ${record.enquiryNumber}?`,
       content: 'This permanently removes the enquiry and its items.',
@@ -156,7 +223,7 @@ export const SalesEnquiryList: FC = () => {
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          await deleteEnquiry(record.id)
+          await deleteEnquiry(record.salesEnquiryId)
           message.success('Sales enquiry deleted')
         } catch (error) {
           message.error(getErrorMessage(error))
@@ -165,28 +232,33 @@ export const SalesEnquiryList: FC = () => {
     })
   }
 
-  const columns = getColumns({
-    onView: record => navigate(`/sales/enquiries/${record.id}`),
-    onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
+    can: { modify: canModify, delete: canDelete, createQuote: canWriteQuotations },
+    onView: record => navigate(`/sales/enquiries/${record.salesEnquiryId}`),
+    onEdit: record => setDrawerState({ mode: 'edit', id: record.salesEnquiryId }),
     onCreateQuotation: handleCreateQuotation,
     onClose: handleClose,
     onDelete: handleDelete,
-  })
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
         title="Sales Enquiries"
-        subtitle={`${meta?.total ?? 0} enquiries`}
+        subtitle={`${meta?.total ?? 0} enquiry items`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Sales Enquiry' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Enquiry
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Enquiry
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -214,9 +286,9 @@ export const SalesEnquiryList: FC = () => {
           body: { flex: 1, minHeight: 0, padding: 0, display: 'flex', flexDirection: 'column' },
         }}
       >
-        <DataTable<SalesEnquiry>
+        <DataTable<SalesEnquiryItemRow>
           columns={columns}
-          dataSource={enquiries}
+          dataSource={enquiryItems}
           rowKey="id"
           loading={isLoading || isFetching}
           pagination={{
@@ -228,10 +300,11 @@ export const SalesEnquiryList: FC = () => {
               setPageSize(nextPageSize)
             },
           }}
-          totalLabel="enquiries"
+          totalLabel="enquiry items"
           fillHeight
+          rowActions={record => getEnquiryActions(record, rowActions)}
           onRow={record => ({
-            onClick: () => navigate(`/sales/enquiries/${record.id}`),
+            onClick: () => navigate(`/sales/enquiries/${record.salesEnquiryId}`),
             style: { cursor: 'pointer' },
           })}
         />

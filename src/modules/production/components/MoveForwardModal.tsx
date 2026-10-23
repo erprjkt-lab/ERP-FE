@@ -8,11 +8,15 @@ import type { JobCardMovement } from '@/types/production'
 import { useCreateMovement } from '../hooks/useJobCardMovements'
 import type { StepProgress } from '../utils/jobCardProgress'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 export interface MoveForwardModalProps {
   open: boolean
   onClose: () => void
   jobCardId: string
+  /** True when the move belongs to a rework redo rather than the first pass —
+   *  ERP-BE keeps the two balances apart and validates against the right one. */
+  isRework?: boolean
   step?: StepProgress
   nextStep?: StepProgress
   /** Movements already sent out of this step. */
@@ -27,6 +31,7 @@ export const MoveForwardModal: FC<MoveForwardModalProps> = ({
   open,
   onClose,
   jobCardId,
+  isRework = false,
   step,
   nextStep,
   movements,
@@ -62,6 +67,7 @@ export const MoveForwardModal: FC<MoveForwardModalProps> = ({
 
     try {
       await createMovement({
+        is_rework: isRework,
         from_process_id: Number(step.step.processId),
         to_process_id: Number(nextStep.step.processId),
         moved_qty: values.movedQty,
@@ -79,7 +85,7 @@ export const MoveForwardModal: FC<MoveForwardModalProps> = ({
       dataIndex: 'movedAt',
       key: 'movedAt',
       width: 110,
-      render: value => String(value).slice(0, 10),
+      render: formatDateTime,
     },
     { title: 'To Process', dataIndex: 'toProcessName', key: 'toProcessName' },
     { title: 'Moved', dataIndex: 'movedQty', key: 'movedQty', width: 90 },

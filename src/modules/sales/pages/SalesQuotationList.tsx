@@ -2,32 +2,34 @@ import {
   CheckOutlined,
   CloseOutlined,
   DeleteOutlined,
-  DiffOutlined,
   EditOutlined,
   EyeOutlined,
   FileDoneOutlined,
   PlusOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Input, Row, Select, Space, Tag, Tooltip } from 'antd'
+import { App, Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { TableActionItem } from '@/components/ui'
 import type { SalesQuotation } from '@/types/sales'
 import { SalesQuotationFormDrawer } from '../components/SalesQuotationFormDrawer'
 import { QUOTATION_STATUS_BADGE, QUOTATION_STATUS_LABELS } from '../constants'
-import { useCreateSalesOrderFromQuotation } from '../hooks/useSalesOrders'
+import { useCreateSalesOrderFromQuotation, useSalesOrders } from '../hooks/useSalesOrders'
 import {
   useDeleteSalesQuotation,
   useSalesQuotationAction,
   useSalesQuotations,
 } from '../hooks/useSalesQuotations'
 import { useSalesStatusFilter, useSalesStore } from '../store/salesStore'
+import { formatDateTime } from '@/utils/date'
 
 const STATUS_OPTIONS = Object.entries(QUOTATION_STATUS_LABELS).map(([value, label]) => ({
   value,
@@ -41,31 +43,31 @@ const LOCKED_STATUSES: SalesQuotation['status'][] = ['ACCEPTED', 'REJECTED', 'RE
 interface RowActions {
   onView: (record: SalesQuotation) => void
   onEdit: (record: SalesQuotation) => void
-  onSend: (record: SalesQuotation) => void
   onAccept: (record: SalesQuotation) => void
   onReject: (record: SalesQuotation) => void
   onRevise: (record: SalesQuotation) => void
   onDelete: (record: SalesQuotation) => void
   onCreateOrder: (record: SalesQuotation) => void
+  can: { modify: boolean; delete: boolean; approve: boolean; createOrder: boolean }
 }
 
-const action = (title: string, icon: ReactNode, onClick: () => void, danger = false) => (
-  <Tooltip title={title} key={title}>
-    <Button type="text" size="small" danger={danger} icon={icon} onClick={onClick} />
-  </Tooltip>
-)
-
-const getColumns = (a: RowActions): TableColumnsType<SalesQuotation> => [
-  { title: 'Quotation #', dataIndex: 'quotationNumber', key: 'quotationNumber', width: 160 },
+const getColumns = (): TableColumnsType<SalesQuotation> => [
+  { title: 'Quotation #', dataIndex: 'quotationNumber', key: 'quotationNumber', width: 140 },
   {
-    title: 'Rev',
-    dataIndex: 'revisionNo',
-    key: 'revisionNo',
-    width: 70,
-    render: (value: number) => (value > 0 ? <Tag color="blue">R{value}</Tag> : '—'),
+    title: 'Date',
+    dataIndex: 'quotationDate',
+    key: 'quotationDate',
+    width: 120,
+    render: formatDateTime,
   },
-  { title: 'Date', dataIndex: 'quotationDate', key: 'quotationDate', width: 120 },
   { title: 'Customer', dataIndex: 'partyName', key: 'partyName', render: v => v ?? '—' },
+  {
+    title: 'Items',
+    key: 'items',
+    width: 250,
+    render: (_, r) =>
+      r.items.length > 0 ? r.items.map(i => i.itemName || i.itemId).join(', ') : '—',
+  },
   {
     title: 'Source',
     key: 'source',
@@ -97,37 +99,92 @@ const getColumns = (a: RowActions): TableColumnsType<SalesQuotation> => [
       />
     ),
   },
-  {
-    title: 'Actions',
-    key: 'actions',
-    width: 260,
-    render: (_, record) => {
-      const isDraft = record.status === 'DRAFT'
-      const isSent = record.status === 'SENT'
-      const isAccepted = record.status === 'ACCEPTED'
-      return (
-        <Space size="small" onClick={e => e.stopPropagation()}>
-          {action('View', <EyeOutlined />, () => a.onView(record))}
-          {!LOCKED_STATUSES.includes(record.status) &&
-            action('Edit', <EditOutlined />, () => a.onEdit(record))}
-          {isDraft && action('Send', <SendOutlined />, () => a.onSend(record))}
-          {isSent && action('Accept', <CheckOutlined />, () => a.onAccept(record))}
-          {isSent && action('Reject', <CloseOutlined />, () => a.onReject(record), true)}
-          {!isAccepted &&
-            record.status !== 'REVISED' &&
-            action('Revise', <DiffOutlined />, () => a.onRevise(record))}
-          {isAccepted &&
-            action('Create Sales Order', <FileDoneOutlined />, () => a.onCreateOrder(record))}
-          {isDraft && action('Delete', <DeleteOutlined />, () => a.onDelete(record), true)}
-        </Space>
-      )
-    },
-  },
 ]
+
+const getQuotationActions = (
+  record: SalesQuotation,
+  a: RowActions,
+  hasOrder: boolean,
+): TableActionItem[] => {
+  const isSent = record.status === 'SENT'
+  const isAccepted = record.status === 'ACCEPTED'
+  const actions: TableActionItem[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <EyeOutlined />,
+      variant: 'default',
+      onClick: () => a.onView(record),
+    },
+  ]
+
+  if (!LOCKED_STATUSES.includes(record.status)) {
+    actions.push({
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditOutlined />,
+      variant: 'primary',
+      hidden: !a.can.modify,
+      onClick: () => a.onEdit(record),
+    })
+  }
+
+  if (isSent) {
+    actions.push(
+      {
+        key: 'accept',
+        label: 'Accept',
+        icon: <CheckOutlined />,
+        variant: 'success',
+        hidden: !a.can.approve,
+        onClick: () => a.onAccept(record),
+      },
+      {
+        key: 'reject',
+        label: 'Reject',
+        icon: <CloseOutlined />,
+        variant: 'danger',
+        danger: true,
+        hidden: !a.can.approve,
+        onClick: () => a.onReject(record),
+      },
+    )
+  }
+
+  // Revise is switched off for now by request; onRevise/handleAction stay wired
+  // so it is a one-block restore when the flow is signed off.
+
+  if (isAccepted && !hasOrder) {
+    actions.push({
+      key: 'create-order',
+      label: 'Create Sales Order',
+      icon: <FileDoneOutlined />,
+      variant: 'success',
+      hidden: !a.can.createOrder,
+      onClick: () => a.onCreateOrder(record),
+    })
+  }
+
+  if (isSent) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteOutlined />,
+      variant: 'danger',
+      danger: true,
+      hidden: !a.can.delete,
+      onClick: () => a.onDelete(record),
+    })
+  }
+
+  return actions
+}
 
 export const SalesQuotationList: FC = () => {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canWrite, canModify, canDelete, canApprove } = usePagePermission()
+  const { canWrite: canWriteOrders } = useModulePermission('sales-orders')
   const status = useSalesStatusFilter('quotation')
   const setStatus = useSalesStore(s => s.setStatus)
   const [page, setPage] = useState(1)
@@ -143,6 +200,12 @@ export const SalesQuotationList: FC = () => {
   const { mutateAsync: runAction } = useSalesQuotationAction()
   const { mutateAsync: createOrder } = useCreateSalesOrderFromQuotation()
   const { mutateAsync: removeQuotation } = useDeleteSalesQuotation()
+  // No flag on the quotation resource says whether an order was raised from it,
+  // so cross-reference the sales orders' sales_quotation_id instead.
+  const { data: salesOrders } = useSalesOrders({ perPage: 200 })
+  const orderedQuotationIds = new Set(
+    salesOrders.map(o => o.salesQuotationId).filter((id): id is string => !!id),
+  )
 
   // Status filtering happens server-side, so changing it has to send the
   // user back to page 1 — otherwise they can sit on a page number that
@@ -154,13 +217,13 @@ export const SalesQuotationList: FC = () => {
 
   const handleAction = async (
     record: SalesQuotation,
-    actionName: 'send' | 'accept' | 'revise',
+    actionName: 'accept' | 'revise',
     successMessage: string,
   ) => {
     try {
       const result = await runAction({ id: record.id, action: actionName })
       message.success(successMessage)
-      // A revision is a brand-new draft row — follow the user to it.
+      // A revision is a brand-new quotation row — follow the user to it.
       if (actionName === 'revise' && result) navigate(`/sales/quotations/${result.id}`)
     } catch (error) {
       message.error(getErrorMessage(error))
@@ -221,16 +284,23 @@ export const SalesQuotationList: FC = () => {
     })
   }
 
-  const columns = getColumns({
+  const columns = getColumns()
+
+  const rowActions: RowActions = {
+    can: {
+      modify: canModify,
+      delete: canDelete,
+      approve: canApprove,
+      createOrder: canWriteOrders,
+    },
     onView: record => navigate(`/sales/quotations/${record.id}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.id }),
-    onSend: record => handleAction(record, 'send', 'Quotation sent'),
     onAccept: record => handleAction(record, 'accept', 'Quotation accepted'),
     onReject: handleReject,
     onRevise: record => handleAction(record, 'revise', 'Revision created'),
     onDelete: handleDelete,
     onCreateOrder: handleCreateOrder,
-  })
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -239,13 +309,15 @@ export const SalesQuotationList: FC = () => {
         subtitle={`${meta?.total ?? 0} quotations`}
         breadcrumbs={[{ label: 'Sales' }, { label: 'Quotation' }]}
         actions={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setDrawerState({ mode: 'add' })}
-          >
-            New Quotation
-          </Button>
+          canWrite ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setDrawerState({ mode: 'add' })}
+            >
+              New Quotation
+            </Button>
+          ) : undefined
         }
       >
         <Row gutter={[12, 12]} align="middle">
@@ -289,6 +361,9 @@ export const SalesQuotationList: FC = () => {
           }}
           totalLabel="quotations"
           fillHeight
+          rowActions={record =>
+            getQuotationActions(record, rowActions, orderedQuotationIds.has(record.id))
+          }
           onRow={record => ({
             onClick: () => navigate(`/sales/quotations/${record.id}`),
             style: { cursor: 'pointer' },

@@ -2,8 +2,27 @@ import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type { ApiStockAdjustment, CreateStockAdjustmentPayload } from '@/types/api/inventory'
 
-export function listStockAdjustments(): Promise<PaginatedEnvelope<ApiStockAdjustment>> {
-  return apiRequest('/api/v1/stock-adjustments', { query: { per_page: 100 } })
+/** Mirrors StockAdjustmentController::index()'s filters. No `search` there, so the
+ *  adjustment-number match stays client-side. */
+export interface StockAdjustmentListParams {
+  status?: string | null
+  locationId?: string | null
+  fromDate?: string | null
+  toDate?: string | null
+}
+
+export function listStockAdjustments(
+  params: StockAdjustmentListParams = {},
+): Promise<PaginatedEnvelope<ApiStockAdjustment>> {
+  return apiRequest('/api/v1/stock-adjustments', {
+    query: {
+      per_page: 100,
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.locationId ? { location_id: params.locationId } : {}),
+      ...(params.fromDate ? { from_date: params.fromDate } : {}),
+      ...(params.toDate ? { to_date: params.toDate } : {}),
+    },
+  })
 }
 
 export function getStockAdjustment(id: number): Promise<ApiEnvelope<ApiStockAdjustment>> {
@@ -22,16 +41,6 @@ export function deleteStockAdjustment(id: number): Promise<void> {
 
 export function approveStockAdjustment(id: number): Promise<ApiEnvelope<ApiStockAdjustment>> {
   return apiRequest(`/api/v1/stock-adjustments/${id}/approve`, { method: 'POST' })
-}
-
-export function cancelStockAdjustment(
-  id: number,
-  remarks?: string,
-): Promise<ApiEnvelope<ApiStockAdjustment>> {
-  return apiRequest(`/api/v1/stock-adjustments/${id}/cancel`, {
-    method: 'POST',
-    body: { remarks },
-  })
 }
 
 export function updateStockAdjustment(

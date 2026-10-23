@@ -1,6 +1,7 @@
 import { App as AntApp, ConfigProvider } from 'antd'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/RequireAuth'
+import { CAN_HOVER, DismissibleMessages } from '@/components/ui/DismissibleMessages'
 import { AppLayout } from '@/layouts/AppLayout'
 import { ALL_NAV_LEAVES } from '@/layouts/navConfig'
 import {
@@ -9,10 +10,13 @@ import {
   EmployeeDetail,
   EmployeeForm,
   EmployeeList,
+  AttendanceList,
   ShiftList,
+  UserPermissionList,
 } from '@/modules/hr'
 import {
-  IssueMaterialList,
+  LocationList,
+  OpeningStockList,
   StockAdjustmentDetail,
   StockAdjustmentForm,
   StockAdjustmentList,
@@ -22,6 +26,7 @@ import {
   StockRequisitionDetail,
   StockRequisitionForm,
   StockRequisitionList,
+  StockTransferList,
 } from '@/modules/inventory'
 import {
   ConsumableList,
@@ -44,6 +49,7 @@ import {
   SupplierDetail,
   SupplierForm,
   SupplierList,
+  UomList,
   VendorDetail,
   VendorForm,
   VendorList,
@@ -67,6 +73,7 @@ import {
 import {
   BomList,
   ItemBomForm,
+  InspectionParameterList,
   ItemInspectionParameterForm,
   ItemProcessRouteForm,
   JobCardDetail,
@@ -79,7 +86,14 @@ import {
   RejectionReviewDetail,
   RejectionReviewList,
 } from '@/modules/production'
-import { FirList, IirList, IprList } from '@/modules/quality'
+import {
+  CustomerComplaintDetail,
+  CustomerComplaintList,
+  FirList,
+  IirList,
+  IprList,
+} from '@/modules/quality'
+import { ReportPage, ReportsLanding } from '@/modules/reports'
 import {
   DeliveryChallanDetail,
   DeliveryChallanForm,
@@ -87,6 +101,8 @@ import {
   SalesEnquiryDetail,
   SalesEnquiryForm,
   SalesEnquiryList,
+  SalesInvoiceDetail,
+  SalesInvoiceList,
   SalesOrderDetail,
   SalesOrderForm,
   SalesOrderList,
@@ -95,6 +111,7 @@ import {
   SalesQuotationList,
 } from '@/modules/sales'
 import { ComingSoon } from '@/pages/ComingSoon'
+import { PendingModule } from '@/pages/PendingModule'
 import { Dashboard } from '@/pages/Dashboard'
 import { Login } from '@/pages/Login'
 import { ANTD_THEME } from '@/theme/antd-theme'
@@ -106,7 +123,10 @@ const IMPLEMENTED_PATHS = new Set([
   '/hr/departments',
   '/hr/designations',
   '/hr/shifts',
+  '/hr/user-permissions',
+  '/hr/attendance',
   '/masters/customers',
+  '/masters/units',
   '/masters/suppliers',
   '/masters/vendors',
   '/masters/finished-goods',
@@ -123,12 +143,16 @@ const IMPLEMENTED_PATHS = new Set([
   '/sales/quotations',
   '/sales/orders',
   '/sales/delivery-challans',
+  '/sales/invoices',
   '/inventory/ledger',
   '/inventory/stock-balance',
   '/inventory/requisitions',
   '/inventory/adjustments',
   '/inventory/stock-issues',
+  '/inventory/transfers',
+  '/inventory/opening-stock',
   '/inventory/issue-material',
+  '/inventory/locations',
   '/production/process',
   '/production/bom',
   '/production/work-orders',
@@ -138,14 +162,26 @@ const IMPLEMENTED_PATHS = new Set([
   '/quality/ipr',
   '/quality/fir',
   '/quality/iir',
+  '/quality/customer-complaints',
+  '/quality/inspection-parameters',
 ])
 
 function App() {
   return (
     <ConfigProvider theme={ANTD_THEME}>
-      {/* Longer than antd's 3s default — API validation errors can be a full
-          sentence and were dismissing before they could be read. */}
-      <AntApp message={{ duration: 5 }}>
+      {/* duration: longer than antd's 3s default — API validation errors can be
+          a full sentence and were dismissing before they could be read.
+
+          pauseOnHover: antd defaults this to true, which on a touch screen is a
+          trap — tapping a toast latches :hover, so the countdown pauses and the
+          toast sits there until something else is tapped. That read as "it stays
+          for 15 seconds and won't close", because trying to dismiss it was what
+          kept it alive. Keep the pause only where a real pointer can hover.
+
+          maxCount: caps the stack so a burst of row-level errors can't bury the
+          screen — and keeps "tap to dismiss" to a predictable handful. */}
+      <AntApp message={{ duration: 5, pauseOnHover: CAN_HOVER, maxCount: 3 }}>
+        <DismissibleMessages />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -159,6 +195,8 @@ function App() {
                 <Route path="/hr/departments" element={<DepartmentList />} />
                 <Route path="/hr/designations" element={<DesignationList />} />
                 <Route path="/hr/shifts" element={<ShiftList />} />
+                <Route path="/hr/user-permissions" element={<UserPermissionList />} />
+                <Route path="/hr/attendance" element={<AttendanceList />} />
 
                 <Route path="/masters/customers" element={<CustomerList />} />
                 <Route path="/masters/customers/new" element={<CustomerForm />} />
@@ -196,6 +234,8 @@ function App() {
                   <Route path="fixtures" element={<FixtureList />} />
                   <Route path="dies-blocks" element={<DieBlockList />} />
                 </Route>
+
+                <Route path="/masters/units" element={<UomList />} />
 
                 <Route path="/hsn-category-grade/hsn-codes" element={<HsnCodeList />} />
                 <Route path="/hsn-category-grade/item-categories" element={<ItemCategoryList />} />
@@ -248,6 +288,9 @@ function App() {
                 <Route path="/sales/delivery-challans/new" element={<DeliveryChallanForm />} />
                 <Route path="/sales/delivery-challans/:id" element={<DeliveryChallanDetail />} />
 
+                <Route path="/sales/invoices" element={<SalesInvoiceList />} />
+                <Route path="/sales/invoices/:id" element={<SalesInvoiceDetail />} />
+
                 <Route path="/inventory/ledger" element={<StockLedger />} />
                 <Route path="/inventory/stock-balance" element={<StockBalance />} />
 
@@ -260,8 +303,14 @@ function App() {
                 <Route path="/inventory/adjustments/new" element={<StockAdjustmentForm />} />
                 <Route path="/inventory/adjustments/:id" element={<StockAdjustmentDetail />} />
 
+                <Route path="/inventory/locations" element={<LocationList />} />
                 <Route path="/inventory/stock-issues" element={<StockIssueList />} />
-                <Route path="/inventory/issue-material" element={<IssueMaterialList />} />
+                <Route path="/inventory/transfers" element={<StockTransferList />} />
+                <Route path="/inventory/opening-stock" element={<OpeningStockList />} />
+                <Route
+                  path="/inventory/issue-material"
+                  element={<Navigate to="/inventory/stock-issues" replace />}
+                />
 
                 <Route path="/production/process" element={<ProcessList />} />
                 <Route path="/production/bom" element={<BomList />} />
@@ -290,6 +339,19 @@ function App() {
                 <Route path="/quality/ipr" element={<IprList />} />
                 <Route path="/quality/fir" element={<FirList />} />
                 <Route path="/quality/iir" element={<IirList />} />
+                <Route
+                  path="/quality/inspection-parameters"
+                  element={<InspectionParameterList />}
+                />
+                <Route path="/quality/customer-complaints" element={<CustomerComplaintList />} />
+                <Route
+                  path="/quality/customer-complaints/:id"
+                  element={<CustomerComplaintDetail />}
+                />
+
+                {/* One generic page serves every report; the slug picks its config. */}
+                <Route path="/reports" element={<ReportsLanding />} />
+                <Route path="/reports/:slug" element={<ReportPage />} />
 
                 {ALL_NAV_LEAVES.filter(leaf => !IMPLEMENTED_PATHS.has(leaf.path)).map(leaf => (
                   <Route
@@ -298,6 +360,9 @@ function App() {
                     element={<ComingSoon title={leaf.label} />}
                   />
                 ))}
+                {/* BE menu modules this app has no screen for yet (see sidebarNav). */}
+                <Route path="/pending/:moduleKey" element={<PendingModule />} />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Route>

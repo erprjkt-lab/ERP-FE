@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -12,7 +13,8 @@ import {
 } from '../hooks/useMaterialGrades'
 
 export const MaterialGradeList: FC = () => {
-  const { data: materialGrades = [], isLoading } = useMaterialGradeList()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: materialGrades = [], meta, isLoading } = useMaterialGradeList(page, pageSize)
   const { mutateAsync: createMaterialGrade } = useCreateMaterialGrade()
   const { mutateAsync: updateMaterialGrade } = useUpdateMaterialGrade()
   const { mutateAsync: deleteMaterialGrade } = useDeleteMaterialGrade()
@@ -26,6 +28,7 @@ export const MaterialGradeList: FC = () => {
       addButtonLabel="Add Material Grade"
       modalWidth={640}
       data={materialGrades}
+      pagination={paginationProps(meta?.total)}
       loading={isLoading}
       columns={[
         { title: 'Grade Name', dataIndex: 'materialGrade', key: 'materialGrade' },
@@ -41,7 +44,7 @@ export const MaterialGradeList: FC = () => {
         },
       ]}
       renderFields={() => (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="Grade Name"
             name="materialGrade"

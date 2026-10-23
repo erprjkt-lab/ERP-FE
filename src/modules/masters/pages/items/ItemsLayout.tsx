@@ -1,6 +1,7 @@
 import { Menu, Tag } from 'antd'
 import type { FC } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { ITEM_CATEGORY_NAV } from './itemCategoryNav'
 
 export const ItemsLayout: FC = () => {
@@ -19,11 +20,27 @@ export const ItemsLayout: FC = () => {
     ),
   }))
 
+  // A fixed 220px rail beside the content leaves ~115px for the table on a
+  // phone. Below md the rail becomes a horizontal scrolling strip above the
+  // content instead — the same shape the Reports rail already uses.
+  const isMobile = useIsMobile()
+
   return (
-    <div style={{ height: '100%', display: 'flex', gap: 24 }}>
-      <div style={{ width: 220, flexShrink: 0 }}>
+    <div
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 12 : 24,
+        minWidth: 0,
+      }}
+    >
+      <div
+        className={isMobile ? 'erp-items-rail is-horizontal' : undefined}
+        style={isMobile ? undefined : { width: 220, flexShrink: 0 }}
+      >
         <Menu
-          mode="inline"
+          mode={isMobile ? 'horizontal' : 'inline'}
           selectedKeys={activeSegment ? [activeSegment] : []}
           items={menuItems}
           onClick={({ key }) => navigate(`/masters/items/${key}`)}

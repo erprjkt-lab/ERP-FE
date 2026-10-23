@@ -1,8 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { finishedGoodsApi } from '@/api/items'
 import type { ApiItemCategory, ApiItemMaster, ApiMaterialGrade, ApiUom } from '@/types/api/masters'
 import type { FinishedGood } from '@/types/masters'
-import { useMastersLocalStore } from '../store/mastersLocalStore'
 import type { FinishedGoodInput } from '../store/mastersStore'
 import { useItemCategories } from './useItemCategories'
 import { useMaterialGrades } from './useMaterialGrades'
@@ -19,7 +18,6 @@ function toFinishedGood(
   categoriesById: Map<string, ApiItemCategory>,
   uomsById: Map<string, ApiUom>,
   materialGradesById: Map<string, ApiMaterialGrade>,
-  imageUrl: string | undefined,
 ): FinishedGood {
   const categoryId = idOrNull(api.category_id)
   const uomId = idOrNull(api.uom_id)
@@ -40,9 +38,9 @@ function toFinishedGood(
     gstPercent: api.gst_percent ?? undefined,
     description: api.description ?? undefined,
     status: api.status === 0 ? 'inactive' : 'active',
-    imageUrl,
+    imageUrl: api.image ?? undefined,
     customerId: api.party_id ? String(api.party_id) : null,
-    customerName: undefined,
+    customerName: api.party_name ?? undefined,
     customerPartNo: api.customer_part_no ?? undefined,
     drawingNo: api.drawing_no ?? undefined,
     drawingRevision: api.drawing_revision ?? undefined,
@@ -72,6 +70,9 @@ function toPayload(input: Partial<FinishedGoodInput>) {
     gst_percent: input.gstPercent,
     description: input.description,
     status: input.status === 'inactive' ? 0 : 1,
+    batch_tracking: input.batchTracking,
+    heat_tracking: input.heatTracking,
+    serial_tracking: input.serialTracking,
     party_id: input.customerId ? Number(input.customerId) : null,
     customer_part_no: input.customerPartNo,
     drawing_no: input.drawingNo,
@@ -83,10 +84,10 @@ function toPayload(input: Partial<FinishedGoodInput>) {
   }
 }
 
-function useLookupMaps() {
-  const { data: categories } = useItemCategories()
-  const { data: uoms } = useUoms()
-  const { data: materialGrades } = useMaterialGrades()
+function useLookupMaps(enabled: boolean) {
+  const { data: categories } = useItemCategories(1, 200, enabled)
+  const { data: uoms } = useUoms(1, 200, enabled)
+  const { data: materialGrades } = useMaterialGrades(1, 200, enabled)
   return {
     categoriesById: new Map(categories.map(c => [String(c.id), c])),
     uomsById: new Map(uoms.map(u => [String(u.id), u])),
@@ -94,24 +95,26 @@ function useLookupMaps() {
   }
 }
 
-export function useFinishedGoods() {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
-  const itemImages = useMastersLocalStore(s => s.itemImages)
+/** `withNames` resolves category/uom/material-grade ids to names, which costs a
+ *  fetch of each of those masters. A picker that shows only code and name
+ *  passes false and skips all of them. */
+export function useFinishedGoods(page = 1, perPage = 100, withNames = true) {
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(withNames)
   const query = useQuery({
-    queryKey: ['finishedGoods'],
-    queryFn: async () => (await finishedGoodsApi.list()).data,
+    queryKey: ['finishedGoods', page, perPage],
+    queryFn: () => finishedGoodsApi.list(page, perPage),
+    placeholderData: keepPreviousData,
   })
 
-  const data = query.data?.map(api =>
-    toFinishedGood(api, categoriesById, uomsById, materialGradesById, itemImages[String(api.id)]),
+  const data = query.data?.data.map(api =>
+    toFinishedGood(api, categoriesById, uomsById, materialGradesById),
   )
 
-  return { ...query, data, isLoading: query.isLoading }
+  return { ...query, data, meta: query.data?.meta, isLoading: query.isLoading }
 }
 
 export function useFinishedGood(id: string | undefined) {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
-  const itemImages = useMastersLocalStore(s => s.itemImages)
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(true)
   const query = useQuery({
     queryKey: ['finishedGoods', id],
     queryFn: () => finishedGoodsApi.get(Number(id)),
@@ -120,13 +123,7 @@ export function useFinishedGood(id: string | undefined) {
 
   const data =
     query.data && id
-      ? toFinishedGood(
-          query.data.data,
-          categoriesById,
-          uomsById,
-          materialGradesById,
-          itemImages[id],
-        )
+      ? toFinishedGood(query.data.data, categoriesById, uomsById, materialGradesById)
       : undefined
 
   return { ...query, data, isLoading: query.isLoading }
@@ -134,12 +131,9 @@ export function useFinishedGood(id: string | undefined) {
 
 export function useCreateFinishedGood() {
   const queryClient = useQueryClient()
-  const setItemImage = useMastersLocalStore(s => s.setItemImage)
   return useMutation({
     mutationFn: async (input: FinishedGoodInput) => {
-      const result = await finishedGoodsApi.create(toPayload(input))
-      setItemImage(String(result.data.id), input.imageUrl)
-      return result
+      return await finishedGoodsApi.create(toPayload(input))
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['finishedGoods'] }),
   })
@@ -147,12 +141,9 @@ export function useCreateFinishedGood() {
 
 export function useUpdateFinishedGood() {
   const queryClient = useQueryClient()
-  const setItemImage = useMastersLocalStore(s => s.setItemImage)
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<FinishedGoodInput> }) => {
-      const result = await finishedGoodsApi.update(Number(id), toPayload(payload))
-      if ('imageUrl' in payload) setItemImage(id, payload.imageUrl)
-      return result
+      return await finishedGoodsApi.update(Number(id), toPayload(payload))
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['finishedGoods'] })
@@ -163,12 +154,8 @@ export function useUpdateFinishedGood() {
 
 export function useDeleteFinishedGood() {
   const queryClient = useQueryClient()
-  const removeItemImage = useMastersLocalStore(s => s.removeItemImage)
   return useMutation({
-    mutationFn: async (id: string) => {
-      await finishedGoodsApi.remove(Number(id))
-      removeItemImage(id)
-    },
+    mutationFn: (id: string) => finishedGoodsApi.remove(Number(id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['finishedGoods'] }),
   })
 }

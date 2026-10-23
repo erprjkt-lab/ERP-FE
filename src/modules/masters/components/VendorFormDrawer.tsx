@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
-import type { VendorType } from '@/types/masters'
 import {
   DEFAULT_COUNTRY_NAME,
   GST_REGEX,
@@ -12,7 +11,6 @@ import {
   MASTER_STATUS_OPTIONS,
   MOBILE_REGEX,
   PINCODE_REGEX,
-  VENDOR_TYPE_OPTIONS,
 } from '../constants'
 import { useCities } from '../hooks/useCities'
 import { useCountries } from '../hooks/useCountries'
@@ -20,8 +18,7 @@ import { useStates } from '../hooks/useStates'
 import { useCreateVendor, useUpdateVendor, useVendor } from '../hooks/useVendors'
 import type { VendorInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
-
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface VendorFormDrawerProps {
   open: boolean
@@ -30,12 +27,12 @@ export interface VendorFormDrawerProps {
   vendorId?: string
 }
 
-export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, vendorId }) => {
+const VendorFormDrawerInner: FC<VendorFormDrawerProps> = ({ open, onClose, vendorId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!vendorId
 
-  const { data: vendor } = useVendor(vendorId)
+  const { data: vendor, isLoading: loadingRecord } = useVendor(vendorId)
   const countryId = Form.useWatch('countryId', form) as string | undefined
   const stateId = Form.useWatch('stateId', form) as string | undefined
   const { data: countries = [] } = useCountries()
@@ -46,7 +43,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   useEffect(() => {
     if (!open) return
@@ -54,7 +51,6 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
       form.setFieldsValue({
         code: vendor.code,
         name: vendor.name,
-        vendorType: vendor.vendorType,
         status: vendor.status,
         contactPerson: vendor.contactPerson,
         mobile: vendor.mobile,
@@ -63,7 +59,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
         address: vendor.address,
         countryId: vendor.countryId ?? undefined,
         stateId: vendor.stateId ?? undefined,
-        cityId: vendor.cityId ?? undefined,
+        cityName: vendor.cityName,
         pincode: vendor.pincode,
         gstNumber: vendor.gstNumber,
         bankName: vendor.bankName,
@@ -101,7 +97,6 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
 
     const payload = {
       name: values.name as string,
-      vendorType: (values.vendorType as VendorType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -112,8 +107,8 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       bankName: values.bankName as string | undefined,
@@ -137,6 +132,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Vendor' : 'Add Vendor'}
       status={isEdit ? (vendor?.status ?? 'active') : undefined}
       open={open}
@@ -149,17 +145,11 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
       <Form form={form} layout="vertical">
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Vendor Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Vendor Name"
               name="name"
               rules={[{ required: true, message: 'Vendor name is required' }]}
-            />
-            <FormField
-              label="Vendor Type"
-              name="vendorType"
-              fieldType="select"
-              options={VENDOR_TYPE_OPTIONS}
             />
             <FormField
               label="Contact Person"
@@ -197,7 +187,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
             fieldType="textarea"
             rules={[{ required: true, message: 'Address is required' }]}
           />
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <Form.Item
               label="Country"
               name="countryId"
@@ -215,7 +205,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
                 }
                 onChange={() => {
                   form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
+                  form.setFieldValue('cityName', undefined)
                 }}
               />
             </Form.Item>
@@ -234,12 +224,12 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                onChange={() => form.setFieldValue('cityId', undefined)}
+                onChange={() => form.setFieldValue('cityName', undefined)}
               />
             </Form.Item>
             <FormField
               label="City"
-              name="cityId"
+              name="cityName"
               fieldType="select"
               options={cityOptions}
               rules={[{ required: true, message: 'City is required' }]}
@@ -261,7 +251,7 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
         </FormSection>
 
         <FormSection title="Banking">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Bank Name" name="bankName" />
             <FormField label="Account Number" name="accountNumber" />
             <FormField
@@ -279,3 +269,5 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
     </FormDrawer>
   )
 }
+
+export const VendorFormDrawer = deferMount(VendorFormDrawerInner)

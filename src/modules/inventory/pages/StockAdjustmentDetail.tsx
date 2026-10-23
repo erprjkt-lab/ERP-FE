@@ -1,8 +1,9 @@
-import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
+import { ArrowLeftOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -10,20 +11,17 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { StockAdjustmentItem } from '@/types/inventory'
 import { StockAdjustmentFormDrawer } from '../components/StockAdjustmentFormDrawer'
 import { STOCK_ADJUSTMENT_STATUS_BADGE, STOCK_ADJUSTMENT_STATUS_LABELS } from '../constants'
-import {
-  useApproveStockAdjustment,
-  useCancelStockAdjustment,
-  useStockAdjustment,
-} from '../hooks/useStockAdjustments'
+import { useApproveStockAdjustment, useStockAdjustment } from '../hooks/useStockAdjustments'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 export const StockAdjustmentDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canApprove } = usePagePermission()
   const { data: adjustment, isLoading } = useStockAdjustment(id)
   const { mutateAsync: approve, isPending: approving } = useApproveStockAdjustment()
-  const { mutateAsync: cancel, isPending: cancelling } = useCancelStockAdjustment()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   if (!adjustment) {
@@ -32,7 +30,11 @@ export const StockAdjustmentDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/inventory/adjustments')}>
           Back to Stock Adjustments
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Adjustment not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Adjustment not found.</p>
+        )}
       </div>
     )
   }
@@ -47,32 +49,6 @@ export const StockAdjustmentDetail: FC = () => {
         try {
           await approve(adjustment.id)
           message.success('Stock adjustment approved and posted to the ledger')
-        } catch (error) {
-          message.error(getErrorMessage(error))
-        }
-      },
-    })
-  }
-
-  const handleCancel = () => {
-    let remarks = ''
-    modal.confirm({
-      title: 'Cancel this adjustment?',
-      content: (
-        <Input.TextArea
-          placeholder="Reason (optional)"
-          rows={3}
-          onChange={e => {
-            remarks = e.target.value
-          }}
-        />
-      ),
-      okText: 'Cancel Adjustment',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await cancel({ id: adjustment.id, remarks })
-          message.success('Stock adjustment cancelled')
         } catch (error) {
           message.error(getErrorMessage(error))
         }
@@ -127,22 +103,23 @@ export const StockAdjustmentDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/inventory/adjustments')}>
               Back
             </Button>
-            {adjustment.status === 'DRAFT' && (
+            {adjustment.status === 'PENDING_APPROVAL' && (
               <>
-                <Button danger icon={<CloseOutlined />} loading={cancelling} onClick={handleCancel}>
-                  Cancel
-                </Button>
-                <Button icon={<EditOutlined />} onClick={() => setDrawerOpen(true)}>
-                  Edit
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  loading={approving}
-                  onClick={handleApprove}
-                >
-                  Approve
-                </Button>
+                {canModify && (
+                  <Button icon={<EditOutlined />} onClick={() => setDrawerOpen(true)}>
+                    Edit
+                  </Button>
+                )}
+                {canApprove && (
+                  <Button
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    loading={approving}
+                    onClick={handleApprove}
+                  >
+                    Approve
+                  </Button>
+                )}
               </>
             )}
           </Space>
@@ -160,7 +137,7 @@ export const StockAdjustmentDetail: FC = () => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Adjustment Date">
-                {adjustment.adjustmentDate}
+                {formatDateTime(adjustment.adjustmentDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Location">
                 {adjustment.locationName ?? '—'}
@@ -170,7 +147,7 @@ export const StockAdjustmentDetail: FC = () => {
                 {adjustment.approvedBy ?? '—'}
               </Descriptions.Item>
               <Descriptions.Item label="Approved At">
-                {adjustment.approvedAt ?? '—'}
+                {formatDateTime(adjustment.approvedAt)}
               </Descriptions.Item>
               <Descriptions.Item label="Remarks" span="filled">
                 {adjustment.remarks ?? '—'}

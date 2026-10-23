@@ -2,6 +2,7 @@ import { App, Button, Col, DatePicker, Form, Input, InputNumber, Row, Select, Sp
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { FormSection } from '@/components/ui/FormSection'
 import { useInspectionParameters } from '@/modules/production/hooks/useInspectionParameters'
@@ -46,6 +47,8 @@ export const JobCardInspectionReports: FC<JobCardInspectionReportsProps> = ({
   const { data: allReports = [], isLoading } = useInspectionReportsForJobCard(jobCardId)
   const { mutateAsync: createReport, isPending: creating } = useCreateInspectionReport(jobCardId)
 
+  // IPR and FIR are separate rbac modules; the prop says which one this tab is.
+  const { canWrite: canCreate } = useModulePermission(reportType.toLowerCase())
   const reports = allReports.filter(r => r.reportType === reportType)
 
   // Mirrors the BE's fillable-parameters rule (InspectionReportService): a report
@@ -100,7 +103,7 @@ export const JobCardInspectionReports: FC<JobCardInspectionReportsProps> = ({
           <Select
             value={active.id}
             onChange={setActiveReportId}
-            style={{ width: 280, marginBottom: 16 }}
+            style={{ width: '100%', maxWidth: 280, marginBottom: 16 }}
             options={reports.map(r => ({
               label: `${r.reportNumber}${r.processName ? ` — ${r.processName}` : ''}`,
               value: r.id,
@@ -177,14 +180,16 @@ export const JobCardInspectionReports: FC<JobCardInspectionReportsProps> = ({
         </FormSection>
       </Form>
       <Space style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-        <Button
-          type="primary"
-          loading={creating}
-          disabled={processOptions.length === 0}
-          onClick={handleCreate}
-        >
-          Create {reportType}
-        </Button>
+        {canCreate && (
+          <Button
+            type="primary"
+            loading={creating}
+            disabled={processOptions.length === 0}
+            onClick={handleCreate}
+          >
+            Create {reportType}
+          </Button>
+        )}
       </Space>
       {processOptions.length === 0 && (
         <span style={{ color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>

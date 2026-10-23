@@ -2,8 +2,8 @@ import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type { ApiShift, CreateShiftPayload, UpdateShiftPayload } from '@/types/api/hr'
 
-export function listShifts(page = 1): Promise<PaginatedEnvelope<ApiShift>> {
-  return apiRequest('/api/v1/shifts', { query: { page, per_page: 100 } })
+export function listShifts(page = 1, perPage = 100): Promise<PaginatedEnvelope<ApiShift>> {
+  return apiRequest('/api/v1/shifts', { query: { page, per_page: perPage } })
 }
 
 export function getShift(id: number): Promise<ApiEnvelope<ApiShift>> {

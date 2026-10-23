@@ -1,11 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { listUoms } from '@/api/uom'
 
-export function useUoms() {
+/** No-arg calls keep the single fetch the UOM dropdowns rely on. */
+export function useUoms(page = 1, perPage = 200, enabled = true) {
   const { data, isLoading } = useQuery({
-    queryKey: ['masters', 'uoms'],
-    queryFn: listUoms,
-    staleTime: Infinity,
+    queryKey: ['masters', 'uoms', page, perPage],
+    queryFn: () => listUoms(page, perPage),
+    placeholderData: keepPreviousData,
+    enabled,
   })
-  return { data: data?.data ?? [], isLoading }
+  return { data: data?.data ?? [], meta: data?.meta, isLoading }
 }

@@ -7,7 +7,6 @@ import {
   getInspectionReport,
   listIncomingInspectionReportsForGrnItem,
   listInspectionReportsForJobCard,
-  submitInspectionReport,
 } from '@/api/inspectionReports'
 import { REPORT_TYPE_FIR, REPORT_TYPE_IIR, REPORT_TYPE_IPR, RESULT_PASS } from '@/types/api/quality'
 import type {
@@ -17,7 +16,12 @@ import type {
   CreateIncomingInspectionReportPayload,
   CreateInspectionReportPayload,
 } from '@/types/api/quality'
-import type { InspectionReading, InspectionReport, InspectionReportType } from '@/types/quality'
+import type {
+  InspectionReading,
+  InspectionReport,
+  InspectionReportStatus,
+  InspectionReportType,
+} from '@/types/quality'
 
 const TYPE_FROM_API: Record<number, InspectionReportType> = {
   [REPORT_TYPE_IPR]: 'IPR',
@@ -31,7 +35,11 @@ export const TYPE_TO_API: Record<InspectionReportType, number> = {
   IIR: REPORT_TYPE_IIR,
 }
 
-const STATUS_FROM_API = ['DRAFT', 'SUBMITTED', 'APPROVED'] as const
+// ERP-BE InspectionReport: 1 = SUBMITTED, 2 = APPROVED (reports are created submitted).
+const STATUS_FROM_API: Record<number, InspectionReportStatus> = {
+  1: 'SUBMITTED',
+  2: 'APPROVED',
+}
 
 function toReading(api: ApiInspectionReading): InspectionReading {
   return {
@@ -64,7 +72,7 @@ function toReport(api: ApiInspectionReport): InspectionReport {
     okQty: api.ok_qty != null ? Number(api.ok_qty) : undefined,
     rejectedQty: api.rejected_qty != null ? Number(api.rejected_qty) : undefined,
     attachmentPath: api.attachment_path ?? undefined,
-    status: STATUS_FROM_API[api.status] ?? 'DRAFT',
+    status: STATUS_FROM_API[api.status] ?? 'SUBMITTED',
     approvedBy: api.approved_by != null ? String(api.approved_by) : null,
     approvedAt: api.approved_at,
     readings: (api.readings ?? []).map(toReading),
@@ -134,14 +142,6 @@ export function useCreateIncomingInspectionReport(grnItemId: string | undefined)
       toReport((await createIncomingInspectionReport(Number(grnItemId), payload)).data),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['quality', 'grnItemReports', grnItemId] }),
-  })
-}
-
-export function useSubmitInspectionReport() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string) => toReport((await submitInspectionReport(Number(id))).data),
-    onSuccess: report => invalidateReportQueries(queryClient, report),
   })
 }
 

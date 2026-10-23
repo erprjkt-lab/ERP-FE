@@ -8,25 +8,16 @@ import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { useRoles } from '@/hooks/useRoles'
 import type { CreateEmployeePayload, UpdateEmployeePayload } from '@/types/api/hr'
-import {
-  BRANCH_OPTIONS,
-  EMPLOYEE_STATUS_OPTIONS,
-  EMPLOYMENT_TYPE_OPTIONS,
-  GENDER_OPTIONS,
-} from '../constants'
+import { EMPLOYEE_STATUS_OPTIONS, EMPLOYMENT_TYPE_OPTIONS, GENDER_OPTIONS } from '../constants'
 import { useDepartments } from '../hooks/useDepartments'
 import { useDesignations } from '../hooks/useDesignations'
 import { useCreateEmployee, useEmployee, useUpdateEmployee } from '../hooks/useEmployees'
 import { useShifts } from '../hooks/useShifts'
 import type { EmployeeExtra } from '../store/hrLocalStore'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
-
-// Two fields per row (instead of the full-page form's one/three-column
-// layout) so the whole form fits a wide drawer without the long single-column
-// scroll a default-width drawer would force.
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
 
 export interface EmployeeFormDrawerProps {
   open: boolean
@@ -35,12 +26,12 @@ export interface EmployeeFormDrawerProps {
   employeeId?: string
 }
 
-export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose, employeeId }) => {
+const EmployeeFormDrawerInner: FC<EmployeeFormDrawerProps> = ({ open, onClose, employeeId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!employeeId
 
-  const { data: employee } = useEmployee(employeeId)
+  const { data: employee, isLoading: loadingRecord } = useEmployee(employeeId)
   const { data: departments = [] } = useDepartments()
   const { data: designations = [] } = useDesignations()
   const { data: shifts = [] } = useShifts()
@@ -60,7 +51,6 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
         phone: employee.phone,
         gender: employee.gender,
         dateOfBirth: employee.dateOfBirth ? dayjs(employee.dateOfBirth, DATE_FORMAT) : undefined,
-        branch: employee.branch,
         departmentId: employee.departmentId ?? undefined,
         designationId: employee.designationId ?? undefined,
         shiftId: employee.shiftId ?? undefined,
@@ -109,7 +99,6 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
       phone_number: values.phone as string,
       gender: (values.gender as UpdateEmployeePayload['gender']) ?? null,
       date_of_birth: values.dateOfBirth ? (values.dateOfBirth as Dayjs).format(DATE_FORMAT) : null,
-      branch: values.branch ? Number(values.branch) : null,
       department_id: values.departmentId ? Number(values.departmentId) : null,
       designation_id: values.designationId ? Number(values.designationId) : null,
       shift_id: values.shiftId ? Number(values.shiftId) : null,
@@ -147,6 +136,7 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Employee' : 'Add Employee'}
       status={isEdit ? (employee?.status ?? 'active') : undefined}
       open={open}
@@ -158,7 +148,7 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
     >
       <Form form={form} layout="vertical" initialValues={{ status: 'active' }}>
         <FormSection title="Personal Information">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Employee Name"
               name="fullName"
@@ -189,7 +179,7 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Employment Information">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Department" name="departmentId">
               <Select
                 placeholder="Select department"
@@ -210,13 +200,6 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
               fieldType="select"
               placeholder="Select designation"
               options={designationOptions}
-            />
-            <FormField
-              label="Branch"
-              name="branch"
-              fieldType="select"
-              placeholder="Select branch"
-              options={BRANCH_OPTIONS}
             />
             <FormField
               label="Shift"
@@ -250,7 +233,7 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Compensation & Account">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Salary (INR)" name="salary" fieldType="number" placeholder="0" />
             <FormField label="Location" name="location" placeholder="City / Office" />
             {isEdit && <FormField label="Employee Code" name="employeeCode" disabled />}
@@ -272,3 +255,5 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
     </FormDrawer>
   )
 }
+
+export const EmployeeFormDrawer = deferMount(EmployeeFormDrawerInner)

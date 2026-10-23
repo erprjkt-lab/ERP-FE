@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useServerPagination } from '@/hooks/useServerPagination'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
 import type { Designation } from '@/types/hr'
@@ -11,7 +12,8 @@ import {
 } from '../hooks/useDesignations'
 
 export const DesignationList: FC = () => {
-  const { data: designations = [], isLoading } = useDesignations()
+  const { page, pageSize, paginationProps } = useServerPagination()
+  const { data: designations = [], meta, isLoading } = useDesignations(page, pageSize)
   const { data: departments = [] } = useDepartments()
   const { mutateAsync: createDesignation } = useCreateDesignation()
   const { mutateAsync: updateDesignation } = useUpdateDesignation()
@@ -27,6 +29,7 @@ export const DesignationList: FC = () => {
       totalLabel="designations"
       addButtonLabel="Add Designation"
       data={designations}
+      pagination={paginationProps(meta?.total)}
       loading={isLoading}
       columns={[
         { title: 'Title', dataIndex: 'title', key: 'title' },

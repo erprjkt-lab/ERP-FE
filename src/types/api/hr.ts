@@ -111,3 +111,56 @@ export interface CreateShiftPayload {
 }
 
 export type UpdateShiftPayload = Partial<CreateShiftPayload>
+
+/** Attendance status as ERP-BE stores it (App\Models\Attendance::STATUS_*). */
+export type ApiAttendanceStatus = 1 | 2 | 3 | 4
+
+export interface ApiAttendance {
+  id: number
+  employee_id: number
+  employee_name?: string | null
+  attendance_date: string
+  status: ApiAttendanceStatus
+  status_code: string | null
+  status_label: string | null
+  check_in_time: string | null
+  check_out_time: string | null
+  remarks: string | null
+  created_at?: string
+}
+
+export interface BulkAttendancePayload {
+  attendance_date: string
+  entries: { employee_id: number; status: ApiAttendanceStatus; remarks?: string | null }[]
+}
+
+export interface AttendanceListParams {
+  employee_id?: number
+  department_id?: number
+  from_date?: string
+  to_date?: string
+  per_page?: number
+}
+
+export interface MonthlyAttendanceParams {
+  month: number
+  year: number
+  employee_id?: number
+  department_id?: number
+}
+
+/** `days` is keyed by day-of-month as a string ("1".."31"); the value is the
+ *  status code ("P"/"A"/"HD"/"L") or '' for a day nobody marked. */
+export interface ApiMonthlyAttendanceRow {
+  employee_id: number
+  employee_name: string
+  days: Record<string, string>
+  summary: { present: number; absent: number; half_day: number; leave: number; not_marked: number }
+}
+
+export interface ApiMonthlyAttendanceReport {
+  month: number
+  year: number
+  days_in_month: number
+  employees: ApiMonthlyAttendanceRow[]
+}

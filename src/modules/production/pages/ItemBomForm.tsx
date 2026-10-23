@@ -32,6 +32,7 @@ export const ItemBomForm: FC = () => {
 
   return (
     <SimpleMasterList<ItemBomLine>
+      moduleKey="item-bom"
       title={finishedGood ? `Item BOM — ${finishedGood.code} · ${finishedGood.name}` : 'Item BOM'}
       breadcrumbParent={{ label: 'BOM', href: '/production/bom' }}
       breadcrumbLabel="Item BOM"
@@ -59,7 +60,7 @@ export const ItemBomForm: FC = () => {
         },
       ]}
       renderFields={() => (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div className="erp-form-grid">
           <FormField
             label="Component Item"
             name="componentItemId"

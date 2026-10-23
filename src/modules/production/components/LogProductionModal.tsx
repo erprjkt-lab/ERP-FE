@@ -12,6 +12,7 @@ import type { ProcessLog } from '@/types/production'
 import { useCreateProcessLog } from '../hooks/useProcessLogs'
 import type { StepProgress } from '../utils/jobCardProgress'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 export interface LogProductionModalProps {
   open: boolean
@@ -22,6 +23,12 @@ export interface LogProductionModalProps {
   nextProcessName?: string
   outputLocationName?: string
   hasMaterialIssued: boolean
+  /** Set when logging a redo: tags the log as this approved Rework review's qty. */
+  /** True when logging the redo rather than the first pass. ERP-BE keys the
+   *  whole rework behaviour off this; the review id below is a label only. */
+  isRework?: boolean
+  /** Optional classification tag when the step has exactly one review waiting. */
+  reworkReviewId?: string
 }
 
 interface LogFormValues {
@@ -31,7 +38,6 @@ interface LogFormValues {
   bypassedQty?: number
   productionMinutes?: number
   downtimeMinutes?: number
-  processorEmployeeId: string
   operatorId: string
   shiftId: string
   remark?: string
@@ -46,6 +52,8 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
   nextProcessName,
   outputLocationName,
   hasMaterialIssued,
+  isRework = false,
+  reworkReviewId,
 }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm<LogFormValues>()
@@ -94,13 +102,17 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
       await createLog({
         process_id: Number(step.step.processId),
         performed_by_type: 1,
-        processor_employee_id: Number(values.processorEmployeeId),
+        // No separate "Processed By" picker: the operator is the person who ran
+        // the process, and ERP-BE requires a processor on every in-house log.
+        processor_employee_id: Number(values.operatorId),
         operator_id: Number(values.operatorId),
         shift_id: Number(values.shiftId),
         log_date: values.logDate.format('YYYY-MM-DD'),
         ok_qty: okQty,
         rejected_qty: values.rejectedQty ?? 0,
         bypassed_qty: values.bypassedQty ?? 0,
+        inbound_rework_review_id: reworkReviewId ? Number(reworkReviewId) : undefined,
+        is_rework: isRework,
         production_seconds: values.productionMinutes ? values.productionMinutes * 60 : 0,
         downtime_seconds: values.downtimeMinutes ? values.downtimeMinutes * 60 : 0,
         remark: values.remark || undefined,
@@ -116,7 +128,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
   const stepLogs = logs.filter(entry => entry.processId === step?.step.processId)
 
   const columns: TableColumnsType<ProcessLog> = [
-    { title: 'Date', dataIndex: 'logDate', key: 'logDate', width: 110 },
+    { title: 'Date', dataIndex: 'logDate', key: 'logDate', width: 110, render: formatDateTime },
     { title: 'OK', dataIndex: 'okQty', key: 'okQty', width: 70 },
     { title: 'Rejected', dataIndex: 'rejectedQty', key: 'rejectedQty', width: 90 },
     { title: 'Operator', dataIndex: 'operatorName', key: 'operatorName' },
@@ -127,7 +139,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
     <Modal
       title={
         <Space wrap>
-          <span>Log Production</span>
+          <span>{isRework ? 'Log Rework' : 'Log Production'}</span>
           {step && <Tag color="blue">{step.step.processName}</Tag>}
           <Tag color={pendingQty > 0 ? 'orange' : 'default'}>Pending: {pendingQty}</Tag>
         </Space>
@@ -239,16 +251,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col xs={24} sm={8}>
-            <FormField
-              label="Processed By"
-              name="processorEmployeeId"
-              fieldType="select"
-              options={employeeOptions}
-              rules={[{ required: true, message: 'Processor is required' }]}
-            />
-          </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <FormField
               label="Operator"
               name="operatorId"
@@ -257,7 +260,7 @@ export const LogProductionModal: FC<LogProductionModalProps> = ({
               rules={[{ required: true, message: 'Operator is required' }]}
             />
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <FormField
               label="Shift"
               name="shiftId"

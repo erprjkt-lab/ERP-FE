@@ -10,12 +10,16 @@ vi.mock('@/api/auth', () => ({
   logout: vi.fn(),
 }))
 
+vi.mock('@/api/menus', () => ({ getSidebarMenu: vi.fn() }))
+
 import { logout } from '@/api/auth'
+import { getSidebarMenu } from '@/api/menus'
 import { AppLayout } from './AppLayout'
 
 describe('AppLayout — user menu logout', () => {
   beforeEach(() => {
     vi.mocked(logout).mockReset()
+    vi.mocked(getSidebarMenu).mockResolvedValue({ status: 'success', message: '', data: [] })
     useAuthStore.setState({ token: 'test-token', user: null })
   })
 

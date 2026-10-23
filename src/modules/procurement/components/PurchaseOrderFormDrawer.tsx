@@ -1,5 +1,6 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
@@ -15,6 +16,7 @@ import {
 } from '../hooks/usePurchaseOrders'
 import type { PurchaseOrderItemInput } from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -33,7 +35,7 @@ export interface PurchaseOrderFormDrawerProps {
   orderId?: string
 }
 
-export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
+const PurchaseOrderFormDrawerInner: FC<PurchaseOrderFormDrawerProps> = ({
   open,
   onClose,
   orderId,
@@ -42,18 +44,18 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
   const [form] = Form.useForm()
   const isEdit = !!orderId
 
-  const { data: order } = usePurchaseOrder(orderId)
+  const { data: order, isLoading: loadingRecord } = usePurchaseOrder(orderId)
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
   const { mutateAsync: updateOrder, isPending: updating } = useUpdatePurchaseOrder()
 
   const supplierOptions = suppliers.map(s => ({ label: `${s.code} — ${s.name}`, value: s.id }))
   const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
 
-  // Only DRAFT purchase orders can be edited — enforced by ERP-BE's
+  // Only pending-approval purchase orders can be edited — enforced by ERP-BE's
   // PurchaseOrderService::updateOrder.
-  const isLocked = isEdit && order && order.status !== 'DRAFT'
+  const isLocked = isEdit && order && order.status !== 'PENDING_APPROVAL'
 
   useEffect(() => {
     if (!open) return
@@ -149,6 +151,7 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Purchase Order' : 'New Purchase Order'}
       status={isEdit && order ? PO_STATUS_BADGE[order.status] : undefined}
       statusLabel={isEdit && order ? PO_STATUS_LABELS[order.status] : undefined}
@@ -176,7 +179,7 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
           }}
         >
           <FormSection title="Order Details">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <div className="erp-form-grid">
               <Form.Item
                 label="PO Date"
                 name="poDate"
@@ -204,7 +207,7 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
           </FormSection>
 
           <FormSection title="Terms & Charges">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <div className="erp-form-grid">
               <Form.Item label="Payment Terms" name="paymentTerms">
                 <Input />
               </Form.Item>
@@ -236,73 +239,85 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <div
-                      key={field.key}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr 32px',
-                        gap: '0 8px',
-                        alignItems: 'start',
-                      }}
-                    >
-                      <Form.Item
-                        name={[field.name, 'itemId']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <Select
-                          placeholder="Select item"
-                          options={itemOptions}
-                          showSearch
-                          filterOption={(input, option) =>
-                            String(option?.label ?? '')
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, 'orderedQty']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, 'rate']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'discountPercent']}>
-                        <InputNumber
-                          placeholder="Disc %"
-                          min={0}
-                          max={100}
-                          style={{ width: '100%' }}
-                        />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'taxPercent']}>
-                        <InputNumber
-                          placeholder="Tax %"
-                          min={0}
-                          max={100}
-                          style={{ width: '100%' }}
-                        />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'deliveryDate']}>
-                        <DatePicker placeholder="Delivery" style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'remarks']}>
-                        <Input placeholder="Remarks" />
-                      </Form.Item>
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 780 }}>
+                      {fields.map(field => (
+                        <div
+                          key={field.key}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr 32px',
+                            gap: '0 8px',
+                            alignItems: 'start',
+                          }}
+                        >
+                          <Form.Item
+                            name={[field.name, 'itemId']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <Select
+                              placeholder="Select item"
+                              options={itemOptions}
+                              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                              showSearch
+                              filterOption={(input, option) =>
+                                String(option?.label ?? '')
+                                  .toLowerCase()
+                                  .includes(input.toLowerCase())
+                              }
+                            />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, 'orderedQty']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, 'rate']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'discountPercent']}>
+                            <InputNumber
+                              placeholder="Disc %"
+                              min={0}
+                              max={100}
+                              style={{ width: '100%' }}
+                            />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'taxPercent']}>
+                            <InputNumber
+                              placeholder="Tax %"
+                              min={0}
+                              max={100}
+                              style={{ width: '100%' }}
+                            />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'deliveryDate']}>
+                            <DatePicker placeholder="Delivery" style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'remarks']}>
+                            <Input placeholder="Remarks" />
+                          </Form.Item>
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => remove(field.name)}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"
@@ -321,3 +336,5 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const PurchaseOrderFormDrawer = deferMount(PurchaseOrderFormDrawerInner)

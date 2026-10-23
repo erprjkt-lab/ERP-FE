@@ -188,6 +188,8 @@ export interface ApiItemMaster {
   updated_at: string | null
   // Finished Good fields
   party_id: number | null
+  /** Eager-loaded by ERP-BE's ItemRepository::findAll (`with('party')`). */
+  party_name?: string | null
   customer_part_no: string | null
   drawing_no: string | null
   drawing_revision: string | null
@@ -243,6 +245,9 @@ export interface ItemMasterPayload {
   description?: string
   price?: number
   status?: number
+  batch_tracking?: boolean
+  heat_tracking?: boolean
+  serial_tracking?: boolean
   party_id?: number | null
   customer_part_no?: string
   drawing_no?: string
@@ -281,6 +286,20 @@ export interface ItemMasterPayload {
 
 // Self-referencing hierarchy — a top-level row (no parent) acts as a warehouse.
 // location_type > 0 is system-generated and locked from edit/deactivate/delete.
+export interface CreateLocationPayload {
+  code: string
+  name: string
+  parent_location_id?: number | null
+  // BE rejects anything but 0 here: location_type > 0 marks a system-generated
+  // row, which only the backend may create.
+  location_type?: 0
+  is_active?: boolean
+}
+
+export type UpdateLocationPayload = Partial<
+  Pick<CreateLocationPayload, 'code' | 'name' | 'parent_location_id'>
+>
+
 export interface ApiLocation {
   id: number
   code: string

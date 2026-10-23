@@ -5,13 +5,26 @@ import {
   DeleteOutlined,
   EditOutlined,
   FileDoneOutlined,
-  SendOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Tag, Typography } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Input,
+  Row,
+  Skeleton,
+  Space,
+  Tag,
+  Typography,
+} from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { useModulePermission } from '@/store/permissionStore'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -26,6 +39,7 @@ import {
   useSalesQuotationAction,
 } from '../hooks/useSalesQuotations'
 import { getErrorMessage } from '@/api/client'
+import { formatDateTime } from '@/utils/date'
 
 const ITEM_COLUMNS: TableColumnsType<SalesQuotationItem> = [
   {
@@ -61,6 +75,8 @@ export const SalesQuotationDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
+  const { canModify, canDelete, canApprove } = usePagePermission()
+  const { canWrite: canWriteOrders } = useModulePermission('sales-orders')
   const { data: quotation, isLoading } = useSalesQuotation(id)
   const { mutateAsync: runAction, isPending: actionPending } = useSalesQuotationAction()
   const { mutateAsync: createOrder, isPending: creatingOrder } = useCreateSalesOrderFromQuotation()
@@ -74,22 +90,25 @@ export const SalesQuotationDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/quotations')}>
           Back to Quotations
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Quotation not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Quotation not found.</p>
+        )}
       </div>
     )
   }
 
-  const isDraft = quotation.status === 'DRAFT'
   const isSent = quotation.status === 'SENT'
   const isAccepted = quotation.status === 'ACCEPTED'
   // Backend blocks edits once a quotation is accepted, rejected or revised.
   const isLocked = ['ACCEPTED', 'REJECTED', 'REVISED'].includes(quotation.status)
 
-  const handle = async (action: 'send' | 'accept' | 'revise', successMessage: string) => {
+  const handle = async (action: 'accept' | 'revise', successMessage: string) => {
     try {
       const result = await runAction({ id: quotation.id, action })
       message.success(successMessage)
-      // A revision is a brand-new draft row — follow the user to it.
+      // A revision is a brand-new quotation row — follow the user to it.
       if (action === 'revise' && result) navigate(`/sales/quotations/${result.id}`)
     } catch (error) {
       message.error(getErrorMessage(error))
@@ -169,60 +188,65 @@ export const SalesQuotationDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/quotations')}>
               Back
             </Button>
-            <Button icon={<EditOutlined />} disabled={isLocked} onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
-            <Button
-              icon={<SendOutlined />}
-              type={isDraft ? 'primary' : 'default'}
-              disabled={!isDraft}
-              loading={actionPending}
-              onClick={() => handle('send', 'Quotation sent')}
-            >
-              Send
-            </Button>
-            <Button
-              icon={<CheckOutlined />}
-              type={isSent ? 'primary' : 'default'}
-              disabled={!isSent}
-              loading={actionPending}
-              onClick={() => handle('accept', 'Quotation accepted')}
-            >
-              Accept
-            </Button>
-            <Button icon={<CloseOutlined />} danger disabled={!isSent} onClick={handleReject}>
-              Reject
-            </Button>
-            <Button
-              disabled={isAccepted || quotation.status === 'REVISED'}
-              loading={actionPending}
-              onClick={() => handle('revise', 'Revision created')}
-            >
-              Revise
-            </Button>
-            {/* Backend only permits deletion while still a draft. */}
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              disabled={!isDraft}
-              loading={deleting}
-              onClick={handleDelete}
-            >
-              Delete
-            </Button>
+            {canModify && (
+              <Button icon={<EditOutlined />} disabled={isLocked} onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
+            {canApprove && (
+              <>
+                <Button
+                  icon={<CheckOutlined />}
+                  type={isSent ? 'primary' : 'default'}
+                  disabled={!isSent}
+                  loading={actionPending}
+                  onClick={() => handle('accept', 'Quotation accepted')}
+                >
+                  Accept
+                </Button>
+                <Button icon={<CloseOutlined />} danger disabled={!isSent} onClick={handleReject}>
+                  Reject
+                </Button>
+              </>
+            )}
+            {/* Revise is switched off for now by request; flip `disabled` back to
+                `isAccepted || quotation.status === 'REVISED'` to restore it. */}
+            {canModify && (
+              <Button
+                disabled
+                loading={actionPending}
+                onClick={() => handle('revise', 'Revision created')}
+              >
+                Revise
+              </Button>
+            )}
+            {/* Backend only permits deletion while the quotation is still Sent. */}
+            {canDelete && (
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                disabled={!isSent}
+                loading={deleting}
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+            )}
             {/* The backend allows only one order per quotation and rejects a
                 second attempt with a clear message; there's no endpoint to look
                 up an existing order by quotation id, so we surface that error
                 rather than guessing from a paginated list. */}
-            <Button
-              icon={<FileDoneOutlined />}
-              type={isAccepted ? 'primary' : 'default'}
-              disabled={!isAccepted}
-              loading={creatingOrder}
-              onClick={handleCreateOrder}
-            >
-              Create Sales Order
-            </Button>
+            {canWriteOrders && (
+              <Button
+                icon={<FileDoneOutlined />}
+                type={isAccepted ? 'primary' : 'default'}
+                disabled={!isAccepted}
+                loading={creatingOrder}
+                onClick={handleCreateOrder}
+              >
+                Create Sales Order
+              </Button>
+            )}
           </Space>
         }
       />
@@ -238,7 +262,7 @@ export const SalesQuotationDetail: FC = () => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Quotation Date">
-                {quotation.quotationDate}
+                {formatDateTime(quotation.quotationDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Valid Until">
                 {quotation.validUntil || '—'}

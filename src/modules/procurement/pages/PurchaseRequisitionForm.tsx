@@ -13,7 +13,9 @@ import {
   Space,
   Typography,
 } from 'antd'
-import type { FormInstance, FormListFieldData } from 'antd'
+import type { FormInstance, FormListFieldData, SelectProps } from 'antd'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
@@ -47,10 +49,13 @@ export const PurchaseRequisitionForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: requisition } = usePurchaseRequisition(id)
   const { data: departments } = useDepartments()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createRequisition, isPending: creating } = useCreatePurchaseRequisition()
   const { mutateAsync: updateRequisition, isPending: updating } = useUpdatePurchaseRequisition()
 
@@ -76,7 +81,7 @@ export const PurchaseRequisitionForm: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, requisition?.id, form])
 
-  if (isEdit && requisition && requisition.status !== 'DRAFT') {
+  if (isEdit && requisition && requisition.status !== 'PENDING_APPROVAL') {
     return (
       <div>
         <PageHeader
@@ -88,7 +93,8 @@ export const PurchaseRequisitionForm: FC = () => {
         />
         <Card>
           <Typography.Text>
-            Only DRAFT requisitions can be edited. This requisition is {requisition.status}.
+            Only requisitions pending approval can be edited. This requisition is{' '}
+            {requisition.status}.
           </Typography.Text>
         </Card>
       </div>
@@ -151,9 +157,11 @@ export const PurchaseRequisitionForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/purchase/requisitions')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Requisition
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Requisition
+              </Button>
+            )}
           </Space>
         }
       />
@@ -215,16 +223,28 @@ export const PurchaseRequisitionForm: FC = () => {
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <RequisitionItemRow
-                      key={field.key}
-                      field={field}
-                      form={form}
-                      itemOptions={itemOptions}
-                      items={items}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 700 }}>
+                      {fields.map(field => (
+                        <RequisitionItemRow
+                          key={field.key}
+                          field={field}
+                          form={form}
+                          itemOptions={itemOptions}
+                          itemsPopupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                          items={items}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"
@@ -248,6 +268,7 @@ interface RequisitionItemRowProps {
   field: FormListFieldData
   form: FormInstance
   itemOptions: { label: string; value: string }[]
+  itemsPopupRender?: SelectProps['popupRender']
   items: ProcurementItemOption[]
   onRemove: () => void
 }
@@ -256,6 +277,7 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
   field,
   form,
   itemOptions,
+  itemsPopupRender,
   items,
   onRemove,
 }) => {
@@ -275,6 +297,7 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
         <Select
           placeholder="Select item"
           options={itemOptions}
+          popupRender={itemsPopupRender}
           showSearch
           filterOption={(input, option) =>
             String(option?.label ?? '')

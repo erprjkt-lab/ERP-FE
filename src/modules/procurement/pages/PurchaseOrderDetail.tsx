@@ -1,8 +1,10 @@
-import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { ArrowLeftOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
+import { getErrorMessage } from '@/api/client'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -10,15 +12,27 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseOrderItem } from '@/types/procurement'
 import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
-import { usePurchaseEnquiries } from '../hooks/usePurchaseEnquiries'
-import { usePurchaseOrder } from '../hooks/usePurchaseOrders'
+import { useApprovePurchaseOrder, usePurchaseOrder } from '../hooks/usePurchaseOrders'
+import { formatDateTime } from '@/utils/date'
 
 export const PurchaseOrderDetail: FC = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [editOpen, setEditOpen] = useState(false)
   const { data: order, isLoading } = usePurchaseOrder(id)
-  const { data: enquiries } = usePurchaseEnquiries()
+  const { message } = App.useApp()
+  const { canModify, canApprove } = usePagePermission()
+  const { mutateAsync: approveOrder, isPending: approving } = useApprovePurchaseOrder()
+
+  const handleApprove = async () => {
+    if (!id) return
+    try {
+      await approveOrder(id)
+      message.success('Purchase order approved')
+    } catch (error) {
+      message.error(getErrorMessage(error))
+    }
+  }
 
   if (!order) {
     return (
@@ -26,12 +40,14 @@ export const PurchaseOrderDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/orders')}>
           Back to Purchase Orders
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Purchase order not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Purchase order not found.</p>
+        )}
       </div>
     )
   }
-
-  const sourceEnquiry = enquiries.find(e => e.id === order.purchaseEnquiryId)
 
   const columns = [
     {
@@ -49,7 +65,7 @@ export const PurchaseOrderDetail: FC = () => {
       title: 'Delivery Date',
       dataIndex: 'deliveryDate',
       key: 'deliveryDate',
-      render: (v: string) => v ?? '—',
+      render: formatDateTime,
     },
   ]
 
@@ -68,13 +84,27 @@ export const PurchaseOrderDetail: FC = () => {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/orders')}>
               Back
             </Button>
-            {order.status === 'DRAFT' && (
-              <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
-                Edit
-              </Button>
+            {order.status === 'PENDING_APPROVAL' && (
+              <>
+                {canModify && (
+                  <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>
+                    Edit
+                  </Button>
+                )}
+                {canApprove && (
+                  <Button
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    loading={approving}
+                    onClick={handleApprove}
+                  >
+                    Approve
+                  </Button>
+                )}
+              </>
             )}
-            {sourceEnquiry && (
-              <Button onClick={() => navigate(`/purchase/enquiries/${sourceEnquiry.id}`)}>
+            {order.purchaseEnquiryId && (
+              <Button onClick={() => navigate(`/purchase/enquiries/${order.purchaseEnquiryId}`)}>
                 View Source Enquiry
               </Button>
             )}
@@ -92,12 +122,15 @@ export const PurchaseOrderDetail: FC = () => {
                   label={PO_STATUS_LABELS[order.status]}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="PO Date">{order.poDate}</Descriptions.Item>
+              <Descriptions.Item label="PO Date">{formatDateTime(order.poDate)}</Descriptions.Item>
               <Descriptions.Item label="Supplier">
                 {order.supplierName ?? order.supplierId}
               </Descriptions.Item>
+              {/* ERP-BE's PurchaseOrderResource sends purchase_enquiry_id but not the
+                  enquiry number, so this says where the order came from and the
+                  "View Source Enquiry" button opens it. */}
               <Descriptions.Item label="Source">
-                {sourceEnquiry ? `Enquiry ${sourceEnquiry.enquiryNumber}` : 'Direct'}
+                {order.purchaseEnquiryId ? 'From Enquiry' : 'Direct'}
               </Descriptions.Item>
               <Descriptions.Item label="Created By">{order.createdBy}</Descriptions.Item>
               <Descriptions.Item label="Payment Terms">

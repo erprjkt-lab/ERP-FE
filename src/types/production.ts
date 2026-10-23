@@ -36,6 +36,40 @@ export interface JobCardBomRequirement {
   returnedQty: number
 }
 
+export interface ProductionReceipt {
+  id: string
+  itemName: string
+  storeLocationId: string
+  storeLocationName: string
+  receivedQty: number
+  receivedAt: string
+}
+
+export interface MaterialSummaryRow {
+  componentItemId: string
+  componentName: string
+  componentCode: string
+  requiredQty: number
+  issuedQty: number
+  /** Consumed by production so far — derived by ERP-BE, cannot be returned. */
+  usedQty: number
+  returnedQty: number
+  /** Issued but neither used nor returned: the most that may still be returned. */
+  pendingUsedQty: number
+}
+
+export interface MaterialReturn {
+  id: string
+  componentItemId?: string
+  componentName: string
+  storeLocationId: string
+  storeLocationName: string
+  batchNo?: string
+  heatNo?: string
+  returnedQty: number
+  returnDate: string
+}
+
 export interface MaterialIssue {
   id: string
   componentItemId?: string
@@ -62,6 +96,9 @@ export interface JobCardMovement {
   fromProcessName: string
   toProcessId: string
   toProcessName: string
+  /** Set when ERP-BE auto-created this movement by approving a Rework review. */
+  reworkReviewId: string | null
+  isRework: boolean
   movedQty: number
   movedAt: string
   acceptances: JobCardAcceptance[]
@@ -82,6 +119,9 @@ export interface ProcessLog {
   rejectedQty: number
   bypassedQty: number
   inboundChallanItemId?: string
+  /** The approved Rework review this log re-processes qty for, if any. */
+  inboundReworkReviewId?: string
+  isRework: boolean
   remark?: string
 }
 
@@ -108,6 +148,8 @@ export interface ChallanItem {
   challanId: string
   challanRequestId: string
   jobCardId: string
+  /** Sent out to redo rejected qty rather than to process fresh qty. */
+  isRework: boolean
   processId: string
   processName: string
   dispatchedQty: number

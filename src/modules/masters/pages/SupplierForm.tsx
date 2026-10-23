@@ -2,6 +2,7 @@ import { App, Button, Card, Col, Form, Row, Select, Space } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -27,6 +28,9 @@ export const SupplierForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: supplier } = useSupplier(id)
   const countryId = Form.useWatch('countryId', form) as string | undefined
@@ -49,7 +53,7 @@ export const SupplierForm: FC = () => {
         address: supplier.address,
         countryId: supplier.countryId ?? undefined,
         stateId: supplier.stateId ?? undefined,
-        cityId: supplier.cityId ?? undefined,
+        cityName: supplier.cityName,
         pincode: supplier.pincode,
         gstNumber: supplier.gstNumber,
         panNumber: supplier.panNumber,
@@ -70,7 +74,7 @@ export const SupplierForm: FC = () => {
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   const handleFinish = async (values: Record<string, unknown>) => {
     const payload = {
@@ -84,8 +88,8 @@ export const SupplierForm: FC = () => {
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       panNumber: values.panNumber as string | undefined,
@@ -122,9 +126,11 @@ export const SupplierForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/masters/suppliers')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Supplier
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Supplier
+              </Button>
+            )}
           </Space>
         }
       />
@@ -203,7 +209,7 @@ export const SupplierForm: FC = () => {
                     }
                     onChange={() => {
                       form.setFieldValue('stateId', undefined)
-                      form.setFieldValue('cityId', undefined)
+                      form.setFieldValue('cityName', undefined)
                     }}
                   />
                 </Form.Item>
@@ -224,14 +230,14 @@ export const SupplierForm: FC = () => {
                         .toLowerCase()
                         .includes(input.toLowerCase())
                     }
-                    onChange={() => form.setFieldValue('cityId', undefined)}
+                    onChange={() => form.setFieldValue('cityName', undefined)}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} md={8}>
                 <FormField
                   label="City"
-                  name="cityId"
+                  name="cityName"
                   fieldType="select"
                   options={cityOptions}
                   rules={[{ required: true, message: 'City is required' }]}

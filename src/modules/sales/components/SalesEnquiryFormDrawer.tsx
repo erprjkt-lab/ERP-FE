@@ -25,6 +25,8 @@ import {
   useUpdateSalesEnquiry,
 } from '../hooks/useSalesEnquiries'
 import type { SalesEnquiryItemInput } from '../hooks/useSalesEnquiries'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -46,7 +48,7 @@ export interface SalesEnquiryFormDrawerProps {
   enquiryId?: string
 }
 
-export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
+const SalesEnquiryFormDrawerInner: FC<SalesEnquiryFormDrawerProps> = ({
   open,
   onClose,
   enquiryId,
@@ -56,8 +58,8 @@ export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
   const [form] = Form.useForm<EnquiryFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
-  const { data: existing } = useSalesEnquiry(enquiryId)
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: existing, isLoading: loadingRecord } = useSalesEnquiry(enquiryId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesEnquiry()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesEnquiry()
 
@@ -136,6 +138,7 @@ export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? `Edit ${existing?.enquiryNumber ?? 'Enquiry'}` : 'New Sales Enquiry'}
       open={open}
       width={840}
@@ -204,48 +207,60 @@ export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <div
-                      key={field.key}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 90px 1fr 32px',
-                        gap: '0 8px',
-                        alignItems: 'start',
-                      }}
-                    >
-                      <Form.Item
-                        name={[field.name, 'itemId']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <Select
-                          placeholder="Select item"
-                          options={itemOptions}
-                          showSearch
-                          filterOption={(input, option) =>
-                            String(option?.label ?? '')
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, 'qty']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'itemRemark']}>
-                        <Input placeholder="Remark" />
-                      </Form.Item>
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 480 }}>
+                      {fields.map(field => (
+                        <div
+                          key={field.key}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 90px 1fr 32px',
+                            gap: '0 8px',
+                            alignItems: 'start',
+                          }}
+                        >
+                          <Form.Item
+                            name={[field.name, 'itemId']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <Select
+                              placeholder="Select item"
+                              options={itemOptions}
+                              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                              showSearch
+                              filterOption={(input, option) =>
+                                String(option?.label ?? '')
+                                  .toLowerCase()
+                                  .includes(input.toLowerCase())
+                              }
+                            />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, 'qty']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'itemRemark']}>
+                            <Input placeholder="Remark" />
+                          </Form.Item>
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => remove(field.name)}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"
@@ -264,3 +279,5 @@ export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const SalesEnquiryFormDrawer = deferMount(SalesEnquiryFormDrawerInner)

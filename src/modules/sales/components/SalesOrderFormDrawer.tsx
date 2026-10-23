@@ -21,6 +21,7 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
 import { useCreateSalesOrder, useSalesOrder, useUpdateSalesOrder } from '../hooks/useSalesOrders'
 import type { SalesOrderItemInput } from '../hooks/useSalesOrders'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -49,14 +50,14 @@ export interface SalesOrderFormDrawerProps {
   orderId?: string
 }
 
-export const SalesOrderFormDrawer: FC<SalesOrderFormDrawerProps> = ({ open, onClose, orderId }) => {
+const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClose, orderId }) => {
   const isEdit = !!orderId
   const { message } = App.useApp()
   const [form] = Form.useForm<OrderFormValues>()
 
   const { data: customers } = useSalesCustomers()
   const { data: items } = useProcurementItems()
-  const { data: existing } = useSalesOrder(orderId)
+  const { data: existing, isLoading: loadingRecord } = useSalesOrder(orderId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesOrder()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesOrder()
 
@@ -139,6 +140,7 @@ export const SalesOrderFormDrawer: FC<SalesOrderFormDrawerProps> = ({ open, onCl
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? `Edit ${existing?.orderNumber ?? 'Sales Order'}` : 'New Sales Order'}
       open={open}
       width={960}
@@ -226,79 +228,94 @@ export const SalesOrderFormDrawer: FC<SalesOrderFormDrawerProps> = ({ open, onCl
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => {
-                    const selectedElsewhere = new Set(
-                      (watchedItems ?? [])
-                        .filter((_, idx) => idx !== field.name)
-                        .map(row => row?.itemId)
-                        .filter(Boolean),
-                    )
-                    const rowItemOptions = itemOptions.filter(
-                      opt => !selectedElsewhere.has(opt.value),
-                    )
-                    return (
-                      <div
-                        key={field.key}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '2fr 90px 90px 90px 90px 140px 1fr 32px',
-                          gap: '0 8px',
-                          alignItems: 'start',
-                        }}
-                      >
-                        <Form.Item
-                          name={[field.name, 'itemId']}
-                          rules={[{ required: true, message: 'Required' }]}
-                        >
-                          <Select
-                            placeholder="Select item"
-                            options={rowItemOptions}
-                            showSearch
-                            filterOption={(input, option) =>
-                              String(option?.label ?? '')
-                                .toLowerCase()
-                                .includes(input.toLowerCase())
-                            }
-                          />
-                        </Form.Item>
-                        <Form.Item
-                          name={[field.name, 'qty']}
-                          rules={[{ required: true, message: 'Required' }]}
-                        >
-                          <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item
-                          name={[field.name, 'rate']}
-                          rules={[{ required: true, message: 'Required' }]}
-                        >
-                          <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'discountPercent']}>
-                          <InputNumber
-                            placeholder="Disc %"
-                            min={0}
-                            max={100}
-                            style={{ width: '100%' }}
-                          />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'taxPercent']}>
-                          <InputNumber placeholder="Tax %" min={0} style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'committedDate']}>
-                          <DatePicker placeholder="Committed" style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item name={[field.name, 'itemRemark']}>
-                          <Input placeholder="Remarks" />
-                        </Form.Item>
-                        <Button
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={() => remove(field.name)}
-                        />
-                      </div>
-                    )
-                  })}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 780 }}>
+                      {fields.map(field => {
+                        const selectedElsewhere = new Set(
+                          (watchedItems ?? [])
+                            .filter((_, idx) => idx !== field.name)
+                            .map(row => row?.itemId)
+                            .filter(Boolean),
+                        )
+                        const rowItemOptions = itemOptions.filter(
+                          opt => !selectedElsewhere.has(opt.value),
+                        )
+                        return (
+                          <div
+                            key={field.key}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '2fr 90px 90px 90px 90px 140px 1fr 32px',
+                              gap: '0 8px',
+                              alignItems: 'start',
+                            }}
+                          >
+                            <Form.Item
+                              name={[field.name, 'itemId']}
+                              rules={[{ required: true, message: 'Required' }]}
+                            >
+                              <Select
+                                placeholder="Select item"
+                                options={rowItemOptions}
+                                showSearch
+                                filterOption={(input, option) =>
+                                  String(option?.label ?? '')
+                                    .toLowerCase()
+                                    .includes(input.toLowerCase())
+                                }
+                              />
+                            </Form.Item>
+                            <Form.Item
+                              name={[field.name, 'qty']}
+                              rules={[{ required: true, message: 'Required' }]}
+                            >
+                              <InputNumber
+                                placeholder="Qty"
+                                min={0.0001}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                            <Form.Item
+                              name={[field.name, 'rate']}
+                              rules={[{ required: true, message: 'Required' }]}
+                            >
+                              <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'discountPercent']}>
+                              <InputNumber
+                                placeholder="Disc %"
+                                min={0}
+                                max={100}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'taxPercent']}>
+                              <InputNumber placeholder="Tax %" min={0} style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'committedDate']}>
+                              <DatePicker placeholder="Committed" style={{ width: '100%' }} />
+                            </Form.Item>
+                            <Form.Item name={[field.name, 'itemRemark']}>
+                              <Input placeholder="Remarks" />
+                            </Form.Item>
+                            <Button
+                              type="text"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() => remove(field.name)}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"
@@ -317,3 +334,5 @@ export const SalesOrderFormDrawer: FC<SalesOrderFormDrawerProps> = ({ open, onCl
     </FormDrawer>
   )
 }
+
+export const SalesOrderFormDrawer = deferMount(SalesOrderFormDrawerInner)

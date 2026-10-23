@@ -2,6 +2,7 @@ import { Drawer } from 'antd'
 import type { FC } from 'react'
 import type { InspectionReportType } from '@/types/quality'
 import { JobCardInspectionReports } from './JobCardInspectionReports'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface JobCardInspectionDrawerProps {
   open: boolean
@@ -13,7 +14,7 @@ export interface JobCardInspectionDrawerProps {
   onClose: () => void
 }
 
-export const JobCardInspectionDrawer: FC<JobCardInspectionDrawerProps> = ({
+const JobCardInspectionDrawerInner: FC<JobCardInspectionDrawerProps> = ({
   open,
   jobCardId,
   jobCardNumber,
@@ -41,3 +42,5 @@ export const JobCardInspectionDrawer: FC<JobCardInspectionDrawerProps> = ({
     </Drawer>
   )
 }
+
+export const JobCardInspectionDrawer = deferMount(JobCardInspectionDrawerInner)

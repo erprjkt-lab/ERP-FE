@@ -14,7 +14,8 @@ import {
   useInspectionParameters,
   useUpdateInspectionParameter,
 } from '../hooks/useInspectionParameters'
-import { useProcesses } from '../hooks/useProcesses'
+import { useItemProcessRoute } from '../hooks/useItemProcessRoute'
+import { deferMount } from '@/components/ui/deferMount'
 
 const PARAM_TYPE_OPTIONS: { label: string; value: InspectionParamType }[] = [
   { label: 'Product', value: 'product' },
@@ -32,22 +33,31 @@ export interface InspectionParametersDrawerProps {
   open: boolean
   onClose: () => void
   itemId?: string
+  /** Raw materials are inspected on receipt, not on a process route: the drawer
+   *  then drops the Process picker and pins the control method to IIR. */
+  rawMaterial?: boolean
 }
 
-export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = ({
+const InspectionParametersDrawerInner: FC<InspectionParametersDrawerProps> = ({
   open,
   onClose,
   itemId,
+  rawMaterial = false,
 }) => {
   const { data: items } = useProcurementItems()
   const item = items.find(i => i.id === itemId)
   const { data: parameters = [], isLoading } = useInspectionParameters(itemId)
-  const { data: processes = [] } = useProcesses()
+  const { data: routeSteps } = useItemProcessRoute(rawMaterial ? undefined : itemId)
   const { mutateAsync: createParameter } = useCreateInspectionParameter(itemId)
   const { mutateAsync: updateParameter } = useUpdateInspectionParameter(itemId)
   const { mutateAsync: deleteParameter } = useDeleteInspectionParameter(itemId)
 
-  const processOptions = processes.map(p => ({ label: p.processName, value: p.id }))
+  // Only the processes actually on this item's process route are inspectable,
+  // so the picker is scoped to the route rather than the whole process master.
+  const processOptions = routeSteps.map(step => ({
+    label: step.processName,
+    value: step.processId,
+  }))
 
   return (
     <Drawer
@@ -57,6 +67,7 @@ export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = (
       width={900}
     >
       <SimpleMasterList<InspectionParameter>
+        moduleKey="inspection-parameters"
         embedded
         breadcrumbLabel="Inspection Parameter"
         totalLabel="parameters"
@@ -67,7 +78,9 @@ export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = (
         columns={[
           { title: 'Parameter', dataIndex: 'parameter', key: 'parameter' },
           { title: 'Specification', dataIndex: 'specification', key: 'specification' },
-          { title: 'Process', dataIndex: 'processName', key: 'processName', width: 140 },
+          ...(rawMaterial
+            ? []
+            : [{ title: 'Process', dataIndex: 'processName', key: 'processName', width: 140 }]),
           {
             title: 'Type',
             dataIndex: 'paramType',
@@ -103,14 +116,16 @@ export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = (
         ]}
         renderFields={() => (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-              <FormField
-                label="Process"
-                name="processId"
-                fieldType="select"
-                options={processOptions}
-                rules={[{ required: true, message: 'Process is required' }]}
-              />
+            <div className="erp-form-grid">
+              {!rawMaterial && (
+                <FormField
+                  label="Process"
+                  name="processId"
+                  fieldType="select"
+                  options={processOptions}
+                  rules={[{ required: true, message: 'Process is required' }]}
+                />
+              )}
               <FormField
                 label="Type"
                 name="paramType"
@@ -147,6 +162,9 @@ export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = (
                 name="controlMethod"
                 fieldType="select"
                 options={CONTROL_METHOD_OPTIONS}
+                disabled={rawMaterial}
+                initialValue={rawMaterial ? 'IIR' : undefined}
+                rules={[{ required: true, message: 'Control method is required' }]}
               />
               <FormField
                 label="Status"
@@ -161,7 +179,7 @@ export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = (
         )}
         onSubmit={async (values, editing) => {
           const payload = {
-            process_id: Number(values.processId),
+            ...(rawMaterial ? {} : { process_id: Number(values.processId) }),
             param_type: PARAM_TYPE_TO_API[values.paramType as InspectionParamType],
             parameter: values.parameter as string,
             specification: values.specification as string,
@@ -190,3 +208,5 @@ export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = (
     </Drawer>
   )
 }
+
+export const InspectionParametersDrawer = deferMount(InspectionParametersDrawerInner)

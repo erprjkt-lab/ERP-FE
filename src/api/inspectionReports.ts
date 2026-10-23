@@ -45,10 +45,6 @@ export function createIncomingInspectionReport(
   })
 }
 
-export function submitInspectionReport(id: number): Promise<ApiEnvelope<ApiInspectionReport>> {
-  return apiRequest(`/api/v1/inspection-reports/${id}/submit`, { method: 'POST' })
-}
-
 export function approveInspectionReport(id: number): Promise<ApiEnvelope<ApiInspectionReport>> {
   return apiRequest(`/api/v1/inspection-reports/${id}/approve`, { method: 'POST' })
 }

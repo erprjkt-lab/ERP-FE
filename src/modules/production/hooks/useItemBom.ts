@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createItemBomLine, deleteItemBomLine, listItemBom, updateItemBomLine } from '@/api/itemBom'
 import { useUoms } from '@/modules/masters/hooks/useUoms'
-import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import type {
   ApiItemBomLine,
   CreateItemBomLinePayload,
@@ -9,17 +8,13 @@ import type {
 } from '@/types/api/production'
 import type { ItemBomLine } from '@/types/production'
 
-function toBomLine(
-  api: ApiItemBomLine,
-  componentsById: Map<string, string>,
-  uomsById: Map<string, string>,
-): ItemBomLine {
+function toBomLine(api: ApiItemBomLine, uomsById: Map<string, string>): ItemBomLine {
   const componentItemId = String(api.component_item_id)
   const uomId = String(api.uom_id)
   return {
     id: String(api.id),
     componentItemId,
-    componentName: api.component_name ?? componentsById.get(componentItemId) ?? '',
+    componentName: api.component_name ?? '',
     quantityPerUnit: Number(api.quantity_per_unit),
     uomId,
     uomName: uomsById.get(uomId) ?? '',
@@ -29,10 +24,14 @@ function toBomLine(
   }
 }
 
-export function useItemBom(itemId: string | undefined) {
-  const { data: components = [] } = useProcurementItems()
-  const { data: uoms = [] } = useUoms()
-  const componentsById = new Map(components.map(c => [c.id, `${c.code} · ${c.name}`]))
+// ItemBomRepository eager-loads `component`, so ItemBomResource always sends
+// component_name; resolving it client-side meant pulling all three item-master
+// lists (finished goods + raw materials + consumables) on every page that shows
+// a BOM, for a value that was never read. UOM still needs a lookup — the
+// resource sends uom_id only.
+export function useItemBom(itemId: string | undefined, withUomNames = true) {
+  // Callers that render no UOM column skip the UOM master fetch entirely.
+  const { data: uoms = [] } = useUoms(1, 200, withUomNames)
   const uomsById = new Map(uoms.map(u => [String(u.id), u.name]))
 
   const query = useQuery({
@@ -41,7 +40,7 @@ export function useItemBom(itemId: string | undefined) {
     enabled: !!itemId,
   })
 
-  const data = (query.data ?? []).map(api => toBomLine(api, componentsById, uomsById))
+  const data = (query.data ?? []).map(api => toBomLine(api, uomsById))
 
   return { ...query, data, isLoading: query.isLoading }
 }

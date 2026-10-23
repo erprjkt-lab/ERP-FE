@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import { SimpleMasterList } from '@/components/erp/SimpleMasterList'
 import { FormField } from '@/components/ui/FormField'
+import { useUoms } from '../../hooks/useUoms'
 import type { Fixture } from '@/types/masters'
 import {
   useCreateFixture,
@@ -17,6 +18,9 @@ export const FixtureList: FC = () => {
   const { mutateAsync: createFixture } = useCreateFixture()
   const { mutateAsync: updateFixture } = useUpdateFixture()
   const { mutateAsync: deleteFixture } = useDeleteFixture()
+  const { data: uoms } = useUoms()
+  // Draft schema stores uom as a plain name, so the option value is the name.
+  const uomOptions = uoms.map(u => ({ label: u.name, value: u.name }))
 
   return (
     <SimpleMasterList<Fixture>
@@ -49,6 +53,8 @@ export const FixtureList: FC = () => {
           <FormField
             label="UOM"
             name="uom"
+            fieldType="select"
+            options={uomOptions}
             rules={[{ required: true, message: 'UOM is required' }]}
           />
           <FormField label="Price" name="price" fieldType="number" />

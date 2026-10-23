@@ -4,9 +4,8 @@ import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
-import type { CustomerType, GstType } from '@/types/masters'
+import type { GstType } from '@/types/masters'
 import {
-  CUSTOMER_TYPE_OPTIONS,
   DEFAULT_COUNTRY_NAME,
   GST_REGEX,
   GST_TYPE_OPTIONS,
@@ -23,10 +22,7 @@ import { useCreateCustomer, useCustomer, useUpdateCustomer } from '../hooks/useC
 import { useStates } from '../hooks/useStates'
 import type { CustomerInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
-
-// Two fields per row instead of the full-page form's one/three-column layout,
-// so this long form fits a wide drawer without a long single-column scroll.
-const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface CustomerFormDrawerProps {
   open: boolean
@@ -35,12 +31,12 @@ export interface CustomerFormDrawerProps {
   customerId?: string
 }
 
-export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose, customerId }) => {
+const CustomerFormDrawerInner: FC<CustomerFormDrawerProps> = ({ open, onClose, customerId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!customerId
 
-  const { data: customer } = useCustomer(customerId)
+  const { data: customer, isLoading: loadingRecord } = useCustomer(customerId)
   const countryId = Form.useWatch('countryId', form) as string | undefined
   const stateId = Form.useWatch('stateId', form) as string | undefined
   const { data: countries = [] } = useCountries()
@@ -51,7 +47,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
 
   const countryOptions = countries.map(c => ({ label: c.name, value: String(c.id) }))
   const stateOptions = states.map(s => ({ label: s.name, value: String(s.id) }))
-  const cityOptions = cities.map(c => ({ label: c.name, value: String(c.id) }))
+  const cityOptions = cities.map(c => ({ label: c.name, value: c.name }))
 
   useEffect(() => {
     if (!open) return
@@ -59,7 +55,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
       form.setFieldsValue({
         code: customer.code,
         name: customer.name,
-        customerType: customer.customerType,
         status: customer.status,
         contactPerson: customer.contactPerson,
         mobile: customer.mobile,
@@ -68,7 +63,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         address: customer.address,
         countryId: customer.countryId ?? undefined,
         stateId: customer.stateId ?? undefined,
-        cityId: customer.cityId ?? undefined,
+        cityName: customer.cityName,
         pincode: customer.pincode,
         gstNumber: customer.gstNumber,
         panNumber: customer.panNumber,
@@ -114,7 +109,6 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
 
     const payload = {
       name: values.name as string,
-      customerType: (values.customerType as CustomerType | undefined) ?? null,
       status: values.status as 'active' | 'inactive',
       contactPerson: values.contactPerson as string,
       mobile: values.mobile as string,
@@ -125,8 +119,8 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
       countryName: countryOptions.find(o => o.value === values.countryId)?.label,
       stateId: (values.stateId as string | undefined) ?? null,
       stateName: stateOptions.find(o => o.value === values.stateId)?.label,
-      cityId: (values.cityId as string | undefined) ?? null,
-      cityName: cityOptions.find(o => o.value === values.cityId)?.label,
+      cityId: null,
+      cityName: values.cityName as string | undefined,
       pincode: values.pincode as string,
       gstNumber: values.gstNumber as string | undefined,
       panNumber: values.panNumber as string | undefined,
@@ -158,6 +152,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Customer' : 'Add Customer'}
       status={isEdit ? (customer?.status ?? 'active') : undefined}
       open={open}
@@ -170,17 +165,11 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
       <Form form={form} layout="vertical">
         <FormSection title="Basic Info">
           {isEdit && <FormField label="Customer Code" name="code" disabled />}
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="Customer Name"
               name="name"
               rules={[{ required: true, message: 'Customer name is required' }]}
-            />
-            <FormField
-              label="Customer Type"
-              name="customerType"
-              fieldType="select"
-              options={CUSTOMER_TYPE_OPTIONS}
             />
             <FormField
               label="Contact Person"
@@ -218,7 +207,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
             fieldType="textarea"
             rules={[{ required: true, message: 'Address is required' }]}
           />
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <Form.Item
               label="Country"
               name="countryId"
@@ -236,7 +225,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
                 }
                 onChange={() => {
                   form.setFieldValue('stateId', undefined)
-                  form.setFieldValue('cityId', undefined)
+                  form.setFieldValue('cityName', undefined)
                 }}
               />
             </Form.Item>
@@ -255,12 +244,12 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                onChange={() => form.setFieldValue('cityId', undefined)}
+                onChange={() => form.setFieldValue('cityName', undefined)}
               />
             </Form.Item>
             <FormField
               label="City"
-              name="cityId"
+              name="cityName"
               fieldType="select"
               options={cityOptions}
               rules={[{ required: true, message: 'City is required' }]}
@@ -274,7 +263,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Tax & Compliance">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField
               label="GST Number"
               name="gstNumber"
@@ -295,7 +284,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Financial Terms">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Credit Limit" name="creditLimit" fieldType="number" />
             <FormField label="Credit Days" name="creditDays" fieldType="number" />
             <FormField label="Opening Balance" name="openingBalance" fieldType="number" />
@@ -309,7 +298,7 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
         </FormSection>
 
         <FormSection title="Banking">
-          <div style={gridStyle}>
+          <div className="erp-form-grid">
             <FormField label="Bank Name" name="bankName" />
             <FormField label="Branch" name="bankBranch" />
             <FormField label="Account Holder" name="accountHolder" />
@@ -326,3 +315,5 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
     </FormDrawer>
   )
 }
+
+export const CustomerFormDrawer = deferMount(CustomerFormDrawerInner)

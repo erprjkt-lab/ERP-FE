@@ -1,5 +1,6 @@
 import { apiRequest } from '@/api/client'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
+import type { ApiEmployeeMenuNode, GrantMenuPermissionsBulkPayload } from '@/types/api/rbac'
 import type {
   ApiEmployee,
   CreateEmployeePayload,
@@ -8,8 +9,13 @@ import type {
   UpdateEmployeePayload,
 } from '@/types/api/hr'
 
-export function listEmployees(page = 1): Promise<PaginatedEnvelope<ApiEmployee>> {
-  return apiRequest('/api/v1/employees', { query: { page, per_page: 100 } })
+export function listEmployees(
+  page = 1,
+  search?: string | null,
+): Promise<PaginatedEnvelope<ApiEmployee>> {
+  return apiRequest('/api/v1/employees', {
+    query: { page, per_page: 100, ...(search ? { search } : {}) },
+  })
 }
 
 export function getEmployee(id: number): Promise<ApiEnvelope<ApiEmployee>> {
@@ -43,4 +49,22 @@ export function syncEmployeePermissions(
   payload: SyncEmployeePermissionsPayload,
 ): Promise<ApiEnvelope<ApiEmployee>> {
   return apiRequest(`/api/v1/employees/${id}/permissions`, { method: 'POST', body: payload })
+}
+
+// Menu tree annotated with this employee's granted actions (GET returns every menu,
+// not just the ones they can see).
+export function getEmployeeMenus(id: number): Promise<ApiEnvelope<ApiEmployeeMenuNode[]>> {
+  return apiRequest(`/api/v1/employees/${id}/menus`)
+}
+
+// Sets the granted actions for several menus in one save; the BE diffs each menu
+// against what's held and only touches that menu's module.
+export function grantEmployeeMenuPermissions(
+  id: number,
+  payload: GrantMenuPermissionsBulkPayload,
+): Promise<ApiEnvelope<unknown>> {
+  return apiRequest(`/api/v1/employees/${id}/menus/permissions`, {
+    method: 'POST',
+    body: payload,
+  })
 }

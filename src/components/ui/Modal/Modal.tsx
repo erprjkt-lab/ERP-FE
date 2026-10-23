@@ -9,6 +9,10 @@ export interface ModalProps extends Omit<AntModalProps, 'styles'> {
 // Fixed, centered modal with the scroll contained to the body — without this,
 // a modal taller than the viewport (long forms like Add Machine) pushes the
 // page itself into scroll instead of scrolling inside the dialog.
+//
+// Narrow viewports are handled by `.ant-modal { max-width: calc(100vw - 24px) }`
+// in index.css, not a JS clamp — CSS survives a resize, a value read at render
+// does not.
 export const Modal: FC<ModalProps> = ({ centered = true, styles, ...props }) => {
   return (
     <AntModal
@@ -17,7 +21,7 @@ export const Modal: FC<ModalProps> = ({ centered = true, styles, ...props }) => 
       styles={{
         ...styles,
         body: {
-          maxHeight: 'calc(100vh - 200px)',
+          maxHeight: 'calc(100dvh - 160px)',
           overflowY: 'auto',
           ...styles?.body,
         },

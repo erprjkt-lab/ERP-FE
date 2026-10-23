@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   approveStockAdjustment,
-  cancelStockAdjustment,
   createStockAdjustment,
   deleteStockAdjustment,
   getStockAdjustment,
   listStockAdjustments,
   updateStockAdjustment,
+  type StockAdjustmentListParams,
 } from '@/api/stockAdjustments'
 import type {
   ApiStockAdjustment,
@@ -109,10 +109,10 @@ function toUpdatePayload(
   }
 }
 
-export function useStockAdjustments() {
+export function useStockAdjustments(params: StockAdjustmentListParams = {}) {
   const query = useQuery({
-    queryKey: ['stock-adjustments'],
-    queryFn: async () => (await listStockAdjustments()).data,
+    queryKey: ['stock-adjustments', params],
+    queryFn: async () => (await listStockAdjustments(params)).data,
   })
   return { data: (query.data ?? []).map(toStockAdjustment), isLoading: query.isLoading }
 }
@@ -154,6 +154,10 @@ export function useUpdateStockAdjustment() {
 function invalidateOne(queryClient: ReturnType<typeof useQueryClient>, id: string) {
   queryClient.invalidateQueries({ queryKey: ['stock-adjustments'] })
   queryClient.invalidateQueries({ queryKey: ['stock-adjustments', id] })
+  // Approving posts the variance to stock, and ItemLotAllocator shows system qty
+  // from this query. Reject/update don't move stock, but they come through here
+  // too and a spare refetch is cheaper than threading a flag through.
+  queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
 }
 
 export function useApproveStockAdjustment() {
@@ -162,15 +166,6 @@ export function useApproveStockAdjustment() {
     mutationFn: async (id: string) =>
       toStockAdjustment((await approveStockAdjustment(Number(id))).data),
     onSuccess: (_result, id) => invalidateOne(queryClient, id),
-  })
-}
-
-export function useCancelStockAdjustment() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, remarks }: { id: string; remarks?: string }) =>
-      toStockAdjustment((await cancelStockAdjustment(Number(id), remarks)).data),
-    onSuccess: (_result, variables) => invalidateOne(queryClient, variables.id),
   })
 }
 

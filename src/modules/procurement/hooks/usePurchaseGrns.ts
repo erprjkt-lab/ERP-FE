@@ -1,20 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   cancelGrn,
   createGrn,
   getGrn,
+  listGrnItems,
   listGrns,
   saveGrnItemQc,
   updateGrn,
 } from '@/api/purchaseGrns'
+import type { ItemListParams } from '@/types/api'
 import type {
   ApiGrn,
   ApiGrnItem,
+  ApiGrnItemRow,
   GrnPayload,
   GrnUpdatePayload,
   QcResultPayload,
 } from '@/types/api/procurement'
-import type { Grn, GrnItem, GrnLineStatus, GrnStatus } from '@/types/procurement'
+import type { Grn, GrnItem, GrnItemRow, GrnLineStatus, GrnStatus } from '@/types/procurement'
 
 export interface GrnItemInput {
   poItemId: string
@@ -65,6 +68,7 @@ function toGrnItem(api: ApiGrnItem): GrnItem {
     rejectedQty: api.rejected_qty != null ? Number(api.rejected_qty) : null,
     shortQty: api.short_qty != null ? Number(api.short_qty) : null,
     lineStatus: api.line_status as GrnLineStatus,
+    hasApprovedInspectionReport: api.has_approved_inspection_report ?? false,
     remarks: api.remark ?? undefined,
   }
 }
@@ -194,4 +198,48 @@ export function useSaveGrnItemQc() {
       queryClient.invalidateQueries({ queryKey: ['grns', variables.grnId] })
     },
   })
+}
+
+const optionalNumber = (value: number | string | null) => (value != null ? Number(value) : null)
+
+function toGrnItemRow(api: ApiGrnItemRow): GrnItemRow {
+  return {
+    id: String(api.id),
+    grnId: String(api.grn_id),
+    grnNo: api.grn_no,
+    grnDate: api.grn_date,
+    supplierId: String(api.supplier_id),
+    supplierName: api.supplier_name ?? undefined,
+    poNumber: api.po_number ?? undefined,
+    itemId: String(api.item_id),
+    itemCode: api.item_code ?? undefined,
+    itemName: api.item_name ?? undefined,
+    itemType: api.item_type ?? undefined,
+    materialGrade: api.material_grade ?? undefined,
+    receivedQty: Number(api.received_qty),
+    rate: optionalNumber(api.rate),
+    commercialUnit: api.commercial_unit ?? undefined,
+    batchNo: api.batch_no ?? undefined,
+    heatNo: api.heat_no ?? undefined,
+    locationName: api.location_name ?? undefined,
+    acceptedQty: optionalNumber(api.accepted_qty),
+    rejectedQty: optionalNumber(api.rejected_qty),
+    lineStatus: api.line_status as GrnLineStatus,
+    hasInspectionReport: api.has_inspection_report ?? false,
+  }
+}
+
+// Item-wise (one row per GRN line) listing — server-side paginated.
+export function useGrnItems(params: ItemListParams = {}) {
+  const query = useQuery({
+    queryKey: ['grns', 'items', params],
+    queryFn: () => listGrnItems(params),
+    placeholderData: keepPreviousData,
+  })
+  return {
+    data: (query.data?.data ?? []).map(toGrnItemRow),
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+  }
 }

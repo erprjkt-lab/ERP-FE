@@ -1,6 +1,7 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { App, Button, DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd'
-import type { FormInstance, FormListFieldData } from 'antd'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
+import type { FormInstance, FormListFieldData, SelectProps } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
@@ -18,6 +19,7 @@ import {
   useUpdatePurchaseRequisition,
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -34,7 +36,7 @@ export interface PurchaseRequisitionFormDrawerProps {
   requisitionId?: string
 }
 
-export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProps> = ({
+const PurchaseRequisitionFormDrawerInner: FC<PurchaseRequisitionFormDrawerProps> = ({
   open,
   onClose,
   requisitionId,
@@ -43,18 +45,18 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
   const [form] = Form.useForm()
   const isEdit = !!requisitionId
 
-  const { data: requisition } = usePurchaseRequisition(requisitionId)
+  const { data: requisition, isLoading: loadingRecord } = usePurchaseRequisition(requisitionId)
   const { data: departments } = useDepartments()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createRequisition, isPending: creating } = useCreatePurchaseRequisition()
   const { mutateAsync: updateRequisition, isPending: updating } = useUpdatePurchaseRequisition()
 
   const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
   const departmentOptions = (departments ?? []).map(d => ({ label: d.name, value: d.id }))
 
-  // Only DRAFT requisitions can be edited — enforced by ERP-BE's
+  // Only PENDING_APPROVAL requisitions can be edited — enforced by ERP-BE's
   // PurchaseRequisitionService::updateRequisition.
-  const isLocked = isEdit && requisition && requisition.status !== 'DRAFT'
+  const isLocked = isEdit && requisition && requisition.status !== 'PENDING_APPROVAL'
 
   useEffect(() => {
     if (!open) return
@@ -137,6 +139,7 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Purchase Requisition' : 'New Purchase Requisition'}
       status={
         isEdit && requisition
@@ -158,7 +161,8 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
     >
       {isLocked ? (
         <Typography.Text>
-          Only DRAFT requisitions can be edited. This requisition is {requisition?.status}.
+          Only requisitions pending approval can be edited. This requisition is{' '}
+          {requisition?.status}.
         </Typography.Text>
       ) : (
         <Form
@@ -167,7 +171,7 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
           initialValues={{ requisitionDate: dayjs(), priority: 'NORMAL', items: [{}] }}
         >
           <FormSection title="Requisition Details">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+            <div className="erp-form-grid is-3col">
               <Form.Item
                 label="Requisition Date"
                 name="requisitionDate"
@@ -210,16 +214,28 @@ export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProp
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <RequisitionItemRow
-                      key={field.key}
-                      field={field}
-                      form={form}
-                      itemOptions={itemOptions}
-                      items={items}
-                      onRemove={() => remove(field.name)}
-                    />
-                  ))}
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 700 }}>
+                      {fields.map(field => (
+                        <RequisitionItemRow
+                          key={field.key}
+                          field={field}
+                          form={form}
+                          itemOptions={itemOptions}
+                          itemsPopupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                          items={items}
+                          onRemove={() => remove(field.name)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"
@@ -243,6 +259,7 @@ interface RequisitionItemRowProps {
   field: FormListFieldData
   form: FormInstance
   itemOptions: { label: string; value: string }[]
+  itemsPopupRender?: SelectProps['popupRender']
   items: ProcurementItemOption[]
   onRemove: () => void
 }
@@ -251,6 +268,7 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
   field,
   form,
   itemOptions,
+  itemsPopupRender,
   items,
   onRemove,
 }) => {
@@ -270,6 +288,7 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
         <Select
           placeholder="Select item"
           options={itemOptions}
+          popupRender={itemsPopupRender}
           showSearch
           filterOption={(input, option) =>
             String(option?.label ?? '')
@@ -301,3 +320,5 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
     </div>
   )
 }
+
+export const PurchaseRequisitionFormDrawer = deferMount(PurchaseRequisitionFormDrawerInner)

@@ -1,10 +1,12 @@
 import { CheckOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Drawer, Empty, Space, Table, Typography } from 'antd'
+import { App, Button, Drawer, Empty, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
+import { useModulePermission } from '@/store/permissionStore'
 import { getErrorMessage } from '@/api/client'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { DataTable } from '@/components/ui/DataTable'
 import {
   DECISION_LABELS,
   REJECTION_REVIEW_STATUS_BADGE,
@@ -16,6 +18,7 @@ import { ReviewRejectionModal } from './ReviewRejectionModal'
 import { useJobCard } from '../hooks/useJobCards'
 import { useApproveRejectionReview, useRejectionReviews } from '../hooks/useRejections'
 import type { Rejection, RejectionReview } from '@/types/production'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface RejectionReviewDrawerProps {
   rejection: Rejection | undefined
@@ -24,6 +27,7 @@ interface RejectionReviewDrawerProps {
 }
 
 const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
+  const { canApprove } = useModulePermission('rejections')
   const { message } = App.useApp()
   const { data: reviews, isLoading } = useRejectionReviews(rejection.id)
   const { mutateAsync: approve, isPending: approving } = useApproveRejectionReview()
@@ -64,7 +68,7 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
       key: 'action',
       width: 80,
       render: (_, r) =>
-        r.status === 'SUBMITTED' ? (
+        r.status === 'SUBMITTED' && canApprove ? (
           <Button
             size="small"
             type="primary"
@@ -85,7 +89,7 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
   ) : reviews.length === 0 ? (
     <Empty description="No reviews yet" style={{ marginTop: 16 }} />
   ) : (
-    <Table<RejectionReview>
+    <DataTable<RejectionReview>
       columns={columns}
       dataSource={reviews}
       rowKey="id"
@@ -96,11 +100,12 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
   )
 }
 
-export const RejectionReviewDrawer: FC<RejectionReviewDrawerProps> = ({
+const RejectionReviewDrawerInner: FC<RejectionReviewDrawerProps> = ({
   rejection,
   open,
   onClose,
 }) => {
+  const { canWrite } = useModulePermission('rejections')
   const [reviewingRejection, setReviewingRejection] = useState<Rejection>()
   const { data: jobCard } = useJobCard(rejection?.jobCardId)
 
@@ -155,7 +160,7 @@ export const RejectionReviewDrawer: FC<RejectionReviewDrawerProps> = ({
             <RejectionReviewsPanel rejection={rejection} />
           </div>
 
-          {rejection.pendingQty ? (
+          {rejection.pendingQty && canWrite ? (
             <Button
               type="primary"
               block
@@ -179,3 +184,5 @@ export const RejectionReviewDrawer: FC<RejectionReviewDrawerProps> = ({
     </>
   )
 }
+
+export const RejectionReviewDrawer = deferMount(RejectionReviewDrawerInner)

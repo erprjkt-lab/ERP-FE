@@ -15,6 +15,7 @@ import {
 import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
@@ -22,6 +23,7 @@ import { useProcurementItems } from '../hooks/useProcurementItems'
 import { useCreatePurchaseOrderDirect } from '../hooks/usePurchaseOrders'
 import type { PurchaseOrderItemInput } from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
+import { loadMoreRender } from '@/components/ui/loadMoreRender'
 
 interface ItemRowValues {
   itemId: string
@@ -35,11 +37,12 @@ interface ItemRowValues {
 
 export const PurchaseOrderForm: FC = () => {
   const navigate = useNavigate()
+  const { canWrite: canSave } = usePagePermission()
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
 
   const supplierOptions = suppliers.map(s => ({ label: `${s.code} — ${s.name}`, value: s.id }))
@@ -104,9 +107,11 @@ export const PurchaseOrderForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/purchase/orders')}>Cancel</Button>
-            <Button type="primary" loading={creating} onClick={() => form.submit()}>
-              Save Purchase Order
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating} onClick={() => form.submit()}>
+                Save Purchase Order
+              </Button>
+            )}
           </Space>
         }
       />
@@ -196,73 +201,85 @@ export const PurchaseOrderForm: FC = () => {
             >
               {(fields, { add, remove }, { errors }) => (
                 <>
-                  {fields.map(field => (
-                    <div
-                      key={field.key}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr 32px',
-                        gap: '0 8px',
-                        alignItems: 'start',
-                      }}
-                    >
-                      <Form.Item
-                        name={[field.name, 'itemId']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <Select
-                          placeholder="Select item"
-                          options={itemOptions}
-                          showSearch
-                          filterOption={(input, option) =>
-                            String(option?.label ?? '')
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, 'orderedQty']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, 'rate']}
-                        rules={[{ required: true, message: 'Required' }]}
-                      >
-                        <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'discountPercent']}>
-                        <InputNumber
-                          placeholder="Disc %"
-                          min={0}
-                          max={100}
-                          style={{ width: '100%' }}
-                        />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'taxPercent']}>
-                        <InputNumber
-                          placeholder="Tax %"
-                          min={0}
-                          max={100}
-                          style={{ width: '100%' }}
-                        />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'deliveryDate']}>
-                        <DatePicker placeholder="Delivery" style={{ width: '100%' }} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, 'remarks']}>
-                        <Input placeholder="Remarks" />
-                      </Form.Item>
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <div style={{ minWidth: 780 }}>
+                      {fields.map(field => (
+                        <div
+                          key={field.key}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr 32px',
+                            gap: '0 8px',
+                            alignItems: 'start',
+                          }}
+                        >
+                          <Form.Item
+                            name={[field.name, 'itemId']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <Select
+                              placeholder="Select item"
+                              options={itemOptions}
+                              popupRender={loadMoreRender(hasMoreItems, loadMoreItems)}
+                              showSearch
+                              filterOption={(input, option) =>
+                                String(option?.label ?? '')
+                                  .toLowerCase()
+                                  .includes(input.toLowerCase())
+                              }
+                            />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, 'orderedQty']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <InputNumber placeholder="Qty" min={0.0001} style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, 'rate']}
+                            rules={[{ required: true, message: 'Required' }]}
+                          >
+                            <InputNumber placeholder="Rate" min={0} style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'discountPercent']}>
+                            <InputNumber
+                              placeholder="Disc %"
+                              min={0}
+                              max={100}
+                              style={{ width: '100%' }}
+                            />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'taxPercent']}>
+                            <InputNumber
+                              placeholder="Tax %"
+                              min={0}
+                              max={100}
+                              style={{ width: '100%' }}
+                            />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'deliveryDate']}>
+                            <DatePicker placeholder="Delivery" style={{ width: '100%' }} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'remarks']}>
+                            <Input placeholder="Remarks" />
+                          </Form.Item>
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => remove(field.name)}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                   <Form.ErrorList errors={errors} />
                   <Button
                     type="dashed"

@@ -2,6 +2,7 @@ import { App, Button, Card, Col, Form, Row, Space } from 'antd'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePagePermission } from '@/hooks/usePagePermission'
 import { FormField } from '@/components/ui/FormField'
 import { FormSection } from '@/components/ui/FormSection'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -13,6 +14,7 @@ import {
   useFinishedGood,
   useUpdateFinishedGood,
 } from '../hooks/useFinishedGoods'
+import { useHsnGstAutofill } from '../hooks/useHsnGstAutofill'
 import { useItemCategories } from '../hooks/useItemCategories'
 import { useMaterialGrades } from '../hooks/useMaterialGrades'
 import { useUoms } from '../hooks/useUoms'
@@ -25,11 +27,15 @@ export const FinishedGoodForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!id
+  // Creating needs `write` on this module, saving an existing record `modify`.
+  const { canWrite, canModify } = usePagePermission()
+  const canSave = isEdit ? canModify : canWrite
 
   const { data: finishedGood } = useFinishedGood(id)
   const { data: customers = [] } = useCustomers()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
+  const { hsnCodeOptions, onValuesChange: autofillGst } = useHsnGstAutofill(form)
   const { data: materialGrades = [] } = useMaterialGrades()
   const { mutateAsync: createFinishedGood, isPending: creating } = useCreateFinishedGood()
   const { mutateAsync: updateFinishedGood, isPending: updating } = useUpdateFinishedGood()
@@ -55,7 +61,9 @@ export const FinishedGoodForm: FC = () => {
         gstPercent: finishedGood.gstPercent,
         description: finishedGood.description,
         status: finishedGood.status,
-        imageUrl: finishedGood.imageUrl,
+        batchTracking: finishedGood.batchTracking,
+        heatTracking: finishedGood.heatTracking,
+        serialTracking: finishedGood.serialTracking,
         customerId: finishedGood.customerId ?? undefined,
         customerPartNo: finishedGood.customerPartNo,
         drawingNo: finishedGood.drawingNo,
@@ -86,7 +94,9 @@ export const FinishedGoodForm: FC = () => {
       gstPercent: values.gstPercent as number | undefined,
       description: values.description as string | undefined,
       status: values.status as 'active' | 'inactive',
-      imageUrl: values.imageUrl as string | undefined,
+      batchTracking: values.batchTracking as boolean | undefined,
+      heatTracking: values.heatTracking as boolean | undefined,
+      serialTracking: values.serialTracking as boolean | undefined,
       customerId: (values.customerId as string | undefined) ?? null,
       customerName: customerOptions.find(o => o.value === values.customerId)?.label,
       customerPartNo: values.customerPartNo as string | undefined,
@@ -124,9 +134,11 @@ export const FinishedGoodForm: FC = () => {
         actions={
           <Space>
             <Button onClick={() => navigate('/masters/finished-goods')}>Cancel</Button>
-            <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
-              {isEdit ? 'Update' : 'Save'} Finished Good
-            </Button>
+            {canSave && (
+              <Button type="primary" loading={creating || updating} onClick={() => form.submit()}>
+                {isEdit ? 'Update' : 'Save'} Finished Good
+              </Button>
+            )}
           </Space>
         }
       />
@@ -136,6 +148,7 @@ export const FinishedGoodForm: FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleFinish}
+          onValuesChange={autofillGst}
           initialValues={{ status: 'active' }}
         >
           <FormSection title="Basic Info">
@@ -178,7 +191,12 @@ export const FinishedGoodForm: FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
-                <FormField label="HSN Code" name="hsnCode" />
+                <FormField
+                  label="HSN Code"
+                  name="hsnCode"
+                  fieldType="select"
+                  options={hsnCodeOptions}
+                />
               </Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField label="GST %" name="gstPercent" fieldType="number" />
@@ -189,6 +207,30 @@ export const FinishedGoodForm: FC = () => {
                   name="status"
                   fieldType="select"
                   options={MASTER_STATUS_OPTIONS}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Batch Tracking"
+                  name="batchTracking"
+                  fieldType="switch"
+                  valuePropName="checked"
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Heat Tracking"
+                  name="heatTracking"
+                  fieldType="switch"
+                  valuePropName="checked"
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12}>
+                <FormField
+                  label="Serial Tracking"
+                  name="serialTracking"
+                  fieldType="switch"
+                  valuePropName="checked"
                 />
               </Col>
             </Row>
@@ -234,18 +276,12 @@ export const FinishedGoodForm: FC = () => {
                 />
               </Col>
               <Col xs={24} sm={12} md={12}>
-                <FormField label="Weight" name="weight" fieldType="number" />
+                <FormField label="Weight (kg)" name="weight" fieldType="number" />
               </Col>
               <Col xs={24} sm={12} md={12}>
                 <FormField label="Price" name="price" fieldType="number" />
               </Col>
             </Row>
-          </FormSection>
-
-          <FormSection title="Image">
-            <FormField label="Image" name="imageUrl">
-              <UploadField mode="image" accept="image/*" />
-            </FormField>
           </FormSection>
         </Form>
       </Card>
