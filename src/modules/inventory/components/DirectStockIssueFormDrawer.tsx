@@ -12,6 +12,7 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import type { DirectIssueLine } from '@/types/api/inventory'
 import { useCreateDirectStockIssue } from '../hooks/useStockIssues'
 import { ItemLotAllocator, parseLotKey } from './ItemLotAllocator'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemLine {
   itemId: string
@@ -24,7 +25,7 @@ export interface DirectStockIssueFormDrawerProps {
   onClose: () => void
 }
 
-export const DirectStockIssueFormDrawer: FC<DirectStockIssueFormDrawerProps> = ({
+const DirectStockIssueFormDrawerInner: FC<DirectStockIssueFormDrawerProps> = ({
   open,
   onClose,
 }) => {
@@ -214,3 +215,5 @@ export const DirectStockIssueFormDrawer: FC<DirectStockIssueFormDrawerProps> = (
     </FormDrawer>
   )
 }
+
+export const DirectStockIssueFormDrawer = deferMount(DirectStockIssueFormDrawerInner)

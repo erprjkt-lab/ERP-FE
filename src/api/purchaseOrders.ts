@@ -28,15 +28,24 @@ export function updatePurchaseOrder(
   return apiRequest(`/api/v1/purchase-orders/${id}`, { method: 'PUT', body: payload })
 }
 
+/** `pendingOnly` is ERP-BE's "still needs receiving" filter: approved/sent/partially
+ *  received POs whose line has received_qty < ordered_qty — what GRN receives against. */
+export interface PurchaseOrderItemListParams extends ItemListParams {
+  supplierId?: string | null
+  pendingOnly?: boolean
+}
+
 // Flat one-row-per-PO-line listing (joined with PO, supplier, item and UOM).
 export function listPurchaseOrderItems(
-  params: ItemListParams = {},
+  params: PurchaseOrderItemListParams = {},
 ): Promise<PaginatedEnvelope<ApiPurchaseOrderItemRow>> {
   return apiRequest('/api/v1/purchase-order-items', {
     query: {
       page: params.page ?? 1,
       per_page: params.perPage ?? 20,
       ...(params.status ? { status: params.status } : {}),
+      ...(params.supplierId ? { supplier_id: params.supplierId } : {}),
+      ...(params.pendingOnly ? { pending_only: 1 } : {}),
     },
   })
 }

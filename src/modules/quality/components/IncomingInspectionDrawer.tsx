@@ -1,6 +1,7 @@
 import { Drawer } from 'antd'
 import type { FC } from 'react'
 import { IncomingInspectionReports } from './IncomingInspectionReports'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface IncomingInspectionDrawerProps {
   open: boolean
@@ -11,7 +12,7 @@ export interface IncomingInspectionDrawerProps {
   onClose: () => void
 }
 
-export const IncomingInspectionDrawer: FC<IncomingInspectionDrawerProps> = ({
+const IncomingInspectionDrawerInner: FC<IncomingInspectionDrawerProps> = ({
   open,
   grnItemId,
   itemId,
@@ -33,3 +34,5 @@ export const IncomingInspectionDrawer: FC<IncomingInspectionDrawerProps> = ({
     </Drawer>
   )
 }
+
+export const IncomingInspectionDrawer = deferMount(IncomingInspectionDrawerInner)

@@ -1,4 +1,4 @@
-import { App, Form, InputNumber, Select, Space, Tag, Typography } from 'antd'
+import { App, Form, InputNumber, Space, Tag, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import dayjs from 'dayjs'
 import type { FC } from 'react'
@@ -6,9 +6,8 @@ import { useEffect } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { FormField } from '@/components/ui/FormField'
 import { Modal } from '@/components/ui/Modal'
-import { useLocations } from '@/modules/inventory/hooks/useLocations'
 import type { ProductionReceipt } from '@/types/production'
-import { useReceiveProduction } from '../hooks/useProductionReceipts'
+import { useCreateMovement } from '../hooks/useJobCardMovements'
 import type { StepProgress } from '../utils/jobCardProgress'
 import { getErrorMessage } from '@/api/client'
 import { formatDateTime } from '@/utils/date'
@@ -19,8 +18,10 @@ export interface ReceiveProductionModalProps {
   jobCardId: string
   /** The last route step — the only one whose OK qty settles into stock. */
   step?: StepProgress
-  /** Where the job card says finished goods land, used as the default store. */
-  outputLocationId?: string
+  /** True when receiving a rework redo's output: ERP-BE keeps that balance
+   *  apart from the first pass and validates the move against it. */
+  isRework?: boolean
+  /** Where ERP-BE posts the finished goods — the job card's output store. */
   outputLocationName?: string
   /** Receipts already taken against this job card. */
   receipts: ProductionReceipt[]
@@ -28,7 +29,6 @@ export interface ReceiveProductionModalProps {
 
 interface ReceiveFormValues {
   receivedQty: number
-  storeLocationId?: string
   receivedAt?: { format: (fmt: string) => string }
 }
 
@@ -37,27 +37,22 @@ export const ReceiveProductionModal: FC<ReceiveProductionModalProps> = ({
   onClose,
   jobCardId,
   step,
-  outputLocationId,
+  isRework = false,
   outputLocationName,
   receipts,
 }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm<ReceiveFormValues>()
-  const { data: locations = [] } = useLocations()
-  const { mutateAsync: receive, isPending } = useReceiveProduction(jobCardId)
+  const { mutateAsync: createMovement, isPending } = useCreateMovement(jobCardId)
 
   const readyQty = step?.readyToMoveQty ?? 0
 
   useEffect(() => {
     if (open) {
-      form.setFieldsValue({
-        receivedQty: readyQty,
-        storeLocationId: outputLocationId,
-        receivedAt: dayjs(),
-      })
+      form.setFieldsValue({ receivedQty: readyQty, receivedAt: dayjs() })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, readyQty, outputLocationId])
+  }, [open, readyQty])
 
   const handleOk = async () => {
     let values: ReceiveFormValues
@@ -67,16 +62,21 @@ export const ReceiveProductionModal: FC<ReceiveProductionModalProps> = ({
       return
     }
 
+    if (!step) return
+
     if (values.receivedQty > readyQty) {
       message.error(`Only ${readyQty} OK qty is available to receive`)
       return
     }
 
     try {
-      await receive({
-        received_qty: values.receivedQty,
-        store_location_id: values.storeLocationId ? Number(values.storeLocationId) : undefined,
-        received_at: values.receivedAt ? values.receivedAt.format('YYYY-MM-DD') : undefined,
+      // Receiving is a move out of the last route step with no next process:
+      // ERP-BE stocks it into the job card's output store and writes the receipt.
+      await createMovement({
+        is_rework: isRework,
+        from_process_id: Number(step.step.processId),
+        moved_qty: values.receivedQty,
+        moved_at: values.receivedAt ? values.receivedAt.format('YYYY-MM-DD') : undefined,
       })
       message.success(`${values.receivedQty} received into store`)
       onClose()
@@ -130,19 +130,6 @@ export const ReceiveProductionModal: FC<ReceiveProductionModalProps> = ({
           ]}
         >
           <InputNumber size="large" min={0} max={readyQty} style={{ width: '100%' }} />
-        </Form.Item>
-
-        <Form.Item label="Store" name="storeLocationId">
-          <Select
-            placeholder="Job card's output store"
-            options={locations.map(location => ({ label: location.name, value: location.id }))}
-            showSearch
-            filterOption={(input, option) =>
-              String(option?.label ?? '')
-                .toLowerCase()
-                .includes(input.toLowerCase())
-            }
-          />
         </Form.Item>
 
         <FormField label="Receive Date" name="receivedAt" fieldType="date" style={{ width: 200 }} />

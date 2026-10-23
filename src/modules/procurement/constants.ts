@@ -170,3 +170,7 @@ export const GRN_LINE_STATUS_BADGE: Record<GrnLineStatus, StatusBadgeStatus> = {
   3: 'approved',
   4: 'cancelled',
 }
+
+/** GRN line statuses past the point where QC can still be recorded:
+ *  2 = QC Done, 3 = Stock Posted, 4 = Cancelled. */
+export const QC_LOCKED_STATUSES = new Set([2, 3, 4])

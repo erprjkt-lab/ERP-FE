@@ -182,13 +182,6 @@ export interface ApiProductionReceipt {
   stock_movement_id: number | null
 }
 
-export interface CreateProductionReceiptPayload {
-  received_qty: number
-  /** Defaults to the job card's output location when omitted. */
-  store_location_id?: number | null
-  received_at?: string | null
-}
-
 export interface ApiMaterialSummaryRow {
   component_item_id: number
   component_name: string | null
@@ -316,7 +309,9 @@ export interface ApiJobCardMovement {
 
 export interface CreateMovementPayload {
   from_process_id: number
-  to_process_id: number
+  /** Omitted when moving out of the last route step — ERP-BE then posts the qty
+   *  into the job card's output store and writes the production receipt. */
+  to_process_id?: number
   moved_qty: number
   moved_at?: string | null
   /** Keeps a rework redo in its own balance bucket instead of pooling with the

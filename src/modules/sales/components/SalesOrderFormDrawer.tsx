@@ -21,6 +21,7 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
 import { useCreateSalesOrder, useSalesOrder, useUpdateSalesOrder } from '../hooks/useSalesOrders'
 import type { SalesOrderItemInput } from '../hooks/useSalesOrders'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -49,7 +50,7 @@ export interface SalesOrderFormDrawerProps {
   orderId?: string
 }
 
-export const SalesOrderFormDrawer: FC<SalesOrderFormDrawerProps> = ({ open, onClose, orderId }) => {
+const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClose, orderId }) => {
   const isEdit = !!orderId
   const { message } = App.useApp()
   const [form] = Form.useForm<OrderFormValues>()
@@ -332,3 +333,5 @@ export const SalesOrderFormDrawer: FC<SalesOrderFormDrawerProps> = ({ open, onCl
     </FormDrawer>
   )
 }
+
+export const SalesOrderFormDrawer = deferMount(SalesOrderFormDrawerInner)

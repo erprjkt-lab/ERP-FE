@@ -36,6 +36,7 @@ import {
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
 import { formatDateTime } from '@/utils/date'
+import { deferMount } from '@/components/ui/deferMount'
 
 type Mode = 'manual' | 'fromRequisitions'
 
@@ -66,7 +67,7 @@ export interface PurchaseEnquiryFormDrawerProps {
   fromRequisitionId?: string
 }
 
-export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
+const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
   open,
   onClose,
   enquiryId,
@@ -538,3 +539,5 @@ export const PurchaseEnquiryFormDrawer: FC<PurchaseEnquiryFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const PurchaseEnquiryFormDrawer = deferMount(PurchaseEnquiryFormDrawerInner)

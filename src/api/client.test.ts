@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/store/authStore'
-import { apiRequest, ApiRequestError, getErrorMessage, _reset401Cooldown } from './client'
+import {
+  apiRequest,
+  ApiRequestError,
+  getErrorMessage,
+  _reset401Cooldown,
+  _resetThrottle,
+} from './client'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -195,5 +201,78 @@ describe('getErrorMessage', () => {
   it('falls back for non-Error throwables, honouring a custom fallback', () => {
     expect(getErrorMessage('a string')).toBe('Something went wrong')
     expect(getErrorMessage(undefined, 'Login failed')).toBe('Login failed')
+  })
+})
+
+describe('request throttling', () => {
+  beforeEach(() => {
+    _reset401Cooldown()
+    _resetThrottle()
+    useAuthStore.setState({ token: 'test-token' })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('never has more than 4 requests in flight at once', async () => {
+    let inFlight = 0
+    let peak = 0
+    const release: Array<() => void> = []
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => {
+        inFlight += 1
+        peak = Math.max(peak, inFlight)
+        return new Promise<Response>(resolve => {
+          release.push(() => {
+            inFlight -= 1
+            resolve(mockResponse({ json: { data: null } }))
+          })
+        })
+      }),
+    )
+
+    const requests = Array.from({ length: 12 }, () => apiRequest('/ping'))
+    // Drain the queue a slot at a time; each release lets a waiter through.
+    for (let i = 0; i < 12; i += 1) {
+      await vi.waitFor(() => expect(release.length).toBeGreaterThan(i))
+      release[i]()
+    }
+    await Promise.all(requests)
+
+    expect(peak).toBe(4)
+  })
+
+  it('parks every in-flight request on a 429 instead of retrying each one', async () => {
+    const rateLimited = {
+      ok: false,
+      status: 429,
+      statusText: 'Too Many Requests',
+      headers: { get: (key: string) => (key === 'Retry-After' ? '0.01' : 'application/json') },
+      json: async () => ({ message: 'Too Many Requests' }),
+    } as unknown as Response
+
+    let calls = 0
+    const started: number[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1
+        started.push(Date.now())
+        // Only the very first request is rate limited; the cooldown it sets
+        // must still delay the one queued behind it.
+        return calls === 1 ? rateLimited : mockResponse({ json: { data: null } })
+      }),
+    )
+
+    const first = apiRequest('/a')
+    const second = apiRequest('/b')
+    await Promise.all([first, second])
+
+    // 2 requests + 1 retry of the rate-limited one, not 2 x 3 independent retries.
+    expect(calls).toBe(3)
+    expect(started[started.length - 1] - started[0]).toBeGreaterThanOrEqual(10)
   })
 })

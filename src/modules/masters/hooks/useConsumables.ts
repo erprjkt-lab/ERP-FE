@@ -59,17 +59,20 @@ function toPayload(input: Partial<ConsumableInput>) {
   }
 }
 
-function useLookupMaps() {
-  const { data: categories } = useItemCategories()
-  const { data: uoms } = useUoms()
+function useLookupMaps(enabled: boolean) {
+  const { data: categories } = useItemCategories(1, 200, enabled)
+  const { data: uoms } = useUoms(1, 200, enabled)
   return {
     categoriesById: new Map(categories.map(c => [String(c.id), c])),
     uomsById: new Map(uoms.map(u => [String(u.id), u])),
   }
 }
 
-export function useConsumables(page = 1, perPage = 100) {
-  const { categoriesById, uomsById } = useLookupMaps()
+/** `withNames` resolves category/uom/material-grade ids to names, which costs a
+ *  fetch of each of those masters. A picker that shows only code and name
+ *  passes false and skips all of them. */
+export function useConsumables(page = 1, perPage = 100, withNames = true) {
+  const { categoriesById, uomsById } = useLookupMaps(withNames)
   const query = useQuery({
     queryKey: ['consumables', page, perPage],
     queryFn: () => consumablesApi.list(page, perPage),

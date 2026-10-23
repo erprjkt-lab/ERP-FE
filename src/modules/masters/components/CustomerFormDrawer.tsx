@@ -22,6 +22,7 @@ import { useCreateCustomer, useCustomer, useUpdateCustomer } from '../hooks/useC
 import { useStates } from '../hooks/useStates'
 import type { CustomerInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface CustomerFormDrawerProps {
   open: boolean
@@ -30,7 +31,7 @@ export interface CustomerFormDrawerProps {
   customerId?: string
 }
 
-export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose, customerId }) => {
+const CustomerFormDrawerInner: FC<CustomerFormDrawerProps> = ({ open, onClose, customerId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!customerId
@@ -313,3 +314,5 @@ export const CustomerFormDrawer: FC<CustomerFormDrawerProps> = ({ open, onClose,
     </FormDrawer>
   )
 }
+
+export const CustomerFormDrawer = deferMount(CustomerFormDrawerInner)

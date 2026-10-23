@@ -13,12 +13,12 @@ import type {
 import type { ItemCategory } from '@/types/masters'
 
 /** No-arg calls keep the old single-fetch behaviour for dropdowns. */
-export function useItemCategories(page = 1, perPage = 200) {
+export function useItemCategories(page = 1, perPage = 200, enabled = true) {
   const { data, isLoading } = useQuery({
     queryKey: ['masters', 'itemCategories', page, perPage],
     queryFn: () => listItemCategories(page, perPage),
-    staleTime: Infinity,
     placeholderData: keepPreviousData,
+    enabled,
   })
   return { data: data?.data ?? [], meta: data?.meta, isLoading }
 }

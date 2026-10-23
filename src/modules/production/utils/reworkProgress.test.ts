@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { JobCardRouteStep, ProcessLog, RejectionReview } from '@/types/production'
+import type {
+  JobCardMovement,
+  JobCardRouteStep,
+  ProcessLog,
+  RejectionReview,
+} from '@/types/production'
 import { computeReworkBatch } from './reworkProgress'
 
 const routes: JobCardRouteStep[] = [
@@ -33,6 +38,22 @@ function log(processId: string, ok: number, rejected = 0, reviewId?: string): Pr
     bypassedQty: 0,
     inboundReworkReviewId: reviewId,
     isRework: Boolean(reviewId),
+  }
+}
+
+// A receive: a rework-bucket movement out of a process with no next process.
+function movedToStore(fromProcessId: string, movedQty: number): JobCardMovement {
+  return {
+    id: `mv-${fromProcessId}-store-${movedQty}`,
+    fromProcessId,
+    fromProcessName: '',
+    toProcessId: '',
+    toProcessName: '',
+    reworkReviewId: null,
+    isRework: true,
+    movedQty,
+    movedAt: '2026-10-07',
+    acceptances: [],
   }
 }
 
@@ -73,7 +94,7 @@ describe('computeReworkBatch', () => {
 
     // 3 OK at Machining, nothing logged at Inspection yet.
     expect(batch.steps[0].readyToMoveQty).toBe(3)
-    // Last step of the redo has nowhere to move to.
+    // Nothing logged at the last step yet, so nothing to receive into store.
     expect(batch.steps[1].readyToMoveQty).toBe(0)
   })
 
@@ -94,5 +115,18 @@ describe('computeReworkBatch', () => {
 
     expect(batch.finishedQty).toBe(3)
     expect(batch.steps.every(step => step.pendingQty === 0)).toBe(true)
+    // The redo's own output is receivable into store like any first-pass qty.
+    expect(batch.steps[1].readyToMoveQty).toBe(3)
+  })
+
+  it('drops the last step to nothing once the redo qty is received into store', () => {
+    const batch = computeReworkBatch(
+      routes,
+      review,
+      [log('20', 3, 0, 'rev-1'), log('30', 3, 0, 'rev-1')],
+      [movedToStore('30', 3)],
+    )
+
+    expect(batch.steps[1].readyToMoveQty).toBe(0)
   })
 })

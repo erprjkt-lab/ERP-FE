@@ -1,4 +1,10 @@
-import { AuditOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons'
+import {
+  AuditOutlined,
+  EditOutlined,
+  EyeOutlined,
+  PlusOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons'
 import { Button, Card, Col, Input, Row, Select } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
@@ -13,7 +19,13 @@ import { IncomingInspectionDrawer } from '@/modules/quality/components/IncomingI
 import type { TableActionItem } from '@/components/ui'
 import type { GrnItemRow, GrnLineStatus } from '@/types/procurement'
 import { GrnFormDrawer } from '../components/GrnFormDrawer'
-import { GRN_LINE_STATUS_BADGE, GRN_LINE_STATUS_LABELS, ITEM_TYPE_RAW_MATERIAL } from '../constants'
+import { GrnQcModal } from '../components/GrnQcModal'
+import {
+  GRN_LINE_STATUS_BADGE,
+  GRN_LINE_STATUS_LABELS,
+  ITEM_TYPE_RAW_MATERIAL,
+  QC_LOCKED_STATUSES,
+} from '../constants'
 import { useGrnItems } from '../hooks/usePurchaseGrns'
 import { useProcurementFilters, useProcurementStore } from '../store/procurementStore'
 import { formatDateTime } from '@/utils/date'
@@ -27,6 +39,7 @@ interface RowActions {
   onView: (record: GrnItemRow) => void
   onEdit: (record: GrnItemRow) => void
   onIir: (record: GrnItemRow) => void
+  onQc: (record: GrnItemRow) => void
   /** Opening the IIR drawer is an incoming-inspection action, so it answers to
    *  the `iir` module rather than this page's. */
   can: { modify: boolean; iir: boolean }
@@ -124,6 +137,18 @@ const getGrnActions = (record: GrnItemRow, a: RowActions): TableActionItem[] => 
         },
       ]
     : []),
+  // Only on lines QC can still be recorded against — once the line is QC Done,
+  // Stock Posted or Cancelled there is nothing to record. The raw-material rule
+  // (an approved IIR first) is enforced inside the modal, which can look it up
+  // per line; a row action cannot.
+  {
+    key: 'qc',
+    label: 'Run QC',
+    icon: <SafetyCertificateOutlined />,
+    variant: 'success' as const,
+    hidden: !a.can.modify || QC_LOCKED_STATUSES.has(Number(record.lineStatus)),
+    onClick: () => a.onQc(record),
+  },
 ]
 
 export const PurchaseGrnList: FC = () => {
@@ -132,6 +157,7 @@ export const PurchaseGrnList: FC = () => {
   const { canRead: canReadIir } = useModulePermission('iir')
   const [drawerState, setDrawerState] = useState<{ mode: 'add' } | { mode: 'edit'; id: string }>()
   const [iirRow, setIirRow] = useState<GrnItemRow>()
+  const [qcRow, setQcRow] = useState<GrnItemRow>()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const filters = useProcurementFilters('grn')
@@ -151,6 +177,7 @@ export const PurchaseGrnList: FC = () => {
     onView: record => navigate(`/purchase/grn/${record.grnId}`),
     onEdit: record => setDrawerState({ mode: 'edit', id: record.grnId }),
     onIir: record => setIirRow(record),
+    onQc: record => setQcRow(record),
     can: { modify: canModify, iir: canReadIir },
   }
 
@@ -249,6 +276,8 @@ export const PurchaseGrnList: FC = () => {
         grnNo={iirRow?.grnNo}
         onClose={() => setIirRow(undefined)}
       />
+
+      {qcRow && <GrnQcModal line={qcRow} onClose={() => setQcRow(undefined)} />}
 
       <GrnFormDrawer
         open={!!drawerState}

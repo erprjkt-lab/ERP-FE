@@ -12,6 +12,7 @@ import type { DeliveryChallanItemRow } from '@/types/sales'
 import { useDeliveryChallanItems } from '../hooks/useDeliveryChallans'
 import { useCreateSalesInvoiceFromChallan } from '../hooks/useSalesInvoices'
 import { formatDateTime } from '@/utils/date'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface HeaderValues {
   invoiceDate: dayjs.Dayjs
@@ -30,7 +31,7 @@ export interface SalesInvoiceFromChallanDrawerProps {
   onClose: () => void
 }
 
-export const SalesInvoiceFromChallanDrawer: FC<SalesInvoiceFromChallanDrawerProps> = ({
+const SalesInvoiceFromChallanDrawerInner: FC<SalesInvoiceFromChallanDrawerProps> = ({
   open,
   onClose,
 }) => {
@@ -226,3 +227,5 @@ export const SalesInvoiceFromChallanDrawer: FC<SalesInvoiceFromChallanDrawerProp
     </FormDrawer>
   )
 }
+
+export const SalesInvoiceFromChallanDrawer = deferMount(SalesInvoiceFromChallanDrawerInner)

@@ -13,6 +13,7 @@ import {
   useItemBom,
   useUpdateItemBomLine,
 } from '../hooks/useItemBom'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface ItemBomDrawerProps {
   open: boolean
@@ -20,7 +21,7 @@ export interface ItemBomDrawerProps {
   itemId?: string
 }
 
-export const ItemBomDrawer: FC<ItemBomDrawerProps> = ({ open, onClose, itemId }) => {
+const ItemBomDrawerInner: FC<ItemBomDrawerProps> = ({ open, onClose, itemId }) => {
   const { data: finishedGood } = useFinishedGood(itemId)
   const { data: bomLines = [], isLoading } = useItemBom(itemId)
   const { data: componentItems = [] } = useProcurementItems()
@@ -121,3 +122,5 @@ export const ItemBomDrawer: FC<ItemBomDrawerProps> = ({ open, onClose, itemId })
     </Drawer>
   )
 }
+
+export const ItemBomDrawer = deferMount(ItemBomDrawerInner)

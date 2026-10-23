@@ -26,6 +26,7 @@ import {
 } from '../hooks/useSalesEnquiries'
 import type { SalesEnquiryItemInput } from '../hooks/useSalesEnquiries'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -47,7 +48,7 @@ export interface SalesEnquiryFormDrawerProps {
   enquiryId?: string
 }
 
-export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
+const SalesEnquiryFormDrawerInner: FC<SalesEnquiryFormDrawerProps> = ({
   open,
   onClose,
   enquiryId,
@@ -277,3 +278,5 @@ export const SalesEnquiryFormDrawer: FC<SalesEnquiryFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const SalesEnquiryFormDrawer = deferMount(SalesEnquiryFormDrawerInner)

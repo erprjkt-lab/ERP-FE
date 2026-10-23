@@ -14,6 +14,7 @@ import {
 } from '../hooks/useSupplierQuotations'
 import type { SupplierQuotationItemInput } from '../hooks/useSupplierQuotations'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   quotedQty: number
@@ -42,7 +43,7 @@ export interface SupplierQuotationFormDrawerProps {
   initialPeSupplierId?: string
 }
 
-export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> = ({
+const SupplierQuotationFormDrawerInner: FC<SupplierQuotationFormDrawerProps> = ({
   open,
   onClose,
   enquiryId,
@@ -326,3 +327,5 @@ export const SupplierQuotationFormDrawer: FC<SupplierQuotationFormDrawerProps> =
     </FormDrawer>
   )
 }
+
+export const SupplierQuotationFormDrawer = deferMount(SupplierQuotationFormDrawerInner)

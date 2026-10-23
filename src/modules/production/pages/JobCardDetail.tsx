@@ -50,7 +50,6 @@ import { ReturnMaterialModal } from '../components/ReturnMaterialModal'
 import { useItemBom } from '../hooks/useItemBom'
 import { useJobCard } from '../hooks/useJobCards'
 import {
-  useBomRequirements,
   useDeleteMaterialIssue,
   useDeleteMaterialReturn,
   useMaterialIssues,
@@ -63,7 +62,7 @@ import {
   useJobCardMovements,
 } from '../hooks/useJobCardMovements'
 import { useDeleteProcessLog, useProcessLogs } from '../hooks/useProcessLogs'
-import { useDeleteProductionReceipt, useProductionReceipts } from '../hooks/useProductionReceipts'
+import { useProductionReceipts } from '../hooks/useProductionReceipts'
 import { useReworkReviewsForJobCard } from '../hooks/useRejections'
 import { computeJobCardTotals, computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
@@ -110,22 +109,32 @@ export const JobCardDetail: FC = () => {
   const [activeReworkReviewId, setActiveReworkReviewId] = useState<string>()
   const [drawer, setDrawer] = useState<'accept' | 'log' | 'move' | 'outsource' | 'receive'>()
   const [returnOpen, setReturnOpen] = useState(false)
+  // The lower tabs each have their own endpoint; only the one on screen fetches.
+  const [detailTab, setDetailTab] = useState('materials')
 
   const { data: jobCard, isLoading } = useJobCard(id)
   const { data: logs = [], isLoading: logsLoading } = useProcessLogs(id)
   const { data: movements = [] } = useJobCardMovements(id)
-  const { data: requirements = [] } = useBomRequirements(id)
   const { data: issues = [], isLoading: issuesLoading } = useMaterialIssues(id)
   const { data: materialSummary = [], isLoading: summaryLoading } = useMaterialSummary(id)
-  const { data: materialReturns = [], isLoading: returnsLoading } = useMaterialReturns(id)
-  const { data: receipts = [], isLoading: receiptsLoading } = useProductionReceipts(id)
-  const { data: bomLines = [] } = useItemBom(jobCard?.itemId)
+  // The return modal fetches the same key itself, so the count fills in here
+  // too once it has been opened.
+  const {
+    data: materialReturns = [],
+    isLoading: returnsLoading,
+    isSuccess: returnsLoaded,
+  } = useMaterialReturns(id, detailTab === 'returns')
+  const {
+    data: receipts = [],
+    isLoading: receiptsLoading,
+    isSuccess: receiptsLoaded,
+  } = useProductionReceipts(id, detailTab === 'receipts' || drawer === 'receive')
+  const { data: bomLines = [] } = useItemBom(jobCard?.itemId, false)
   const { mutateAsync: removeLog } = useDeleteProcessLog(id)
   const { mutateAsync: removeMovement } = useDeleteMovement(id)
   const { mutateAsync: removeAcceptance } = useDeleteAcceptance(id)
   const { mutateAsync: removeIssue } = useDeleteMaterialIssue(id)
   const { mutateAsync: removeReturn } = useDeleteMaterialReturn(id)
-  const { mutateAsync: removeReceipt } = useDeleteProductionReceipt(id)
   const {
     data: reworkReviews,
     allReviews: rejectionReviews,
@@ -138,17 +147,7 @@ export const JobCardDetail: FC = () => {
   // tab counts only its own logs. A rework log re-processes qty the first pass already
   // counted, and mixing them would double-count every step.
   const firstPassLogs = logs.filter(log => !log.isRework)
-  // ERP-BE no longer posts finished-goods stock when the last step is logged; the
-  // qty waits to be received, so what has been received nets out of that step's
-  // ready-to-move figure the way a movement does for every earlier step.
-  const receivedQty = receipts.reduce((sum, receipt) => sum + receipt.receivedQty, 0)
-  const progress = computeStepProgress(
-    jobCard?.routes ?? [],
-    firstPassLogs,
-    movements,
-    orderedQty,
-    receivedQty,
-  )
+  const progress = computeStepProgress(jobCard?.routes ?? [], firstPassLogs, movements, orderedQty)
   const reworkBatches = computeReworkBatches(jobCard?.routes ?? [], reworkReviews, logs, movements)
   const activeBatch = reworkBatches.find(batch => batch.review.id === activeReworkReviewId)
   const activeRows = activeBatch?.steps ?? progress
@@ -298,17 +297,16 @@ export const JobCardDetail: FC = () => {
   // material-summary carries the server's own required/issued/used/returned/pending
   // per component, but only once something has been issued (the requirement rows
   // it reads are created lazily by the first issue), so the planned figures still
-  // fall back to the item's BOM before that.
+  // fall back to the item's BOM before that. GET bom-requirements is not fetched
+  // here: material-summary is built from the same requirement rows and already
+  // carries every field this table reads off them.
   const materialRows: MaterialRow[] = bomLines.map(line => {
     const summaryRow = materialSummary.find(r => r.componentItemId === line.componentItemId)
-    const requirement = requirements.find(req => req.componentItemId === line.componentItemId)
-    const requiredQty =
-      summaryRow?.requiredQty ?? requirement?.requiredQty ?? line.quantityPerUnit * orderedQty
-    const issuedQty = summaryRow?.issuedQty ?? requirement?.issuedQty ?? 0
+    const requiredQty = summaryRow?.requiredQty ?? line.quantityPerUnit * orderedQty
+    const issuedQty = summaryRow?.issuedQty ?? 0
     return {
       key: line.componentItemId,
-      componentName:
-        line.componentName || summaryRow?.componentName || requirement?.componentName || '',
+      componentName: line.componentName || summaryRow?.componentName || '',
       requiredQty,
       issuedQty,
       usedQty: summaryRow?.usedQty ?? 0,
@@ -493,17 +491,8 @@ export const JobCardDetail: FC = () => {
     { title: 'Item', dataIndex: 'itemName', key: 'itemName' },
     { title: 'Store', dataIndex: 'storeLocationName', key: 'storeLocationName', width: 170 },
     { title: 'Qty', dataIndex: 'receivedQty', key: 'receivedQty', width: 90 },
-    ...(canDelete
-      ? [
-          deleteColumn<ProductionReceipt>(receipt => ({
-            title: `Delete the receipt of ${receipt.receivedQty}?`,
-            content:
-              'Takes the finished goods back out of store stock and returns the qty to ready-to-receive at the final process. Refused if any of it has already been issued or sold.',
-            run: () => removeReceipt(receipt.id),
-            success: 'Production receipt deleted and stock reversed',
-          })),
-        ]
-      : []),
+    // No delete here: ERP-BE writes the receipt as part of the movement out of
+    // the last step, so it is reversed by deleting that movement.
   ]
 
   const logColumns: TableColumnsType<ProcessLog> = [
@@ -546,7 +535,12 @@ export const JobCardDetail: FC = () => {
       render: formatDateTime,
     },
     { title: 'From', dataIndex: 'fromProcessName', key: 'fromProcessName' },
-    { title: 'To', dataIndex: 'toProcessName', key: 'toProcessName' },
+    {
+      title: 'To',
+      dataIndex: 'toProcessName',
+      key: 'toProcessName',
+      render: value => value || <Tag color="blue">Store</Tag>,
+    },
     {
       title: 'Type',
       key: 'type',
@@ -564,9 +558,10 @@ export const JobCardDetail: FC = () => {
     ...(canDelete
       ? [
           deleteColumn<JobCardMovement>(movement => ({
-            title: `Delete the move of ${movement.movedQty} to ${movement.toProcessName}?`,
-            content:
-              'The qty goes back to being ready-to-move at the earlier process. Refused while any of it is still accepted at the next step — delete the acceptance first.',
+            title: `Delete the move of ${movement.movedQty} to ${movement.toProcessName || 'store'}?`,
+            content: movement.toProcessName
+              ? 'The qty goes back to being ready-to-move at the earlier process. Refused while any of it is still accepted at the next step — delete the acceptance first.'
+              : 'Takes the finished goods back out of store stock and returns the qty to ready-to-receive at the final process. Refused if any of it has already been issued or sold.',
             run: () => removeMovement(movement.id),
             success: 'Movement deleted and reverted',
             // ERP-BE creates this row itself when a Rework review is approved, and
@@ -788,6 +783,8 @@ export const JobCardDetail: FC = () => {
 
       <Card styles={{ body: { paddingTop: 8 } }}>
         <Tabs
+          activeKey={detailTab}
+          onChange={setDetailTab}
           items={[
             {
               key: 'materials',
@@ -822,7 +819,7 @@ export const JobCardDetail: FC = () => {
             },
             {
               key: 'returns',
-              label: `Material Returns (${materialReturns.length})`,
+              label: `Material Returns${returnsLoaded ? ` (${materialReturns.length})` : ''}`,
               children: (
                 <DataTable<MaterialReturn>
                   columns={returnColumns}
@@ -838,7 +835,7 @@ export const JobCardDetail: FC = () => {
             },
             {
               key: 'receipts',
-              label: `Stock Received (${receipts.length})`,
+              label: `Stock Received${receiptsLoaded ? ` (${receipts.length})` : ''}`,
               children: (
                 <DataTable<ProductionReceipt>
                   columns={receiptColumns}
@@ -935,64 +932,76 @@ export const JobCardDetail: FC = () => {
 
       {jobCard && (
         <>
-          <AcceptProductionModal
-            open={drawer === 'accept'}
-            onClose={closeDrawer}
-            jobCardId={jobCard.id}
-            step={activeStep}
-            // An acceptance inherits its bucket from the movement, so the list
-            // only ever offers movements from the row that was acted on.
-            movements={movements.filter(
-              movement =>
-                movement.toProcessId === activeStep?.step.processId &&
-                movement.isRework === isReworkAction,
-            )}
-          />
-          <RequestOutsourceModal
-            open={drawer === 'outsource'}
-            onClose={closeDrawer}
-            jobCardId={jobCard.id}
-            isRework={isReworkAction}
-            step={activeStep}
-          />
-          <LogProductionModal
-            open={drawer === 'log'}
-            onClose={closeDrawer}
-            jobCardId={jobCard.id}
-            step={activeStep}
-            logs={activeBatch ? logs.filter(log => log.isRework) : firstPassLogs}
-            nextProcessName={nextStep?.step.processName}
-            outputLocationName={jobCard.outputLocationName}
-            hasMaterialIssued={hasMaterial}
-            reworkReviewId={activeReworkReviewId}
-          />
-          <ReturnMaterialModal
-            open={returnOpen}
-            onClose={() => setReturnOpen(false)}
-            jobCardId={jobCard.id}
-          />
-          <ReceiveProductionModal
-            open={drawer === 'receive'}
-            onClose={closeDrawer}
-            jobCardId={jobCard.id}
-            step={activeStep}
-            outputLocationId={jobCard.outputLocationId}
-            outputLocationName={jobCard.outputLocationName}
-            receipts={receipts}
-          />
-          <MoveForwardModal
-            open={drawer === 'move'}
-            onClose={closeDrawer}
-            jobCardId={jobCard.id}
-            isRework={isReworkAction}
-            step={activeStep}
-            nextStep={nextStep}
-            movements={movements.filter(
-              movement =>
-                movement.fromProcessId === activeStep?.step.processId &&
-                movement.isRework === isReworkAction,
-            )}
-          />
+          {drawer === 'accept' && (
+            <AcceptProductionModal
+              open
+              onClose={closeDrawer}
+              jobCardId={jobCard.id}
+              step={activeStep}
+              // An acceptance inherits its bucket from the movement, so the list
+              // only ever offers movements from the row that was acted on.
+              movements={movements.filter(
+                movement =>
+                  movement.toProcessId === activeStep?.step.processId &&
+                  movement.isRework === isReworkAction,
+              )}
+            />
+          )}
+          {drawer === 'outsource' && (
+            <RequestOutsourceModal
+              open
+              onClose={closeDrawer}
+              jobCardId={jobCard.id}
+              isRework={isReworkAction}
+              step={activeStep}
+            />
+          )}
+          {drawer === 'log' && (
+            <LogProductionModal
+              open
+              onClose={closeDrawer}
+              jobCardId={jobCard.id}
+              step={activeStep}
+              logs={activeBatch ? logs.filter(log => log.isRework) : firstPassLogs}
+              nextProcessName={nextStep?.step.processName}
+              outputLocationName={jobCard.outputLocationName}
+              hasMaterialIssued={hasMaterial}
+              reworkReviewId={activeReworkReviewId}
+            />
+          )}
+          {returnOpen && (
+            <ReturnMaterialModal
+              open={returnOpen}
+              onClose={() => setReturnOpen(false)}
+              jobCardId={jobCard.id}
+            />
+          )}
+          {drawer === 'receive' && (
+            <ReceiveProductionModal
+              open
+              onClose={closeDrawer}
+              jobCardId={jobCard.id}
+              isRework={isReworkAction}
+              step={activeStep}
+              outputLocationName={jobCard.outputLocationName}
+              receipts={receipts}
+            />
+          )}
+          {drawer === 'move' && (
+            <MoveForwardModal
+              open
+              onClose={closeDrawer}
+              jobCardId={jobCard.id}
+              isRework={isReworkAction}
+              step={activeStep}
+              nextStep={nextStep}
+              movements={movements.filter(
+                movement =>
+                  movement.fromProcessId === activeStep?.step.processId &&
+                  movement.isRework === isReworkAction,
+              )}
+            />
+          )}
         </>
       )}
     </div>

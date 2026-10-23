@@ -18,6 +18,7 @@ import { useStates } from '../hooks/useStates'
 import { useCreateVendor, useUpdateVendor, useVendor } from '../hooks/useVendors'
 import type { VendorInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface VendorFormDrawerProps {
   open: boolean
@@ -26,7 +27,7 @@ export interface VendorFormDrawerProps {
   vendorId?: string
 }
 
-export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, vendorId }) => {
+const VendorFormDrawerInner: FC<VendorFormDrawerProps> = ({ open, onClose, vendorId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!vendorId
@@ -267,3 +268,5 @@ export const VendorFormDrawer: FC<VendorFormDrawerProps> = ({ open, onClose, ven
     </FormDrawer>
   )
 }
+
+export const VendorFormDrawer = deferMount(VendorFormDrawerInner)

@@ -1,10 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  deleteProductionReceipt,
-  listProductionReceipts,
-  receiveProduction,
-} from '@/api/productionReceipts'
-import type { ApiProductionReceipt, CreateProductionReceiptPayload } from '@/types/api/production'
+import { useQuery } from '@tanstack/react-query'
+import { listProductionReceipts } from '@/api/productionReceipts'
+import type { ApiProductionReceipt } from '@/types/api/production'
 import type { ProductionReceipt } from '@/types/production'
 
 function toReceipt(api: ApiProductionReceipt): ProductionReceipt {
@@ -18,41 +14,11 @@ function toReceipt(api: ApiProductionReceipt): ProductionReceipt {
   }
 }
 
-export function useProductionReceipts(jobCardId: string | undefined) {
+export function useProductionReceipts(jobCardId: string | undefined, enabled = true) {
   const query = useQuery({
     queryKey: ['production', 'productionReceipts', jobCardId],
     queryFn: async () => (await listProductionReceipts(Number(jobCardId))).data.map(toReceipt),
-    enabled: !!jobCardId,
+    enabled: !!jobCardId && enabled,
   })
   return { ...query, data: query.data ?? [], isLoading: query.isLoading }
-}
-
-// Receiving moves finished goods into store and changes how much of the last
-// step is still ready to move, which the job card header and process table both
-// read from.
-function useReceiptInvalidation(jobCardId: string | undefined) {
-  const queryClient = useQueryClient()
-  return () => {
-    queryClient.invalidateQueries({ queryKey: ['production', 'productionReceipts', jobCardId] })
-    queryClient.invalidateQueries({ queryKey: ['production', 'jobCards'] })
-    queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
-    queryClient.invalidateQueries({ queryKey: ['stock-ledger'] })
-  }
-}
-
-export function useReceiveProduction(jobCardId: string | undefined) {
-  const invalidate = useReceiptInvalidation(jobCardId)
-  return useMutation({
-    mutationFn: async (payload: CreateProductionReceiptPayload) =>
-      toReceipt((await receiveProduction(Number(jobCardId), payload)).data),
-    onSuccess: invalidate,
-  })
-}
-
-export function useDeleteProductionReceipt(jobCardId: string | undefined) {
-  const invalidate = useReceiptInvalidation(jobCardId)
-  return useMutation({
-    mutationFn: (receiptId: string) => deleteProductionReceipt(Number(receiptId)),
-    onSuccess: invalidate,
-  })
 }

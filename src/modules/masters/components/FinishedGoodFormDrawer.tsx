@@ -18,6 +18,7 @@ import { useMaterialGrades } from '../hooks/useMaterialGrades'
 import { useUoms } from '../hooks/useUoms'
 import type { FinishedGoodInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface FinishedGoodFormDrawerProps {
   open: boolean
@@ -26,7 +27,7 @@ export interface FinishedGoodFormDrawerProps {
   finishedGoodId?: string
 }
 
-export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
+const FinishedGoodFormDrawerInner: FC<FinishedGoodFormDrawerProps> = ({
   open,
   onClose,
   finishedGoodId,
@@ -258,3 +259,5 @@ export const FinishedGoodFormDrawer: FC<FinishedGoodFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const FinishedGoodFormDrawer = deferMount(FinishedGoodFormDrawerInner)

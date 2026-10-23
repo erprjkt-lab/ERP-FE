@@ -15,6 +15,7 @@ import { useCreateEmployee, useEmployee, useUpdateEmployee } from '../hooks/useE
 import { useShifts } from '../hooks/useShifts'
 import type { EmployeeExtra } from '../store/hrLocalStore'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
@@ -25,7 +26,7 @@ export interface EmployeeFormDrawerProps {
   employeeId?: string
 }
 
-export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose, employeeId }) => {
+const EmployeeFormDrawerInner: FC<EmployeeFormDrawerProps> = ({ open, onClose, employeeId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!employeeId
@@ -253,3 +254,5 @@ export const EmployeeFormDrawer: FC<EmployeeFormDrawerProps> = ({ open, onClose,
     </FormDrawer>
   )
 }
+
+export const EmployeeFormDrawer = deferMount(EmployeeFormDrawerInner)

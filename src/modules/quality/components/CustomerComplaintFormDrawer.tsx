@@ -16,6 +16,7 @@ import {
   useCreateCustomerComplaint,
   useUpdateCustomerComplaint,
 } from '../hooks/useCustomerComplaints'
+import { deferMount } from '@/components/ui/deferMount'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
@@ -29,7 +30,7 @@ export interface CustomerComplaintFormDrawerProps {
 const fileFromEvent = (event: unknown) =>
   Array.isArray(event) ? event : ((event as { fileList?: UploadFile[] })?.fileList ?? [])
 
-export const CustomerComplaintFormDrawer: FC<CustomerComplaintFormDrawerProps> = ({
+const CustomerComplaintFormDrawerInner: FC<CustomerComplaintFormDrawerProps> = ({
   open,
   complaint,
   onClose,
@@ -253,3 +254,5 @@ export const CustomerComplaintFormDrawer: FC<CustomerComplaintFormDrawerProps> =
     </FormDrawer>
   )
 }
+
+export const CustomerComplaintFormDrawer = deferMount(CustomerComplaintFormDrawerInner)

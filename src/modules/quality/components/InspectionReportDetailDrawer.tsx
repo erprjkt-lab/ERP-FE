@@ -22,6 +22,7 @@ import {
 } from '../hooks/useInspectionReports'
 import { ReportReadingsFields, toReadingsPayload } from './ReportReadingsFields'
 import { formatDateTime } from '@/utils/date'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface InspectionReportDetailProps {
   reportId?: string
@@ -260,7 +261,7 @@ export const InspectionReportDetail: FC<InspectionReportDetailProps> = ({ report
   )
 }
 
-export const InspectionReportDetailDrawer: FC<InspectionReportDetailDrawerProps> = ({
+const InspectionReportDetailDrawerInner: FC<InspectionReportDetailDrawerProps> = ({
   open,
   onClose,
   ...detailProps
@@ -269,3 +270,5 @@ export const InspectionReportDetailDrawer: FC<InspectionReportDetailDrawerProps>
     <InspectionReportDetail {...detailProps} />
   </Drawer>
 )
+
+export const InspectionReportDetailDrawer = deferMount(InspectionReportDetailDrawerInner)

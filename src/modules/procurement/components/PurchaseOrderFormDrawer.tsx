@@ -16,6 +16,7 @@ import {
 } from '../hooks/usePurchaseOrders'
 import type { PurchaseOrderItemInput } from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -34,7 +35,7 @@ export interface PurchaseOrderFormDrawerProps {
   orderId?: string
 }
 
-export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
+const PurchaseOrderFormDrawerInner: FC<PurchaseOrderFormDrawerProps> = ({
   open,
   onClose,
   orderId,
@@ -334,3 +335,5 @@ export const PurchaseOrderFormDrawer: FC<PurchaseOrderFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const PurchaseOrderFormDrawer = deferMount(PurchaseOrderFormDrawerInner)

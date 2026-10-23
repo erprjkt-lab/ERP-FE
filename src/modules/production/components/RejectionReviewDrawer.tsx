@@ -18,6 +18,7 @@ import { ReviewRejectionModal } from './ReviewRejectionModal'
 import { useJobCard } from '../hooks/useJobCards'
 import { useApproveRejectionReview, useRejectionReviews } from '../hooks/useRejections'
 import type { Rejection, RejectionReview } from '@/types/production'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface RejectionReviewDrawerProps {
   rejection: Rejection | undefined
@@ -99,7 +100,7 @@ const RejectionReviewsPanel: FC<{ rejection: Rejection }> = ({ rejection }) => {
   )
 }
 
-export const RejectionReviewDrawer: FC<RejectionReviewDrawerProps> = ({
+const RejectionReviewDrawerInner: FC<RejectionReviewDrawerProps> = ({
   rejection,
   open,
   onClose,
@@ -183,3 +184,5 @@ export const RejectionReviewDrawer: FC<RejectionReviewDrawerProps> = ({
     </>
   )
 }
+
+export const RejectionReviewDrawer = deferMount(RejectionReviewDrawerInner)

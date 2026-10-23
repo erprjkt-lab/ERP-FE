@@ -20,6 +20,7 @@ import { useCreateSupplier, useSupplier, useUpdateSupplier } from '../hooks/useS
 import { useStates } from '../hooks/useStates'
 import type { SupplierInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface SupplierFormDrawerProps {
   open: boolean
@@ -28,7 +29,7 @@ export interface SupplierFormDrawerProps {
   supplierId?: string
 }
 
-export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose, supplierId }) => {
+const SupplierFormDrawerInner: FC<SupplierFormDrawerProps> = ({ open, onClose, supplierId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!supplierId
@@ -286,3 +287,5 @@ export const SupplierFormDrawer: FC<SupplierFormDrawerProps> = ({ open, onClose,
     </FormDrawer>
   )
 }
+
+export const SupplierFormDrawer = deferMount(SupplierFormDrawerInner)

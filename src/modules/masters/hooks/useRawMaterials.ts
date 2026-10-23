@@ -85,10 +85,10 @@ function toPayload(input: Partial<RawMaterialInput>) {
   }
 }
 
-function useLookupMaps() {
-  const { data: categories } = useItemCategories()
-  const { data: uoms } = useUoms()
-  const { data: materialGrades } = useMaterialGrades()
+function useLookupMaps(enabled: boolean) {
+  const { data: categories } = useItemCategories(1, 200, enabled)
+  const { data: uoms } = useUoms(1, 200, enabled)
+  const { data: materialGrades } = useMaterialGrades(1, 200, enabled)
   return {
     categoriesById: new Map(categories.map(c => [String(c.id), c])),
     uomsById: new Map(uoms.map(u => [String(u.id), u])),
@@ -96,8 +96,11 @@ function useLookupMaps() {
   }
 }
 
-export function useRawMaterials(page = 1, perPage = 100) {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
+/** `withNames` resolves category/uom/material-grade ids to names, which costs a
+ *  fetch of each of those masters. A picker that shows only code and name
+ *  passes false and skips all of them. */
+export function useRawMaterials(page = 1, perPage = 100, withNames = true) {
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(withNames)
   const query = useQuery({
     queryKey: ['rawMaterials', page, perPage],
     queryFn: () => rawMaterialsApi.list(page, perPage),
@@ -112,7 +115,7 @@ export function useRawMaterials(page = 1, perPage = 100) {
 }
 
 export function useRawMaterial(id: string | undefined) {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(true)
   const query = useQuery({
     queryKey: ['rawMaterials', id],
     queryFn: () => rawMaterialsApi.get(Number(id)),

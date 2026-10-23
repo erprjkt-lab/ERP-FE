@@ -8,7 +8,7 @@ import {
   listPurchaseOrders,
   updatePurchaseOrder,
 } from '@/api/purchaseOrders'
-import type { ItemListParams } from '@/types/api'
+import type { PurchaseOrderItemListParams } from '@/api/purchaseOrders'
 import type {
   ApiPurchaseOrder,
   ApiPurchaseOrderItem,
@@ -243,7 +243,7 @@ function toPurchaseOrderItemRow(api: ApiPurchaseOrderItemRow): PurchaseOrderItem
 }
 
 // Item-wise (one row per PO line) listing — server-side paginated.
-export function usePurchaseOrderItems(params: ItemListParams = {}) {
+export function usePurchaseOrderItems(params: PurchaseOrderItemListParams = {}) {
   const query = useQuery({
     queryKey: ['purchase-orders', 'items', params],
     queryFn: () => listPurchaseOrderItems(params),

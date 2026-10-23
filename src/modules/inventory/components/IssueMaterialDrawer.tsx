@@ -25,6 +25,7 @@ import {
   useBomRequirements,
   useIssueMaterial,
 } from '@/modules/production/hooks/useJobCardMaterials'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface IssueMaterialDrawerProps {
   open: boolean
@@ -45,7 +46,7 @@ function rowKey(row: StockBalanceRow): string {
   return `${row.locationId}-${row.batchNo}-${row.heatNo}-${row.serialNo}`
 }
 
-export const IssueMaterialDrawer: FC<IssueMaterialDrawerProps> = ({
+const IssueMaterialDrawerInner: FC<IssueMaterialDrawerProps> = ({
   open,
   onClose,
   jobCardId,
@@ -280,3 +281,5 @@ export const IssueMaterialDrawer: FC<IssueMaterialDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const IssueMaterialDrawer = deferMount(IssueMaterialDrawerInner)

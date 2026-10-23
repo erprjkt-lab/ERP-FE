@@ -13,12 +13,12 @@ import type {
 import type { MaterialGrade } from '@/types/masters'
 
 /** No-arg calls keep the old single-fetch behaviour for dropdowns. */
-export function useMaterialGrades(page = 1, perPage = 200) {
+export function useMaterialGrades(page = 1, perPage = 200, enabled = true) {
   const { data, isLoading } = useQuery({
     queryKey: ['masters', 'materialGrades', page, perPage],
     queryFn: () => listMaterialGrades(page, perPage),
-    staleTime: Infinity,
     placeholderData: keepPreviousData,
+    enabled,
   })
   return { data: data?.data ?? [], meta: data?.meta, isLoading }
 }

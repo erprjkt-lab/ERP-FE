@@ -12,7 +12,6 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { PurchaseOrderItem } from '@/types/procurement'
 import { PurchaseOrderFormDrawer } from '../components/PurchaseOrderFormDrawer'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
-import { usePurchaseEnquiries } from '../hooks/usePurchaseEnquiries'
 import { useApprovePurchaseOrder, usePurchaseOrder } from '../hooks/usePurchaseOrders'
 import { formatDateTime } from '@/utils/date'
 
@@ -21,7 +20,6 @@ export const PurchaseOrderDetail: FC = () => {
   const navigate = useNavigate()
   const [editOpen, setEditOpen] = useState(false)
   const { data: order, isLoading } = usePurchaseOrder(id)
-  const { data: enquiries } = usePurchaseEnquiries()
   const { message } = App.useApp()
   const { canModify, canApprove } = usePagePermission()
   const { mutateAsync: approveOrder, isPending: approving } = useApprovePurchaseOrder()
@@ -46,8 +44,6 @@ export const PurchaseOrderDetail: FC = () => {
       </div>
     )
   }
-
-  const sourceEnquiry = enquiries.find(e => e.id === order.purchaseEnquiryId)
 
   const columns = [
     {
@@ -103,8 +99,8 @@ export const PurchaseOrderDetail: FC = () => {
                 )}
               </>
             )}
-            {sourceEnquiry && (
-              <Button onClick={() => navigate(`/purchase/enquiries/${sourceEnquiry.id}`)}>
+            {order.purchaseEnquiryId && (
+              <Button onClick={() => navigate(`/purchase/enquiries/${order.purchaseEnquiryId}`)}>
                 View Source Enquiry
               </Button>
             )}
@@ -126,8 +122,11 @@ export const PurchaseOrderDetail: FC = () => {
               <Descriptions.Item label="Supplier">
                 {order.supplierName ?? order.supplierId}
               </Descriptions.Item>
+              {/* ERP-BE's PurchaseOrderResource sends purchase_enquiry_id but not the
+                  enquiry number, so this says where the order came from and the
+                  "View Source Enquiry" button opens it. */}
               <Descriptions.Item label="Source">
-                {sourceEnquiry ? `Enquiry ${sourceEnquiry.enquiryNumber}` : 'Direct'}
+                {order.purchaseEnquiryId ? 'From Enquiry' : 'Direct'}
               </Descriptions.Item>
               <Descriptions.Item label="Created By">{order.createdBy}</Descriptions.Item>
               <Descriptions.Item label="Payment Terms">

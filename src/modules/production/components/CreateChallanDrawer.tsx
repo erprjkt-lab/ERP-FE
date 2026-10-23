@@ -10,6 +10,7 @@ import { useVendors } from '@/modules/masters/hooks/useVendors'
 import type { ChallanRequest } from '@/types/production'
 import { useCreateChallan } from '../hooks/useJobCardChallans'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface CreateChallanDrawerProps {
   open: boolean
@@ -26,7 +27,7 @@ interface ChallanFormValues {
   destinationPartyId: string
 }
 
-export const CreateChallanDrawer: FC<CreateChallanDrawerProps> = ({
+const CreateChallanDrawerInner: FC<CreateChallanDrawerProps> = ({
   open,
   onClose,
   requests,
@@ -186,3 +187,5 @@ export const CreateChallanDrawer: FC<CreateChallanDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const CreateChallanDrawer = deferMount(CreateChallanDrawerInner)

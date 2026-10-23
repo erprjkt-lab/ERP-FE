@@ -65,6 +65,9 @@ export const PurchaseEnquiryDetail: FC = () => {
   const [editOpen, setEditOpen] = useState(false)
   const { data: enquiry, isLoading } = usePurchaseEnquiry(id)
   const { data: suppliers = [] } = useSuppliers()
+  // ponytail: full PO list (per_page=100) only to find the order raised from this
+  // enquiry — ERP-BE exposes no purchase_enquiry_id filter on the PO index, and the
+  // link silently drops past 100 orders. Ask BE for the filter if that bites.
   const { data: purchaseOrders } = usePurchaseOrders()
   const { mutateAsync: addSupplier, isPending: addingSupplier } = useAddSupplierToEnquiry()
   const { mutateAsync: removeSupplier } = useRemoveSupplierFromEnquiry()

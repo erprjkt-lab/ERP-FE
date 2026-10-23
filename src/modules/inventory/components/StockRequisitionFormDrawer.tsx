@@ -30,6 +30,7 @@ import {
   useStockRequisition,
   useUpdateStockRequisition,
 } from '../hooks/useStockRequisitions'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -53,7 +54,7 @@ export interface StockRequisitionFormDrawerProps {
   requisitionId?: string
 }
 
-export const StockRequisitionFormDrawer: FC<StockRequisitionFormDrawerProps> = ({
+const StockRequisitionFormDrawerInner: FC<StockRequisitionFormDrawerProps> = ({
   open,
   onClose,
   requisitionId,
@@ -318,3 +319,5 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({ field, items, onRemov
     </div>
   )
 }
+
+export const StockRequisitionFormDrawer = deferMount(StockRequisitionFormDrawerInner)

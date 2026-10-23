@@ -40,7 +40,7 @@ function toFinishedGood(
     status: api.status === 0 ? 'inactive' : 'active',
     imageUrl: api.image ?? undefined,
     customerId: api.party_id ? String(api.party_id) : null,
-    customerName: undefined,
+    customerName: api.party_name ?? undefined,
     customerPartNo: api.customer_part_no ?? undefined,
     drawingNo: api.drawing_no ?? undefined,
     drawingRevision: api.drawing_revision ?? undefined,
@@ -84,10 +84,10 @@ function toPayload(input: Partial<FinishedGoodInput>) {
   }
 }
 
-function useLookupMaps() {
-  const { data: categories } = useItemCategories()
-  const { data: uoms } = useUoms()
-  const { data: materialGrades } = useMaterialGrades()
+function useLookupMaps(enabled: boolean) {
+  const { data: categories } = useItemCategories(1, 200, enabled)
+  const { data: uoms } = useUoms(1, 200, enabled)
+  const { data: materialGrades } = useMaterialGrades(1, 200, enabled)
   return {
     categoriesById: new Map(categories.map(c => [String(c.id), c])),
     uomsById: new Map(uoms.map(u => [String(u.id), u])),
@@ -95,8 +95,11 @@ function useLookupMaps() {
   }
 }
 
-export function useFinishedGoods(page = 1, perPage = 100) {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
+/** `withNames` resolves category/uom/material-grade ids to names, which costs a
+ *  fetch of each of those masters. A picker that shows only code and name
+ *  passes false and skips all of them. */
+export function useFinishedGoods(page = 1, perPage = 100, withNames = true) {
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(withNames)
   const query = useQuery({
     queryKey: ['finishedGoods', page, perPage],
     queryFn: () => finishedGoodsApi.list(page, perPage),
@@ -111,7 +114,7 @@ export function useFinishedGoods(page = 1, perPage = 100) {
 }
 
 export function useFinishedGood(id: string | undefined) {
-  const { categoriesById, uomsById, materialGradesById } = useLookupMaps()
+  const { categoriesById, uomsById, materialGradesById } = useLookupMaps(true)
   const query = useQuery({
     queryKey: ['finishedGoods', id],
     queryFn: () => finishedGoodsApi.get(Number(id)),

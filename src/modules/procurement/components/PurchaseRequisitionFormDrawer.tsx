@@ -19,6 +19,7 @@ import {
   useUpdatePurchaseRequisition,
 } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -35,7 +36,7 @@ export interface PurchaseRequisitionFormDrawerProps {
   requisitionId?: string
 }
 
-export const PurchaseRequisitionFormDrawer: FC<PurchaseRequisitionFormDrawerProps> = ({
+const PurchaseRequisitionFormDrawerInner: FC<PurchaseRequisitionFormDrawerProps> = ({
   open,
   onClose,
   requisitionId,
@@ -318,3 +319,5 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
     </div>
   )
 }
+
+export const PurchaseRequisitionFormDrawer = deferMount(PurchaseRequisitionFormDrawerInner)

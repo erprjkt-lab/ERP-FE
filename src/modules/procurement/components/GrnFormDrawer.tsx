@@ -19,7 +19,8 @@ import type { ProcurementItemOption } from '../hooks/useProcurementItems'
 import { useProcurementItems } from '../hooks/useProcurementItems'
 import type { GrnItemInput } from '../hooks/usePurchaseGrns'
 import { useCreateGrn, useGrn, useUpdateGrn } from '../hooks/usePurchaseGrns'
-import { usePurchaseOrder, usePurchaseOrders } from '../hooks/usePurchaseOrders'
+import { usePurchaseOrderItems } from '../hooks/usePurchaseOrders'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface GrnRowValues {
   poItemId: string
@@ -39,7 +40,7 @@ interface GrnRowValues {
 interface PoItemInfo {
   itemName?: string
   uomName?: string
-  orderedQty: number
+  pendingQty: number
 }
 
 interface GrnHeaderValues {
@@ -58,14 +59,13 @@ export interface GrnFormDrawerProps {
   grnId?: string
 }
 
-export const GrnFormDrawer: FC<GrnFormDrawerProps> = ({ open, onClose, grnId }) => {
+const GrnFormDrawerInner: FC<GrnFormDrawerProps> = ({ open, onClose, grnId }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm<GrnHeaderValues>()
   const isEdit = !!grnId
 
   const { data: grn } = useGrn(grnId)
   const { data: suppliers } = useSuppliers()
-  const { data: purchaseOrders } = usePurchaseOrders()
   const { data: items } = useProcurementItems()
   const { data: locations } = useLocations()
   const { data: grades } = useMaterialGradeList()
@@ -76,20 +76,31 @@ export const GrnFormDrawer: FC<GrnFormDrawerProps> = ({ open, onClose, grnId }) 
   const [selectedPoItemIds, setSelectedPoItemIds] = useState<string[]>([])
   const [poItemInfo, setPoItemInfo] = useState<Record<string, PoItemInfo>>({})
 
-  const { data: selectedPo } = usePurchaseOrder(selectedPoId)
-
   const supplierId = Form.useWatch('supplierId', form) as string | undefined
+
+  // Only POs that still have something to receive — ERP-BE's pending_only filter
+  // on the flat PO-line listing, which also feeds the PO Items picker below.
+  const { data: pendingPoItems } = usePurchaseOrderItems({
+    pendingOnly: true,
+    supplierId,
+    perPage: 200,
+  })
 
   const supplierOptions = (suppliers ?? []).map(s => ({ label: s.name, value: s.id }))
 
-  const poOptions = purchaseOrders
-    .filter(po => po.status !== 'CANCELLED' && (!supplierId || po.supplierId === supplierId))
-    .map(po => ({ label: `${po.poNumber} — ${po.supplierName ?? ''}`, value: po.id }))
-
-  const poItemOptions = (selectedPo?.items ?? []).map(item => ({
-    label: `${item.itemName ?? item.itemId} — Ordered: ${item.orderedQty} ${item.uomName ?? ''}`,
-    value: item.id,
+  const poOptions = [
+    ...new Map(pendingPoItems.map(row => [row.purchaseOrderId, row])).values(),
+  ].map(row => ({
+    label: `${row.poNumber} — ${row.supplierName ?? ''}`,
+    value: row.purchaseOrderId,
   }))
+
+  const poItemOptions = pendingPoItems
+    .filter(row => row.purchaseOrderId === selectedPoId)
+    .map(row => ({
+      label: `${row.itemName ?? row.itemId} — Pending: ${row.pendingQty} ${row.uomName ?? ''}`,
+      value: row.id,
+    }))
 
   useEffect(() => {
     if (!open) return
@@ -292,20 +303,20 @@ export const GrnFormDrawer: FC<GrnFormDrawerProps> = ({ open, onClose, grnId }) 
                 const handleAddItems = () => {
                   selectedPoItemIds.forEach(poItemId => {
                     if (existingPoItemIds.has(poItemId)) return
-                    const poItem = selectedPo?.items.find(i => i.id === poItemId)
+                    const poItem = pendingPoItems.find(row => row.id === poItemId)
                     if (!poItem) return
                     setPoItemInfo(prev => ({
                       ...prev,
                       [poItemId]: {
                         itemName: poItem.itemName,
                         uomName: poItem.uomName,
-                        orderedQty: poItem.orderedQty,
+                        pendingQty: poItem.pendingQty,
                       },
                     }))
                     add({
                       poItemId,
                       itemId: poItem.itemId,
-                      receivedQty: poItem.orderedQty,
+                      receivedQty: poItem.pendingQty,
                       rate: poItem.rate,
                     })
                   })
@@ -440,7 +451,7 @@ const GrnItemRow: FC<GrnItemRowProps> = ({
               <Typography.Text strong>{info?.itemName ?? selectedItem?.name}</Typography.Text>
               <br />
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                Ordered: {info?.orderedQty ?? '—'} {info?.uomName ?? ''}
+                Pending: {info?.pendingQty ?? '—'} {info?.uomName ?? ''}
               </Typography.Text>
             </div>
             <Form.Item
@@ -564,3 +575,5 @@ const GrnItemRow: FC<GrnItemRowProps> = ({
     </Card>
   )
 }
+
+export const GrnFormDrawer = deferMount(GrnFormDrawerInner)

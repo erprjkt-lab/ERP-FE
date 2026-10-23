@@ -9,20 +9,9 @@ import { ITEM_TYPE_RAW_MATERIAL } from '@/modules/procurement/constants'
 import { useGrns } from '@/modules/procurement/hooks/usePurchaseGrns'
 import type { GrnItem } from '@/types/procurement'
 import { IncomingInspectionDrawer } from '../components/IncomingInspectionDrawer'
-import { useIncomingInspectionReportsForGrnItem } from '../hooks/useInspectionReports'
 
 interface RmLineRow extends GrnItem {
   grnNo: string
-}
-
-const IirStatusTag: FC<{ grnItemId: string }> = ({ grnItemId }) => {
-  const { hasApprovedIir, isLoading } = useIncomingInspectionReportsForGrnItem(grnItemId)
-  if (isLoading) return null
-  return hasApprovedIir ? (
-    <Tag color="green">Approved IIR on file</Tag>
-  ) : (
-    <Tag color="orange">IIR Required</Tag>
-  )
 }
 
 const getColumns = (onOpen: (record: RmLineRow) => void): TableColumnsType<RmLineRow> => [
@@ -37,7 +26,14 @@ const getColumns = (onOpen: (record: RmLineRow) => void): TableColumnsType<RmLin
     title: 'IIR Status',
     key: 'iirStatus',
     width: 170,
-    render: (_, r) => <IirStatusTag grnItemId={r.id} />,
+    // The GRN response carries this per line, so the whole table costs one
+    // request rather than one per row.
+    render: (_, r) =>
+      r.hasApprovedInspectionReport ? (
+        <Tag color="green">Approved IIR on file</Tag>
+      ) : (
+        <Tag color="orange">IIR Required</Tag>
+      ),
   },
   {
     title: 'Action',

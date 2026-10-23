@@ -11,6 +11,7 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import { useCreateStockTransfer } from '../hooks/useStockTransfers'
 import { useLocations } from '../hooks/useLocations'
 import { ItemLotAllocator, parseLotKey } from './ItemLotAllocator'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface TransferFormValues {
   transferDate: dayjs.Dayjs
@@ -24,7 +25,7 @@ export interface StockTransferFormDrawerProps {
   onClose: () => void
 }
 
-export const StockTransferFormDrawer: FC<StockTransferFormDrawerProps> = ({ open, onClose }) => {
+const StockTransferFormDrawerInner: FC<StockTransferFormDrawerProps> = ({ open, onClose }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm<TransferFormValues>()
 
@@ -260,3 +261,5 @@ export const StockTransferFormDrawer: FC<StockTransferFormDrawerProps> = ({ open
     </FormDrawer>
   )
 }
+
+export const StockTransferFormDrawer = deferMount(StockTransferFormDrawerInner)

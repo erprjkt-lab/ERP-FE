@@ -202,6 +202,10 @@ export const PurchaseEnquiryList: FC = () => {
     isFetching,
   } = usePurchaseEnquiryItems({ page, perPage: pageSize, status: filters.status })
   // Header-level lookup, only to link an enquiry row to the PO raised from it.
+  // ponytail: full PO list (per_page=100) because ERP-BE exposes no
+  // purchase_enquiry_id filter on the PO index, and the enquiry item rows carry
+  // no order id either — the link silently drops past 100 orders. Ask BE for the
+  // filter, or for purchase_order_id on PurchaseEnquiryItemListResource.
   const { data: purchaseOrders } = usePurchaseOrders()
   const { mutateAsync: createPO } = useCreatePurchaseOrderFromEnquiry()
   const setFilter = useProcurementStore(s => s.setFilter)

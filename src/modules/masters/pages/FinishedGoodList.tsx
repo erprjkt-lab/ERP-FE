@@ -21,7 +21,6 @@ import { ItemProcessRouteDrawer } from '@/modules/production/components/ItemProc
 import type { FinishedGood } from '@/types/masters'
 import { FinishedGoodFormDrawer } from '../components/FinishedGoodFormDrawer'
 import { MASTER_STATUS_OPTIONS } from '../constants'
-import { useCustomers } from '../hooks/useCustomers'
 import { useDeleteFinishedGood, useFinishedGoods } from '../hooks/useFinishedGoods'
 import { useMastersStore } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
@@ -37,7 +36,7 @@ interface RowActions {
 
 // ItemResource sends party_id but no party_name, so the customer column
 // resolves the name against the party master.
-const getColumns = (customerNames: Map<string, string>): TableColumnsType<FinishedGood> => [
+const getColumns = (): TableColumnsType<FinishedGood> => [
   { title: 'Code', dataIndex: 'code', key: 'code', width: 110 },
   {
     title: 'Name',
@@ -52,8 +51,7 @@ const getColumns = (customerNames: Map<string, string>): TableColumnsType<Finish
   {
     title: 'Customer',
     key: 'customerName',
-    render: (_, record) =>
-      (record.customerId && customerNames.get(String(record.customerId))) || '—',
+    render: (_, record) => record.customerName || '—',
   },
   { title: 'UOM', dataIndex: 'uom', key: 'uom', width: 90 },
   { title: 'Price', dataIndex: 'price', key: 'price', width: 100 },
@@ -114,7 +112,6 @@ export const FinishedGoodList: FC = () => {
   const [processRouteItemId, setProcessRouteItemId] = useState<string>()
   const [bomItemId, setBomItemId] = useState<string>()
   const { data: finishedGoods = [], isLoading } = useFinishedGoods()
-  const { data: customers = [] } = useCustomers()
   const { mutateAsync: deleteFinishedGood } = useDeleteFinishedGood()
   const filters = useMastersStore(s => s.finishedGoodFilters)
   const setFilter = useMastersStore(s => s.setFinishedGoodFilter)
@@ -137,8 +134,7 @@ export const FinishedGoodList: FC = () => {
     })
   }
 
-  const customerNames = new Map(customers.map(c => [c.id, c.name]))
-  const columns = getColumns(customerNames)
+  const columns = getColumns()
 
   const rowActions: RowActions = {
     can: { modify: canModify, delete: canDelete },

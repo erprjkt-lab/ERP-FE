@@ -16,6 +16,7 @@ import { useHsnGstAutofill } from '../hooks/useHsnGstAutofill'
 import { useUoms } from '../hooks/useUoms'
 import type { RawMaterialInput } from '../store/mastersStore'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface RawMaterialFormDrawerProps {
   open: boolean
@@ -24,7 +25,7 @@ export interface RawMaterialFormDrawerProps {
   rawMaterialId?: string
 }
 
-export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
+const RawMaterialFormDrawerInner: FC<RawMaterialFormDrawerProps> = ({
   open,
   onClose,
   rawMaterialId,
@@ -250,3 +251,5 @@ export const RawMaterialFormDrawer: FC<RawMaterialFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const RawMaterialFormDrawer = deferMount(RawMaterialFormDrawerInner)

@@ -54,6 +54,23 @@ export function computeReworkBatch(
       )
 
   const slice = sorted.slice(Math.max(startIndex, 0))
+
+  // What the redo may still send onward out of the route's final step, i.e.
+  // receive into store. ERP-BE validates this against one rework bucket per
+  // process rather than per review, so it is counted the same way here: every
+  // rework log's OK qty at that process, less every rework movement out of it.
+  // ponytail: with two open rework batches both tables show the same shared
+  // figure; split it per review once ERP-BE tags receive movements with one.
+  const reworkPoolOut = (processId: string) =>
+    Math.max(
+      logs
+        .filter(log => log.inboundReworkReviewId != null && log.processId === processId)
+        .reduce((sum, log) => sum + log.okQty, 0) -
+        movements
+          .filter(movement => movement.isRework && movement.fromProcessId === processId)
+          .reduce((sum, movement) => sum + movement.movedQty, 0),
+      0,
+    )
   const loggedAt = (processId: string) =>
     batchLogs
       .filter(log => log.processId === processId)
@@ -84,7 +101,12 @@ export function computeReworkBatch(
       // This batch's own OK qty that the next step of the redo hasn't picked up yet.
       // Job-card movements aren't tagged per batch, so this is counted from the
       // batch's logs rather than from movement records.
-      readyToMoveQty: isLast || !nextStep ? 0 : Math.max(okQty - loggedAt(nextStep.processId), 0),
+      // The final step settles by being received into store, so it has a
+      // ready-to-move qty like any other — capped at what this batch produced.
+      readyToMoveQty:
+        isLast || !nextStep
+          ? Math.min(okQty, reworkPoolOut(step.processId))
+          : Math.max(okQty - loggedAt(nextStep.processId), 0),
       // Never the first pass: the material was issued and consumed on the original
       // run, so the first-step material gate must not block a redo.
       isFirst: false,

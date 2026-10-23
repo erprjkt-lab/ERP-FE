@@ -157,6 +157,8 @@ describe('computeStepProgress', () => {
     expect(inspection.readyToMoveQty).toBe(20)
   })
 
+  // Receiving into store is a movement out of the last step with no next
+  // process — ERP-BE writes the production receipt off the back of it.
   it('nets a partial receipt out of the last step', () => {
     const progress = computeStepProgress(
       routes,
@@ -164,9 +166,9 @@ describe('computeStepProgress', () => {
       [
         movement('10', '20', 20, [{ acceptedQty: 20 }]),
         movement('20', '30', 20, [{ acceptedQty: 20 }]),
+        movement('30', '', 15),
       ],
       20,
-      15,
     )
 
     expect(progress[2].readyToMoveQty).toBe(5)
@@ -179,8 +181,8 @@ describe('computeStepProgress', () => {
       [
         movement('10', '20', 20, [{ acceptedQty: 20 }]),
         movement('20', '30', 20, [{ acceptedQty: 20 }]),
+        movement('30', '', 20),
       ],
-      20,
       20,
     )
 

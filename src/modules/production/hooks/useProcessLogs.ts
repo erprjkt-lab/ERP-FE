@@ -44,8 +44,11 @@ export function useProcessLogs(jobCardId: string | undefined) {
  * consumed qty on its request, and — because ERP-BE derives used_qty from what
  * was logged at the first route step — shift the material summary's used and
  * returnable figures. A log with rejected_qty raises a rejection row, and
- * deleting the log deletes it again, so the rejection lists move too. Create and
- * delete move the same things in opposite directions, so they share one list.
+ * deleting the log deletes it again, so the rejection lists move too. The
+ * reviews themselves are left alone: a log neither creates nor changes one, and
+ * there is a query per rejection, so refetching them all cost N requests a log.
+ * Create and delete move the same things in opposite directions, so they share
+ * one list.
  */
 function useProcessLogInvalidation(jobCardId: string | undefined) {
   const queryClient = useQueryClient()
@@ -56,7 +59,6 @@ function useProcessLogInvalidation(jobCardId: string | undefined) {
     queryClient.invalidateQueries({ queryKey: ['production', 'challanRequests'] })
     queryClient.invalidateQueries({ queryKey: ['production', 'jobCards'] })
     queryClient.invalidateQueries({ queryKey: ['rejections'] })
-    queryClient.invalidateQueries({ queryKey: ['rejection-reviews'] })
     queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
     queryClient.invalidateQueries({ queryKey: ['stock-ledger'] })
   }

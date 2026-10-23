@@ -1,6 +1,20 @@
 import { apiRequest } from '@/api/client'
-import type { ApiEnvelope } from '@/types/api'
+import type { ApiEnvelope, PaginatedEnvelope } from '@/types/api'
 import type { ApiJobCardChallan, CreateChallanPayload } from '@/types/api/production'
+
+/** Every outsource challan, newest first — ERP-BE's cross-job-card listing.
+ *  One challan can bundle items from several job cards; this returns it once. */
+export function listChallans(
+  params: { page?: number; perPage?: number; status?: number } = {},
+): Promise<PaginatedEnvelope<ApiJobCardChallan>> {
+  return apiRequest('/api/v1/challans', {
+    query: {
+      page: params.page ?? 1,
+      per_page: params.perPage ?? 200,
+      ...(params.status != null ? { status: params.status } : {}),
+    },
+  })
+}
 
 export function listChallansForJobCard(
   jobCardId: number,

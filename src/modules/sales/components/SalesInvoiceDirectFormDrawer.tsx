@@ -28,6 +28,7 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import type { SalesInvoiceItemPayload, SalesInvoiceItemStockPayload } from '@/types/api/sales'
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
 import { useCreateSalesInvoice } from '../hooks/useSalesInvoices'
+import { deferMount } from '@/components/ui/deferMount'
 
 // Same lot identity as the delivery challan drawer: a stock row is unique by
 // (location, batch, heat, serial).
@@ -62,7 +63,7 @@ export interface SalesInvoiceDirectFormDrawerProps {
   onClose: () => void
 }
 
-export const SalesInvoiceDirectFormDrawer: FC<SalesInvoiceDirectFormDrawerProps> = ({
+const SalesInvoiceDirectFormDrawerInner: FC<SalesInvoiceDirectFormDrawerProps> = ({
   open,
   onClose,
 }) => {
@@ -375,3 +376,5 @@ const InvoiceLinePanel: FC<InvoiceLinePanelProps> = ({
     </Card>
   )
 }
+
+export const SalesInvoiceDirectFormDrawer = deferMount(SalesInvoiceDirectFormDrawerInner)

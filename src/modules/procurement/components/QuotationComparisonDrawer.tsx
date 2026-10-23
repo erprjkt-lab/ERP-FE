@@ -14,6 +14,7 @@ import type {
 } from '../hooks/usePurchaseEnquiries'
 import { useSelectSupplierForEnquiry } from '../hooks/usePurchaseOrders'
 import { getErrorMessage } from '@/api/client'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface QuotationComparisonDrawerProps {
   open: boolean
@@ -21,7 +22,7 @@ export interface QuotationComparisonDrawerProps {
   enquiryId?: string
 }
 
-export const QuotationComparisonDrawer: FC<QuotationComparisonDrawerProps> = ({
+const QuotationComparisonDrawerInner: FC<QuotationComparisonDrawerProps> = ({
   open,
   onClose,
   enquiryId,
@@ -219,3 +220,5 @@ export const QuotationComparisonDrawer: FC<QuotationComparisonDrawerProps> = ({
     </Drawer>
   )
 }
+
+export const QuotationComparisonDrawer = deferMount(QuotationComparisonDrawerInner)

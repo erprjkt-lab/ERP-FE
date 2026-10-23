@@ -207,6 +207,8 @@ export interface GrnItem {
   rejectedQty?: number | null
   shortQty?: number | null
   lineStatus: GrnLineStatus
+  /** An approved Incoming Inspection Report exists for this line. */
+  hasApprovedInspectionReport: boolean
   remarks?: string
 }
 

@@ -31,7 +31,9 @@ function getColumns(locationNameById: Map<string, string>): TableColumnsType<Sto
 
 export function StockBalance() {
   const [itemId, setItemId] = useState<string | undefined>(undefined)
-  const { data: items, isLoading: loadingItems } = useProcurementItems()
+  // The picker labels options with code and name only, so skip resolving uom,
+  // category and material-grade names — three master fetches this page never shows.
+  const { data: items, isLoading: loadingItems } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { data: rows, isLoading: loadingBalance } = useStockBalance(itemId)
 

@@ -18,6 +18,7 @@ import {
 } from '../hooks/useStockAdjustments'
 import { useLocations } from '../hooks/useLocations'
 import { ItemLotAllocator, lotKey, parseLotKey } from './ItemLotAllocator'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface AdjustmentFormValues {
   adjustmentDate: dayjs.Dayjs
@@ -33,7 +34,7 @@ export interface StockAdjustmentFormDrawerProps {
   adjustmentId?: string
 }
 
-export const StockAdjustmentFormDrawer: FC<StockAdjustmentFormDrawerProps> = ({
+const StockAdjustmentFormDrawerInner: FC<StockAdjustmentFormDrawerProps> = ({
   open,
   onClose,
   adjustmentId,
@@ -327,3 +328,5 @@ export const StockAdjustmentFormDrawer: FC<StockAdjustmentFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const StockAdjustmentFormDrawer = deferMount(StockAdjustmentFormDrawerInner)

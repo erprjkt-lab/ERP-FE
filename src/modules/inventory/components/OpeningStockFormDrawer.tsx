@@ -21,6 +21,7 @@ import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementI
 import type { ProcurementItemOption } from '@/modules/procurement/hooks/useProcurementItems'
 import { useCreateOpeningStock } from '../hooks/useOpeningStocks'
 import { useLocations } from '../hooks/useLocations'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   itemId: string
@@ -44,7 +45,7 @@ export interface OpeningStockFormDrawerProps {
   onClose: () => void
 }
 
-export const OpeningStockFormDrawer: FC<OpeningStockFormDrawerProps> = ({ open, onClose }) => {
+const OpeningStockFormDrawerInner: FC<OpeningStockFormDrawerProps> = ({ open, onClose }) => {
   const { message } = App.useApp()
   const [form] = Form.useForm<OpeningStockFormValues>()
 
@@ -254,3 +255,5 @@ const OpeningStockItemRow: FC<OpeningStockItemRowProps> = ({
     </div>
   )
 }
+
+export const OpeningStockFormDrawer = deferMount(OpeningStockFormDrawerInner)

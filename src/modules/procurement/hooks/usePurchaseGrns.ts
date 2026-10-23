@@ -68,6 +68,7 @@ function toGrnItem(api: ApiGrnItem): GrnItem {
     rejectedQty: api.rejected_qty != null ? Number(api.rejected_qty) : null,
     shortQty: api.short_qty != null ? Number(api.short_qty) : null,
     lineStatus: api.line_status as GrnLineStatus,
+    hasApprovedInspectionReport: api.has_approved_inspection_report ?? false,
     remarks: api.remark ?? undefined,
   }
 }

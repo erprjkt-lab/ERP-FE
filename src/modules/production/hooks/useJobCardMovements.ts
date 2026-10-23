@@ -18,7 +18,8 @@ function toMovement(api: ApiJobCardMovement): JobCardMovement {
     id: String(api.id),
     fromProcessId: String(api.from_process_id),
     fromProcessName: api.from_process_name ?? '',
-    toProcessId: String(api.to_process_id),
+    // Null means "moved into store" — no next process to key anything by.
+    toProcessId: api.to_process_id == null ? '' : String(api.to_process_id),
     toProcessName: api.to_process_name ?? '',
     reworkReviewId: api.rejection_review_id ? String(api.rejection_review_id) : null,
     isRework: api.is_rework,
@@ -48,6 +49,11 @@ function useMovementInvalidation(jobCardId: string | undefined) {
   return () => {
     queryClient.invalidateQueries({ queryKey: ['production', 'movements', jobCardId] })
     queryClient.invalidateQueries({ queryKey: ['production', 'jobCards'] })
+    // A move out of the last step posts finished goods into store, and deleting
+    // one reverses that, so stock and the receipt list move with movements.
+    queryClient.invalidateQueries({ queryKey: ['production', 'productionReceipts', jobCardId] })
+    queryClient.invalidateQueries({ queryKey: ['stock-balance'] })
+    queryClient.invalidateQueries({ queryKey: ['stock-ledger'] })
   }
 }
 

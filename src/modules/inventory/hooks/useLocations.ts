@@ -37,7 +37,6 @@ export function useLocations() {
   const query = useQuery({
     queryKey: ['locations'],
     queryFn: async () => (await listLocations()).data,
-    staleTime: 5 * 60 * 1000,
   })
   return { data: (query.data ?? []).map(toLocation), isLoading: query.isLoading }
 }
@@ -47,7 +46,6 @@ export function useStoreLocations() {
   const query = useQuery({
     queryKey: ['locations'],
     queryFn: async () => (await listLocations()).data,
-    staleTime: 5 * 60 * 1000,
   })
   return { data: (query.data ?? []).map(toStoreLocation), isLoading: query.isLoading }
 }

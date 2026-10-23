@@ -29,6 +29,7 @@ import {
 } from '../hooks/useSalesQuotations'
 import type { SalesQuotationItemInput } from '../hooks/useSalesQuotations'
 import { loadMoreRender } from '@/components/ui/loadMoreRender'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface ItemRowValues {
   salesEnquiryItemId?: string | null
@@ -64,7 +65,7 @@ export interface SalesQuotationFormDrawerProps {
   sourceEnquiryId?: string
 }
 
-export const SalesQuotationFormDrawer: FC<SalesQuotationFormDrawerProps> = ({
+const SalesQuotationFormDrawerInner: FC<SalesQuotationFormDrawerProps> = ({
   open,
   onClose,
   quotationId,
@@ -426,3 +427,5 @@ export const SalesQuotationFormDrawer: FC<SalesQuotationFormDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const SalesQuotationFormDrawer = deferMount(SalesQuotationFormDrawerInner)

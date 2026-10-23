@@ -15,6 +15,7 @@ import {
   useUpdateInspectionParameter,
 } from '../hooks/useInspectionParameters'
 import { useItemProcessRoute } from '../hooks/useItemProcessRoute'
+import { deferMount } from '@/components/ui/deferMount'
 
 const PARAM_TYPE_OPTIONS: { label: string; value: InspectionParamType }[] = [
   { label: 'Product', value: 'product' },
@@ -37,7 +38,7 @@ export interface InspectionParametersDrawerProps {
   rawMaterial?: boolean
 }
 
-export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = ({
+const InspectionParametersDrawerInner: FC<InspectionParametersDrawerProps> = ({
   open,
   onClose,
   itemId,
@@ -207,3 +208,5 @@ export const InspectionParametersDrawer: FC<InspectionParametersDrawerProps> = (
     </Drawer>
   )
 }
+
+export const InspectionParametersDrawer = deferMount(InspectionParametersDrawerInner)

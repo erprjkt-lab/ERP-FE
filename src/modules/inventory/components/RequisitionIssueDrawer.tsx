@@ -9,6 +9,7 @@ import type { IssueAgainstRequisitionLine } from '@/types/api/inventory'
 import { useStockRequisition } from '../hooks/useStockRequisitions'
 import { useIssueAgainstRequisition } from '../hooks/useStockIssues'
 import { ItemLotAllocator, parseLotKey } from './ItemLotAllocator'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface RequisitionIssueDrawerProps {
   open: boolean
@@ -16,7 +17,7 @@ export interface RequisitionIssueDrawerProps {
   requisitionId?: string
 }
 
-export const RequisitionIssueDrawer: FC<RequisitionIssueDrawerProps> = ({
+const RequisitionIssueDrawerInner: FC<RequisitionIssueDrawerProps> = ({
   open,
   onClose,
   requisitionId,
@@ -157,3 +158,5 @@ export const RequisitionIssueDrawer: FC<RequisitionIssueDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const RequisitionIssueDrawer = deferMount(RequisitionIssueDrawerInner)

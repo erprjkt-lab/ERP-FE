@@ -117,11 +117,11 @@ export function useMaterialSummary(jobCardId: string | undefined) {
   return { ...query, data: query.data ?? [], isLoading: query.isLoading }
 }
 
-export function useMaterialReturns(jobCardId: string | undefined) {
+export function useMaterialReturns(jobCardId: string | undefined, enabled = true) {
   const query = useQuery({
     queryKey: ['production', 'materialReturns', jobCardId],
     queryFn: async () => (await listMaterialReturns(Number(jobCardId))).data.map(toReturn),
-    enabled: !!jobCardId,
+    enabled: !!jobCardId && enabled,
   })
   return { ...query, data: query.data ?? [], isLoading: query.isLoading }
 }

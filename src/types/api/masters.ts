@@ -188,6 +188,8 @@ export interface ApiItemMaster {
   updated_at: string | null
   // Finished Good fields
   party_id: number | null
+  /** Eager-loaded by ERP-BE's ItemRepository::findAll (`with('party')`). */
+  party_name?: string | null
   customer_part_no: string | null
   drawing_no: string | null
   drawing_revision: string | null

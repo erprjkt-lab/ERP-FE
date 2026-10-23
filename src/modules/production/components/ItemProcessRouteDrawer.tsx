@@ -14,6 +14,7 @@ import { FormSection } from '@/components/ui/FormSection'
 import { useFinishedGood } from '@/modules/masters/hooks/useFinishedGoods'
 import { useDefineItemProcessRoute, useItemProcessRoute } from '../hooks/useItemProcessRoute'
 import { useProcesses } from '../hooks/useProcesses'
+import { deferMount } from '@/components/ui/deferMount'
 
 interface StepFormValue {
   processId?: string
@@ -99,7 +100,7 @@ export interface ItemProcessRouteDrawerProps {
   itemId?: string
 }
 
-export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
+const ItemProcessRouteDrawerInner: FC<ItemProcessRouteDrawerProps> = ({
   open,
   onClose,
   itemId,
@@ -261,3 +262,5 @@ export const ItemProcessRouteDrawer: FC<ItemProcessRouteDrawerProps> = ({
     </Drawer>
   )
 }
+
+export const ItemProcessRouteDrawer = deferMount(ItemProcessRouteDrawerInner)

@@ -1,44 +1,28 @@
 import { ArrowLeftOutlined, EditOutlined, StopOutlined } from '@ant-design/icons'
-import {
-  App,
-  Button,
-  Card,
-  Checkbox,
-  Col,
-  Descriptions,
-  Form,
-  Input,
-  InputNumber,
-  Row,
-  Space,
-  Tooltip,
-  Typography,
-} from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Space, Tooltip, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePagePermission } from '@/hooks/usePagePermission'
 import { getErrorMessage } from '@/api/client'
-import { Modal } from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/DataTable'
 import { SUMMARY_PROPS } from '@/components/erp/detailSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { IncomingInspectionDrawer } from '@/modules/quality/components/IncomingInspectionDrawer'
-import { useIncomingInspectionReportsForGrnItem } from '@/modules/quality/hooks/useInspectionReports'
 import type { GrnItem } from '@/types/procurement'
 import { GrnFormDrawer } from '../components/GrnFormDrawer'
+import { GrnQcModal } from '../components/GrnQcModal'
 import {
   GRN_LINE_STATUS_BADGE,
   GRN_LINE_STATUS_LABELS,
   GRN_STATUS_BADGE,
   GRN_STATUS_LABELS,
   ITEM_TYPE_RAW_MATERIAL,
+  QC_LOCKED_STATUSES,
 } from '../constants'
-import { useCancelGrn, useGrn, useSaveGrnItemQc } from '../hooks/usePurchaseGrns'
+import { useCancelGrn, useGrn } from '../hooks/usePurchaseGrns'
 import { formatDateTime } from '@/utils/date'
-
-const QC_LOCKED_STATUSES = new Set([2, 3, 4]) // QC Done | Stock Posted | Cancelled
 
 export const PurchaseGrnDetail: FC = () => {
   const { id } = useParams()
@@ -236,7 +220,7 @@ export const PurchaseGrnDetail: FC = () => {
         </Col>
       </Row>
 
-      {qcItem && <QcModal item={qcItem} grnId={grn.id} onClose={() => setQcItem(null)} />}
+      {qcItem && <GrnQcModal line={qcItem} onClose={() => setQcItem(null)} />}
       <IncomingInspectionDrawer
         open={!!iirItem}
         grnItemId={iirItem?.id}
@@ -258,14 +242,11 @@ interface GrnLineActionsProps {
 
 const GrnLineActions: FC<GrnLineActionsProps> = ({ record, onQc, onIir }) => {
   const isRawMaterial = record.itemType === ITEM_TYPE_RAW_MATERIAL
-  const { hasApprovedIir, isLoading } = useIncomingInspectionReportsForGrnItem(
-    isRawMaterial ? record.id : undefined,
-  )
   const qcLocked = QC_LOCKED_STATUSES.has(record.lineStatus)
-  // Fail-safe: block QC on an RM line until the IIR check has actually
-  // resolved and confirmed an approval — don't let the button flash enabled
-  // during the initial fetch just because isLoading hasn't settled yet.
-  const qcBlockedByIir = isRawMaterial && (isLoading || !hasApprovedIir)
+  // The GRN response says per line whether an approved IIR exists, so this no
+  // longer costs a request per raw-material row — and the flag arrives with the
+  // row, so the button can never flash enabled while a check is still running.
+  const qcBlockedByIir = isRawMaterial && !record.hasApprovedInspectionReport
 
   const qcTooltip = qcLocked
     ? 'QC already recorded'
@@ -278,7 +259,7 @@ const GrnLineActions: FC<GrnLineActionsProps> = ({ record, onQc, onIir }) => {
       {isRawMaterial && (
         <Tooltip title="Manage Incoming Inspection Reports for this line">
           <Button size="small" onClick={onIir}>
-            IIR{hasApprovedIir ? ' ✓' : ''}
+            IIR{record.hasApprovedInspectionReport ? ' ✓' : ''}
           </Button>
         </Tooltip>
       )}
@@ -288,85 +269,5 @@ const GrnLineActions: FC<GrnLineActionsProps> = ({ record, onQc, onIir }) => {
         </Button>
       </Tooltip>
     </Space>
-  )
-}
-
-interface QcModalProps {
-  item: GrnItem
-  grnId: string
-  onClose: () => void
-}
-
-interface QcFormValues {
-  acceptedQty?: number
-  rejectedQty?: number
-  shortQty?: number
-  heatVerified?: boolean
-  remark?: string
-}
-
-const QcModal: FC<QcModalProps> = ({ item, grnId, onClose }) => {
-  const [form] = Form.useForm<QcFormValues>()
-  const { message } = App.useApp()
-  const { mutateAsync: saveQc, isPending } = useSaveGrnItemQc()
-
-  const handleOk = async () => {
-    try {
-      const values = await form.validateFields()
-      const accepted = values.acceptedQty ?? 0
-      const rejected = values.rejectedQty ?? 0
-      const short = values.shortQty ?? 0
-      if (accepted + rejected + short > item.receivedQty) {
-        message.error('Accepted + rejected + short quantity cannot exceed received quantity')
-        return
-      }
-      await saveQc({
-        grnItemId: item.id,
-        grnId,
-        payload: {
-          accepted_qty: values.acceptedQty ?? null,
-          rejected_qty: values.rejectedQty ?? null,
-          short_qty: values.shortQty ?? null,
-          heat_verified: values.heatVerified ?? null,
-          remark: values.remark,
-        },
-      })
-      message.success('QC result saved')
-      onClose()
-    } catch (error) {
-      if (error instanceof Error) message.error(getErrorMessage(error))
-    }
-  }
-
-  return (
-    <Modal
-      title={`QC — ${item.itemName ?? item.itemId}`}
-      open
-      onCancel={onClose}
-      onOk={handleOk}
-      confirmLoading={isPending}
-      okText="Save QC Result"
-    >
-      <Typography.Text type="secondary">Received Qty: {item.receivedQty}</Typography.Text>
-      <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-        <Form.Item label="Accepted Qty" name="acceptedQty">
-          <InputNumber min={0} max={item.receivedQty} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item label="Rejected Qty" name="rejectedQty">
-          <InputNumber min={0} max={item.receivedQty} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item label="Short Qty" name="shortQty">
-          <InputNumber min={0} max={item.receivedQty} style={{ width: '100%' }} />
-        </Form.Item>
-        {item.heatNo && item.heatNo !== 'NA' && (
-          <Form.Item label="Heat Verified" name="heatVerified" valuePropName="checked">
-            <Checkbox />
-          </Form.Item>
-        )}
-        <Form.Item label="Remarks" name="remark">
-          <Input.TextArea rows={2} />
-        </Form.Item>
-      </Form>
-    </Modal>
   )
 }

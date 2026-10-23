@@ -41,11 +41,15 @@ const DayCell: FC<{ code: string }> = ({ code }) => {
   )
 }
 
-function toCsv(rows: ApiMonthlyAttendanceRow[], daysInMonth: number): string {
+function toCsv(
+  rows: ApiMonthlyAttendanceRow[],
+  daysInMonth: number,
+  nameFor: (row: ApiMonthlyAttendanceRow) => string,
+): string {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
   const header = ['Employee', ...days, 'Present', 'Absent', 'Half Day', 'Leave', 'Not Marked']
   const body = rows.map(row => [
-    `"${row.employee_name.replace(/"/g, '""')}"`,
+    `"${nameFor(row).replace(/"/g, '""')}"`,
     ...days.map(day => row.days[String(day)] ?? ''),
     row.summary.present,
     row.summary.absent,
@@ -70,18 +74,25 @@ export const AttendanceMonthlyGrid: FC = () => {
     ...(employeeId ? { employee_id: Number(employeeId) } : {}),
   })
 
-  // The report carries only the employee's name, so the department shown under
-  // it comes from the employee list this page already loads for the filter.
-  const departmentByEmployeeId = useMemo(
-    () => new Map(employees.map(employee => [employee.id, employee.department?.name])),
+  // The report sends `employee_name`, which is nullable on ERP-BE and empty for
+  // plenty of real rows — the employee list is the one place that already falls
+  // back to the login name, and it carries the department too, so both the name
+  // and the line under it are read from there.
+  const employeeById = useMemo(
+    () => new Map(employees.map(employee => [employee.id, employee])),
     [employees],
   )
 
   const daysInMonth = report?.days_in_month ?? month.daysInMonth()
   const rows = report?.employees ?? []
 
+  const nameFor = (row: ApiMonthlyAttendanceRow) =>
+    employeeById.get(String(row.employee_id))?.fullName ||
+    row.employee_name ||
+    `Employee #${row.employee_id}`
+
   const handleExport = () => {
-    const blob = new Blob([toCsv(rows, daysInMonth)], { type: 'text/csv;charset=utf-8' })
+    const blob = new Blob([toCsv(rows, daysInMonth, nameFor)], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -96,14 +107,17 @@ export const AttendanceMonthlyGrid: FC = () => {
       key: 'employee',
       width: 190,
       fixed: 'left',
-      render: (_, row) => (
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 13 }}>{row.employee_name}</div>
-          <div style={{ fontSize: 11, color: '#64748B' }}>
-            {departmentByEmployeeId.get(String(row.employee_id)) ?? '—'}
+      render: (_, row) => {
+        const employee = employeeById.get(String(row.employee_id))
+        return (
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 13 }}>{nameFor(row)}</div>
+            <div style={{ fontSize: 11, color: '#64748B' }}>
+              {employee?.department?.name ?? '—'}
+            </div>
           </div>
-        </div>
-      ),
+        )
+      },
     },
     ...Array.from({ length: daysInMonth }, (_, index) => index + 1).map(day => {
       const isSunday = month.date(day).day() === 0

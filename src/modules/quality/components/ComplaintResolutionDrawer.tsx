@@ -7,6 +7,7 @@ import { getErrorMessage } from '@/api/client'
 import { FormDrawer } from '@/components/ui/FormDrawer'
 import { FormField } from '@/components/ui/FormField'
 import { useCreateComplaintResolution } from '../hooks/useCustomerComplaints'
+import { deferMount } from '@/components/ui/deferMount'
 
 export interface ComplaintResolutionDrawerProps {
   open: boolean
@@ -18,7 +19,7 @@ export interface ComplaintResolutionDrawerProps {
 const fileFromEvent = (event: unknown) =>
   Array.isArray(event) ? event : ((event as { fileList?: UploadFile[] })?.fileList ?? [])
 
-export const ComplaintResolutionDrawer: FC<ComplaintResolutionDrawerProps> = ({
+const ComplaintResolutionDrawerInner: FC<ComplaintResolutionDrawerProps> = ({
   open,
   complaintId,
   complaintNumber,
@@ -110,3 +111,5 @@ export const ComplaintResolutionDrawer: FC<ComplaintResolutionDrawerProps> = ({
     </FormDrawer>
   )
 }
+
+export const ComplaintResolutionDrawer = deferMount(ComplaintResolutionDrawerInner)

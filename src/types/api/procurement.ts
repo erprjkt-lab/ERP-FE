@@ -367,6 +367,9 @@ export interface ApiGrnItem {
   stock_movement_id: number | null
   line_status: number
   remark: string | null
+  /** Counted by ERP-BE's GrnRepository (report_type = IIR, status = approved),
+   *  so the line can show its IIR state without a request of its own. */
+  has_approved_inspection_report?: boolean
 }
 
 export interface ApiGrn {

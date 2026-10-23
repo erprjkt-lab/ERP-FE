@@ -1,8 +1,9 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   closeChallan,
   createChallan,
   deleteChallan,
+  listChallans,
   listChallansForJobCard,
   markChallanReceived,
   unmarkChallanReceived,
@@ -13,7 +14,6 @@ import type {
   CreateChallanPayload,
 } from '@/types/api/production'
 import type { Challan, ChallanItem, ChallanStatus } from '@/types/production'
-import { useJobCards } from './useJobCards'
 
 const STATUS_BY_CODE: Record<number, ChallanStatus> = {
   0: 'open',
@@ -58,38 +58,26 @@ export function useChallansForJobCard(jobCardId: string | undefined) {
   return { ...query, data: query.data ?? [], isLoading: query.isLoading }
 }
 
-// There is no `GET /challans` endpoint on the backend — only
-// `GET /job-cards/{id}/challans` — so a cross-job-card view has to fan out
-// across every job card and de-duplicate (one challan can bundle items from
-// several job cards, so it would otherwise appear once per job card it
-// touches). This is real data from real endpoints, just N requests instead
-// of one; a global list endpoint on the backend would make this cheaper.
+// The Outsource list filters and counts by status across the whole set, so it
+// takes one wide page rather than server-side paging. ERP-BE returns each
+// challan once, however many job cards its items span.
 export function useAllChallans() {
   const queryClient = useQueryClient()
-  const { data: jobCards, isLoading: jobCardsLoading } = useJobCards()
-
-  const results = useQueries({
-    queries: jobCards.map(jobCard => ({
-      queryKey: ['production', 'challans', 'byJobCard', jobCard.id],
-      queryFn: async () => (await listChallansForJobCard(Number(jobCard.id))).data.map(toChallan),
-      enabled: !jobCardsLoading,
-    })),
+  const query = useQuery({
+    queryKey: ['production', 'challans', 'all'],
+    queryFn: async () => (await listChallans()).data.map(toChallan),
   })
-
-  const isLoading = jobCardsLoading || results.some(r => r.isLoading)
-  const isFetching = results.some(r => r.isFetching)
-  const byId = new Map<string, Challan>()
-  for (const result of results) {
-    for (const challan of result.data ?? []) {
-      byId.set(challan.id, challan)
-    }
-  }
 
   const refetch = async () => {
     await queryClient.invalidateQueries({ queryKey: ['production', 'challans'] })
   }
 
-  return { data: Array.from(byId.values()), isLoading, isFetching, refetch }
+  return {
+    data: query.data ?? [],
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    refetch,
+  }
 }
 
 export function useCreateChallan() {

@@ -17,7 +17,9 @@ export interface ProcurementItemOption {
 // Purchase modules must source items from the existing Item Master rather
 // than a locally-duplicated list — combines the three item-master types
 // (Finished Goods / Raw Materials / Consumables) into one flat pick list.
-export function useProcurementItems() {
+// `withNames` false drops `uomName` (and the uom/category/material-grade master
+// fetches behind it) for callers that only label options with code and name.
+export function useProcurementItems(withNames = true) {
   // One page size across the three types: ERP-BE has no `search` on item master,
   // so the picker filters the options it holds and `loadMore` widens all three.
   const { perPage, loadMore, hasMore } = useLookupPaging()
@@ -25,17 +27,17 @@ export function useProcurementItems() {
     data: finishedGoods = [],
     meta: finishedGoodsMeta,
     isLoading: loadingFinishedGoods,
-  } = useFinishedGoods(1, perPage)
+  } = useFinishedGoods(1, perPage, withNames)
   const {
     data: rawMaterials = [],
     meta: rawMaterialsMeta,
     isLoading: loadingRawMaterials,
-  } = useRawMaterials(1, perPage)
+  } = useRawMaterials(1, perPage, withNames)
   const {
     data: consumables = [],
     meta: consumablesMeta,
     isLoading: loadingConsumables,
-  } = useConsumables(1, perPage)
+  } = useConsumables(1, perPage, withNames)
 
   const data: ProcurementItemOption[] = [...finishedGoods, ...rawMaterials, ...consumables].map(
     item => ({
