@@ -5,7 +5,7 @@ import {
   FileTextOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -108,7 +108,11 @@ export const SalesEnquiryDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/enquiries')}>
           Back to Sales Enquiries
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Sales enquiry not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Sales enquiry not found.</p>
+        )}
       </div>
     )
   }

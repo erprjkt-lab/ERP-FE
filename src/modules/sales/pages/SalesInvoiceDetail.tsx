@@ -4,7 +4,7 @@ import {
   DownloadOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -94,7 +94,11 @@ export const SalesInvoiceDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/invoices')}>
           Back to Sales Invoices
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Sales invoice not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Sales invoice not found.</p>
+        )}
       </div>
     )
   }

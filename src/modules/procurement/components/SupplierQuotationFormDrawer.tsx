@@ -10,6 +10,7 @@ import { SUPPLIER_STATUS_LABELS } from '../constants'
 import { usePurchaseEnquiry } from '../hooks/usePurchaseEnquiries'
 import {
   useRecordSupplierQuotation,
+  useUpdateSupplierQuotation,
   useSupplierQuotationByPeSupplier,
 } from '../hooks/useSupplierQuotations'
 import type { SupplierQuotationItemInput } from '../hooks/useSupplierQuotations'
@@ -68,13 +69,15 @@ const SupplierQuotationFormDrawerInner: FC<SupplierQuotationFormDrawerProps> = (
     queryClient.invalidateQueries({ queryKey: ['purchase-enquiries', enquiryId, 'quotations'] })
   }, [open, enquiryId, queryClient])
 
-  const { data: enquiry } = usePurchaseEnquiry(enquiryId)
+  const { data: enquiry, isLoading: loadingRecord } = usePurchaseEnquiry(enquiryId)
   const activePeSupplierId = manualPeSupplierId ?? initialPeSupplierId ?? enquiry?.suppliers[0]?.id
   const { data: existingQuotation } = useSupplierQuotationByPeSupplier(
     enquiryId,
     activePeSupplierId,
   )
-  const { mutateAsync: recordQuotation, isPending: saving } = useRecordSupplierQuotation()
+  const { mutateAsync: recordQuotation, isPending: recording } = useRecordSupplierQuotation()
+  const { mutateAsync: updateQuotation, isPending: updating } = useUpdateSupplierQuotation()
+  const saving = recording || updating
 
   const peSupplier = enquiry?.suppliers.find(sup => sup.id === activePeSupplierId)
   const isLocked = !!enquiry && LOCKED_STATUSES.includes(enquiry.status)
@@ -153,21 +156,31 @@ const SupplierQuotationFormDrawerInner: FC<SupplierQuotationFormDrawerProps> = (
       }
     })
 
+    const input = {
+      purchaseEnquiryId: enquiry.id,
+      purchaseEnquirySupplierId: peSupplier.id,
+      quotationNumber: values.quotationNumber,
+      quotationDate: values.quotationDate.format('YYYY-MM-DD'),
+      validUntil: values.validUntil ? values.validUntil.format('YYYY-MM-DD') : null,
+      paymentTerms: values.paymentTerms,
+      deliveryTerms: values.deliveryTerms,
+      freightAmount: values.freightAmount ?? 0,
+      otherCharges: values.otherCharges ?? 0,
+      remarks: values.remarks,
+      items,
+    }
+
     try {
-      await recordQuotation({
-        purchaseEnquiryId: enquiry.id,
-        purchaseEnquirySupplierId: peSupplier.id,
-        quotationNumber: values.quotationNumber,
-        quotationDate: values.quotationDate.format('YYYY-MM-DD'),
-        validUntil: values.validUntil ? values.validUntil.format('YYYY-MM-DD') : null,
-        paymentTerms: values.paymentTerms,
-        deliveryTerms: values.deliveryTerms,
-        freightAmount: values.freightAmount ?? 0,
-        otherCharges: values.otherCharges ?? 0,
-        remarks: values.remarks,
-        items,
-      })
-      message.success('Supplier quotation recorded')
+      // ERP-BE allows one quotation per enquiry+supplier pair and rejects a
+      // second POST, so an existing one is edited in place — which is what the
+      // drawer has been titled and labelled for all along.
+      if (existingQuotation) {
+        await updateQuotation({ quotationId: existingQuotation.id, input })
+        message.success('Supplier quotation updated')
+      } else {
+        await recordQuotation(input)
+        message.success('Supplier quotation recorded')
+      }
       handleClose()
     } catch (error) {
       message.error(getErrorMessage(error))
@@ -178,6 +191,7 @@ const SupplierQuotationFormDrawerInner: FC<SupplierQuotationFormDrawerProps> = (
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={`${existingQuotation ? 'Edit' : 'Record'} Quotation${enquiry ? ` — ${enquiry.enquiryNumber}` : ''}`}
       open={open}
       width={960}

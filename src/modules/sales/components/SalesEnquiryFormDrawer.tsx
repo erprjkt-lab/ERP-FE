@@ -59,7 +59,7 @@ const SalesEnquiryFormDrawerInner: FC<SalesEnquiryFormDrawerProps> = ({
 
   const { data: customers } = useSalesCustomers()
   const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
-  const { data: existing } = useSalesEnquiry(enquiryId)
+  const { data: existing, isLoading: loadingRecord } = useSalesEnquiry(enquiryId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesEnquiry()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesEnquiry()
 
@@ -138,6 +138,7 @@ const SalesEnquiryFormDrawerInner: FC<SalesEnquiryFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? `Edit ${existing?.enquiryNumber ?? 'Enquiry'}` : 'New Sales Enquiry'}
       open={open}
       width={840}

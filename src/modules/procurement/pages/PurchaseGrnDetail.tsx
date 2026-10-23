@@ -1,5 +1,16 @@
 import { ArrowLeftOutlined, EditOutlined, StopOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Tooltip, Typography } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Row,
+  Skeleton,
+  Space,
+  Tooltip,
+  Typography,
+} from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -41,7 +52,11 @@ export const PurchaseGrnDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/grn')}>
           Back to GRNs
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'GRN not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>GRN not found.</p>
+        )}
       </div>
     )
   }

@@ -45,7 +45,7 @@ const PurchaseRequisitionFormDrawerInner: FC<PurchaseRequisitionFormDrawerProps>
   const [form] = Form.useForm()
   const isEdit = !!requisitionId
 
-  const { data: requisition } = usePurchaseRequisition(requisitionId)
+  const { data: requisition, isLoading: loadingRecord } = usePurchaseRequisition(requisitionId)
   const { data: departments } = useDepartments()
   const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createRequisition, isPending: creating } = useCreatePurchaseRequisition()
@@ -139,6 +139,7 @@ const PurchaseRequisitionFormDrawerInner: FC<PurchaseRequisitionFormDrawerProps>
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Purchase Requisition' : 'New Purchase Requisition'}
       status={
         isEdit && requisition

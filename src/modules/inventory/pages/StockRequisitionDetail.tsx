@@ -6,7 +6,7 @@ import {
   EditOutlined,
   InboxOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Input, Row, Skeleton, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -50,7 +50,11 @@ export const StockRequisitionDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/inventory/requisitions')}>
           Back to Stock Requisitions
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Requisition not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Requisition not found.</p>
+        )}
       </div>
     )
   }

@@ -6,46 +6,66 @@ import type {
 } from '@/types/production'
 import type { StepProgress } from './jobCardProgress'
 
-export interface ReworkBatch {
-  review: RejectionReview
-  /** Route steps from the rework point onward, with this batch's own quantities. */
+export interface ReworkSummary {
+  /** Route steps from the earliest rework entry onward, every review pooled. */
   steps: StepProgress[]
-  /** reviewed qty still to be re-logged at the rework step. */
+  /** Reviews that sent qty back to a process, oldest first. */
+  reviewsByProcess: Map<string, RejectionReview[]>
+  /** Qty every approved Rework review put back on the floor. */
+  totalQty: number
+  /** Work still to log anywhere in the redo. */
   outstandingQty: number
-  /** OK qty this batch has reached the end of the route with. */
+  /** Qty the redo has carried to the end of the route. */
   finishedQty: number
+  /** Distinct reasons behind the reviews, for the header. */
+  reasons: string[]
 }
 
 /**
- * The rework batch's own pass through the route, built only from logs citing its
- * review. ERP-BE balance-checks the review's reviewed_qty at the rework step only;
- * every later step is ordinary forward flow it re-classifies as rework, so here the
- * batch simply carries its OK qty from one step to the next.
+ * One rework pass for the whole job card rather than one table per review.
  *
- * Approving the review makes ERP-BE auto-create a movement into the rework step
- * tagged with the review id. That movement still has to be accepted like any
- * other, so it is what the redo step's Unaccepted/In columns are drawn from —
- * logging itself is not gated on it (the backend balances against reviewed_qty),
- * which is why a missing acceptance shows up as Unaccepted rather than blocking.
+ * ERP-BE keeps the rework balance per *process*, not per review (its
+ * process-summary computes a 'rework' bucket for each process), and the floor
+ * reads it the same way: qty sent back to Mixing is qty to redo at Mixing,
+ * whichever rejection put it there. So the reviews are pooled at the process
+ * each one points at, and the redo flows forward from there exactly like the
+ * first pass does.
  */
-export function computeReworkBatch(
+export function computeReworkSummary(
   routes: JobCardRouteStep[],
-  review: RejectionReview,
+  reviews: RejectionReview[],
   logs: ProcessLog[],
   movements: JobCardMovement[] = [],
-): ReworkBatch {
+): ReworkSummary {
   const sorted = [...routes].sort((a, b) => a.sequenceNo - b.sequenceNo)
-  const startIndex = sorted.findIndex(step => step.processId === review.reworkProcessId)
-  const batchLogs = logs.filter(log => log.inboundReworkReviewId === review.id)
-  const batchMovements = movements.filter(movement => movement.reworkReviewId === review.id)
+  const reworkLogs = logs.filter(log => log.inboundReworkReviewId != null)
+  const reworkMovements = movements.filter(movement => movement.isRework)
+
+  // Oldest first: a log at a process cites the review that has been waiting
+  // longest there, so partial redos close out in the order they were raised.
+  const reviewsByProcess = new Map<string, RejectionReview[]>()
+  const entryQty: Record<string, number> = {}
+  for (const review of [...reviews].reverse()) {
+    const processId = review.reworkProcessId
+    if (!processId) continue
+    entryQty[processId] = (entryQty[processId] ?? 0) + review.reviewedQty
+    reviewsByProcess.set(processId, [...(reviewsByProcess.get(processId) ?? []), review])
+  }
+
+  const startIndex = sorted.findIndex(step => entryQty[step.processId] != null)
+  const slice = startIndex >= 0 ? sorted.slice(startIndex) : []
+  const lastProcessId = sorted[sorted.length - 1]?.processId
+
+  const sumBy = (processId: string, pick: (log: ProcessLog) => number) =>
+    reworkLogs.filter(log => log.processId === processId).reduce((sum, log) => sum + pick(log), 0)
 
   const movedInAt = (processId: string) =>
-    batchMovements
+    reworkMovements
       .filter(movement => movement.toProcessId === processId)
       .reduce((sum, movement) => sum + movement.movedQty, 0)
 
   const settledAt = (processId: string) =>
-    batchMovements
+    reworkMovements
       .filter(movement => movement.toProcessId === processId)
       .reduce(
         (sum, movement) =>
@@ -53,42 +73,25 @@ export function computeReworkBatch(
         0,
       )
 
-  const slice = sorted.slice(Math.max(startIndex, 0))
+  const movedOutAt = (processId: string) =>
+    reworkMovements
+      .filter(movement => movement.fromProcessId === processId)
+      .reduce((sum, movement) => sum + movement.movedQty, 0)
 
-  // What the redo may still send onward out of the route's final step, i.e.
-  // receive into store. ERP-BE validates this against one rework bucket per
-  // process rather than per review, so it is counted the same way here: every
-  // rework log's OK qty at that process, less every rework movement out of it.
-  // ponytail: with two open rework batches both tables show the same shared
-  // figure; split it per review once ERP-BE tags receive movements with one.
-  const reworkPoolOut = (processId: string) =>
-    Math.max(
-      logs
-        .filter(log => log.inboundReworkReviewId != null && log.processId === processId)
-        .reduce((sum, log) => sum + log.okQty, 0) -
-        movements
-          .filter(movement => movement.isRework && movement.fromProcessId === processId)
-          .reduce((sum, movement) => sum + movement.movedQty, 0),
-      0,
-    )
-  const loggedAt = (processId: string) =>
-    batchLogs
-      .filter(log => log.processId === processId)
-      .reduce((sum, log) => sum + log.okQty + log.rejectedQty + log.bypassedQty, 0)
-
-  const steps: StepProgress[] = []
-  let availableQty = review.reviewedQty
-
-  slice.forEach((step, index) => {
-    const stepLogs = batchLogs.filter(log => log.processId === step.processId)
-    const okQty = stepLogs.reduce((sum, log) => sum + log.okQty, 0)
-    const rejectedQty = stepLogs.reduce((sum, log) => sum + log.rejectedQty, 0)
-    const bypassedQty = stepLogs.reduce((sum, log) => sum + log.bypassedQty, 0)
+  let carriedQty = 0
+  const steps: StepProgress[] = slice.map((step, index) => {
+    const okQty = sumBy(step.processId, log => log.okQty)
+    const rejectedQty = sumBy(step.processId, log => log.rejectedQty)
+    const bypassedQty = sumBy(step.processId, log => log.bypassedQty)
     const loggedQty = okQty + rejectedQty + bypassedQty
-    const isLast = index === slice.length - 1
+    // What arrived here to be redone: whatever a review sent back to this
+    // process, plus whatever the previous step of the redo finished.
+    const availableQty = (entryQty[step.processId] ?? 0) + carriedQty
     const nextStep = slice[index + 1]
+    const isLast = step.processId === lastProcessId || !nextStep
+    carriedQty = okQty
 
-    steps.push({
+    return {
       step,
       unacceptedQty: Math.max(movedInAt(step.processId) - settledAt(step.processId), 0),
       acceptedQty: availableQty,
@@ -98,43 +101,33 @@ export function computeReworkBatch(
       loggedQty,
       availableQty,
       pendingQty: Math.max(availableQty - loggedQty, 0),
-      // This batch's own OK qty that the next step of the redo hasn't picked up yet.
-      // Job-card movements aren't tagged per batch, so this is counted from the
-      // batch's logs rather than from movement records.
-      // The final step settles by being received into store, so it has a
-      // ready-to-move qty like any other — capped at what this batch produced.
-      readyToMoveQty:
-        isLast || !nextStep
-          ? Math.min(okQty, reworkPoolOut(step.processId))
-          : Math.max(okQty - loggedAt(nextStep.processId), 0),
-      // Never the first pass: the material was issued and consumed on the original
-      // run, so the first-step material gate must not block a redo.
+      // The last step settles into store, so what it may still send onward is
+      // its OK qty less what the rework bucket has already moved out of it.
+      readyToMoveQty: isLast
+        ? Math.max(okQty - movedOutAt(step.processId), 0)
+        : Math.max(
+            okQty - sumBy(nextStep.processId, log => log.okQty + log.rejectedQty + log.bypassedQty),
+            0,
+          ),
+      // Never the first pass: the material was issued and consumed on the
+      // original run, so the first-step material gate must not block a redo.
       isFirst: false,
       isLast,
       isCurrent: false,
-    })
-
-    // Only OK qty carries on to the next step of the redo.
-    availableQty = okQty
+    }
   })
 
   const actionable = steps.findIndex(row => row.pendingQty > 0)
   if (steps[actionable]) steps[actionable].isCurrent = true
 
   return {
-    review,
     steps,
-    outstandingQty: steps[0]?.pendingQty ?? 0,
+    reviewsByProcess,
+    totalQty: reviews.reduce((sum, review) => sum + review.reviewedQty, 0),
+    outstandingQty: steps.reduce((sum, row) => sum + row.pendingQty, 0),
     finishedQty: steps.length > 0 ? steps[steps.length - 1].okQty : 0,
+    reasons: Array.from(
+      new Set(reviews.map(review => review.reasonName).filter((name): name is string => !!name)),
+    ),
   }
-}
-
-/** One batch per approved Rework review, newest first. */
-export function computeReworkBatches(
-  routes: JobCardRouteStep[],
-  reviews: RejectionReview[],
-  logs: ProcessLog[],
-  movements: JobCardMovement[] = [],
-): ReworkBatch[] {
-  return reviews.map(review => computeReworkBatch(routes, review, logs, movements))
 }

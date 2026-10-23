@@ -36,7 +36,7 @@ const FinishedGoodFormDrawerInner: FC<FinishedGoodFormDrawerProps> = ({
   const [form] = Form.useForm()
   const isEdit = !!finishedGoodId
 
-  const { data: finishedGood } = useFinishedGood(finishedGoodId)
+  const { data: finishedGood, isLoading: loadingRecord } = useFinishedGood(finishedGoodId)
   const { data: customers = [] } = useCustomers()
   const { data: categories = [] } = useItemCategories()
   const { data: uoms = [] } = useUoms()
@@ -144,6 +144,7 @@ const FinishedGoodFormDrawerInner: FC<FinishedGoodFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Finished Good' : 'Add Finished Good'}
       status={isEdit ? (finishedGood?.status ?? 'active') : undefined}
       open={open}

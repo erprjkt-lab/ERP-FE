@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -40,7 +40,11 @@ export const PurchaseOrderDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/orders')}>
           Back to Purchase Orders
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Purchase order not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Purchase order not found.</p>
+        )}
       </div>
     )
   }

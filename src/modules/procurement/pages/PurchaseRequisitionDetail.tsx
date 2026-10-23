@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Input, Row, Skeleton, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { usePagePermission } from '@/hooks/usePagePermission'
 import { useModulePermission } from '@/store/permissionStore'
@@ -39,7 +39,11 @@ export const PurchaseRequisitionDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/requisitions')}>
           Back to Requisitions
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Requisition not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Requisition not found.</p>
+        )}
       </div>
     )
   }

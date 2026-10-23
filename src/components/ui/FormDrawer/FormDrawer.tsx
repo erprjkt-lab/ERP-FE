@@ -1,4 +1,4 @@
-import { Space } from 'antd'
+import { Skeleton, Space } from 'antd'
 import type { FC, MouseEventHandler, ReactNode } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Drawer } from '@/components/ui/Drawer'
@@ -16,6 +16,9 @@ export interface FormDrawerProps extends Omit<DrawerProps, 'footer'> {
   cancelText?: string
   /** Puts the submit button in a loading state and disables it. */
   submitting?: boolean
+  /** The record being edited is still loading — show a skeleton instead of a
+   *  form whose fields are about to be filled in underneath the user. */
+  loading?: boolean
   submitDisabled?: boolean
   /** Hide the Cancel/Submit footer entirely — for a read-only side panel. */
   hideFooter?: boolean
@@ -36,6 +39,7 @@ export const FormDrawer: FC<FormDrawerProps> = ({
   submitText = 'Submit',
   cancelText = 'Cancel',
   submitting = false,
+  loading = false,
   submitDisabled = false,
   hideFooter = false,
   extraFooter,
@@ -74,7 +78,7 @@ export const FormDrawer: FC<FormDrawerProps> = ({
             <Button
               type="primary"
               loading={submitting}
-              disabled={submitDisabled}
+              disabled={submitDisabled || loading}
               onClick={onSubmit}
             >
               {submitText}
@@ -84,7 +88,7 @@ export const FormDrawer: FC<FormDrawerProps> = ({
       }
       {...props}
     >
-      {children}
+      {loading ? <Skeleton active paragraph={{ rows: 8 }} /> : children}
     </Drawer>
   )
 }

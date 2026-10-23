@@ -64,7 +64,7 @@ const GrnFormDrawerInner: FC<GrnFormDrawerProps> = ({ open, onClose, grnId }) =>
   const [form] = Form.useForm<GrnHeaderValues>()
   const isEdit = !!grnId
 
-  const { data: grn } = useGrn(grnId)
+  const { data: grn, isLoading: loadingRecord } = useGrn(grnId)
   const { data: suppliers } = useSuppliers()
   const { data: items } = useProcurementItems()
   const { data: locations } = useLocations()
@@ -182,6 +182,7 @@ const GrnFormDrawerInner: FC<GrnFormDrawerProps> = ({ open, onClose, grnId }) =>
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit GRN' : 'New GRN'}
       status={isEdit && grn ? GRN_STATUS_BADGE[grn.status] : undefined}
       statusLabel={isEdit && grn ? GRN_STATUS_LABELS[grn.status] : undefined}

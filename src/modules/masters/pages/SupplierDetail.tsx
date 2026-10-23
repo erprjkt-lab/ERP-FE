@@ -1,5 +1,16 @@
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
-import { Avatar, Button, Card, Col, Descriptions, Row, Space, Tabs, theme as antTheme } from 'antd'
+import {
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Row,
+  Skeleton,
+  Space,
+  Tabs,
+  theme as antTheme,
+} from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -23,7 +34,11 @@ export const SupplierDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/masters/suppliers')}>
           Back to Suppliers
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Supplier not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Supplier not found.</p>
+        )}
       </div>
     )
   }

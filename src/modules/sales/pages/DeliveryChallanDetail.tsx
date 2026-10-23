@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, DownloadOutlined, StopOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -93,7 +93,11 @@ export const DeliveryChallanDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/delivery-challans')}>
           Back to Delivery Challans
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Delivery challan not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Delivery challan not found.</p>
+        )}
       </div>
     )
   }

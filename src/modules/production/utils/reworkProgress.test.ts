@@ -5,7 +5,7 @@ import type {
   ProcessLog,
   RejectionReview,
 } from '@/types/production'
-import { computeReworkBatch } from './reworkProgress'
+import { computeReworkSummary } from './reworkProgress'
 
 const routes: JobCardRouteStep[] = [
   { id: '1', processId: '10', processName: 'Cutting', sequenceNo: 1 },
@@ -13,19 +13,22 @@ const routes: JobCardRouteStep[] = [
   { id: '3', processId: '30', processName: 'Inspection', sequenceNo: 3 },
 ]
 
-const review = {
-  id: 'rev-1',
-  rejectionId: 'rej-1',
-  reviewedQty: 3,
-  decision: 'REWORK',
-  reasonId: 'r1',
-  reworkProcessId: '20',
-  status: 'APPROVED',
-} as RejectionReview
-
-function log(processId: string, ok: number, rejected = 0, reviewId?: string): ProcessLog {
+function review(id: string, reviewedQty: number, reworkProcessId: string, reason?: string) {
   return {
-    id: `log-${processId}-${ok}-${rejected}-${reviewId ?? 'plain'}`,
+    id,
+    rejectionId: `rej-${id}`,
+    reviewedQty,
+    decision: 'REWORK',
+    reasonId: 'r1',
+    reasonName: reason,
+    reworkProcessId,
+    status: 'APPROVED',
+  } as RejectionReview
+}
+
+function log(processId: string, ok: number, rejected = 0, reviewId = 'rev-1'): ProcessLog {
+  return {
+    id: `log-${processId}-${ok}-${rejected}-${reviewId}`,
     processId,
     processName: '',
     performedByType: 'in_house',
@@ -37,7 +40,7 @@ function log(processId: string, ok: number, rejected = 0, reviewId?: string): Pr
     rejectedQty: rejected,
     bypassedQty: 0,
     inboundReworkReviewId: reviewId,
-    isRework: Boolean(reviewId),
+    isRework: true,
   }
 }
 
@@ -57,76 +60,71 @@ function movedToStore(fromProcessId: string, movedQty: number): JobCardMovement 
   }
 }
 
-describe('computeReworkBatch', () => {
-  it('starts at the rework step and runs to the end of the route', () => {
-    const batch = computeReworkBatch(routes, review, [])
+describe('computeReworkSummary', () => {
+  it('pools every review into one pass starting at the earliest rework step', () => {
+    // Newest first, as the reviews hook returns them.
+    const reviews = [review('rev-2', 20, '20'), review('rev-1', 5, '10')]
+    const summary = computeReworkSummary(routes, reviews, [])
 
-    expect(batch.steps.map(s => s.step.processName)).toEqual(['Machining', 'Inspection'])
-    expect(batch.steps[0].availableQty).toBe(3)
-    expect(batch.outstandingQty).toBe(3)
+    expect(summary.steps.map(s => s.step.processName)).toEqual([
+      'Cutting',
+      'Machining',
+      'Inspection',
+    ])
+    expect(summary.totalQty).toBe(25)
+    // Each review's qty waits at the process it was sent back to.
+    expect(summary.steps[0].availableQty).toBe(5)
+    expect(summary.steps[1].availableQty).toBe(20)
   })
 
-  it('ignores logs that do not cite this review', () => {
-    const batch = computeReworkBatch(routes, review, [log('20', 3), log('20', 1, 0, 'rev-2')])
+  it('adds two reviews aimed at the same process together', () => {
+    const reviews = [review('rev-2', 4, '20'), review('rev-1', 6, '20')]
+    const summary = computeReworkSummary(routes, reviews, [])
 
-    expect(batch.steps[0].loggedQty).toBe(0)
-    expect(batch.outstandingQty).toBe(3)
+    expect(summary.steps).toHaveLength(2)
+    expect(summary.steps[0].availableQty).toBe(10)
+    expect(summary.steps[0].pendingQty).toBe(10)
+    expect(summary.outstandingQty).toBe(10)
   })
 
-  it('carries only OK qty to the next step', () => {
-    const batch = computeReworkBatch(routes, review, [log('20', 2, 1, 'rev-1')])
-
-    expect(batch.steps[0]).toMatchObject({ okQty: 2, rejectedQty: 1, pendingQty: 0 })
-    // 2 OK out of Machining is all Inspection gets to work on.
-    expect(batch.steps[1]).toMatchObject({ availableQty: 2, pendingQty: 2 })
-    expect(batch.outstandingQty).toBe(0)
-  })
-
-  it('marks the first step with work left as current', () => {
-    const batch = computeReworkBatch(routes, review, [log('20', 3, 0, 'rev-1')])
-
-    expect(batch.steps[0].isCurrent).toBe(false)
-    expect(batch.steps[1].isCurrent).toBe(true)
-  })
-
-  it('counts To Move from its own OK qty, not from job-card movements', () => {
-    const batch = computeReworkBatch(routes, review, [log('20', 3, 0, 'rev-1')])
-
-    // 3 OK at Machining, nothing logged at Inspection yet.
-    expect(batch.steps[0].readyToMoveQty).toBe(3)
-    // Nothing logged at the last step yet, so nothing to receive into store.
-    expect(batch.steps[1].readyToMoveQty).toBe(0)
-  })
-
-  it('drops To Move as the next step picks the qty up', () => {
-    const batch = computeReworkBatch(routes, review, [
-      log('20', 3, 0, 'rev-1'),
-      log('30', 2, 0, 'rev-1'),
+  it('carries OK qty on to the next step, whichever review logged it', () => {
+    const reviews = [review('rev-2', 4, '20'), review('rev-1', 6, '20')]
+    const summary = computeReworkSummary(routes, reviews, [
+      log('20', 6, 0, 'rev-1'),
+      log('20', 3, 1, 'rev-2'),
     ])
 
-    expect(batch.steps[0].readyToMoveQty).toBe(1)
+    // 10 arrived, 10 logged (9 ok + 1 rejected), nothing left to redo here.
+    expect(summary.steps[0]).toMatchObject({ okQty: 9, rejectedQty: 1, pendingQty: 0 })
+    // Inspection gets the 9 that came out OK.
+    expect(summary.steps[1]).toMatchObject({ availableQty: 9, pendingQty: 9 })
+    expect(summary.outstandingQty).toBe(9)
   })
 
-  it('reports the qty that made it through the whole route', () => {
-    const batch = computeReworkBatch(routes, review, [
-      log('20', 3, 0, 'rev-1'),
-      log('30', 3, 0, 'rev-1'),
-    ])
+  it('makes the final step receivable and drops it once received', () => {
+    const reviews = [review('rev-1', 3, '20')]
+    const logs = [log('20', 3), log('30', 3)]
 
-    expect(batch.finishedQty).toBe(3)
-    expect(batch.steps.every(step => step.pendingQty === 0)).toBe(true)
-    // The redo's own output is receivable into store like any first-pass qty.
-    expect(batch.steps[1].readyToMoveQty).toBe(3)
+    const before = computeReworkSummary(routes, reviews, logs)
+    expect(before.finishedQty).toBe(3)
+    expect(before.steps[1].readyToMoveQty).toBe(3)
+
+    const after = computeReworkSummary(routes, reviews, logs, [movedToStore('30', 3)])
+    expect(after.steps[1].readyToMoveQty).toBe(0)
   })
 
-  it('drops the last step to nothing once the redo qty is received into store', () => {
-    const batch = computeReworkBatch(
-      routes,
-      review,
-      [log('20', 3, 0, 'rev-1'), log('30', 3, 0, 'rev-1')],
-      [movedToStore('30', 3)],
-    )
+  it('lists each review under its process, oldest first, and dedupes reasons', () => {
+    const reviews = [
+      review('rev-2', 4, '20', 'Cutting not done'),
+      review('rev-1', 6, '20', 'Cutting not done'),
+    ]
+    const summary = computeReworkSummary(routes, reviews, [])
 
-    expect(batch.steps[1].readyToMoveQty).toBe(0)
+    expect(summary.reviewsByProcess.get('20')?.map(r => r.id)).toEqual(['rev-1', 'rev-2'])
+    expect(summary.reasons).toEqual(['Cutting not done'])
+  })
+
+  it('returns nothing to show when no review points at a route step', () => {
+    expect(computeReworkSummary(routes, [], []).steps).toEqual([])
   })
 })

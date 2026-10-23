@@ -44,7 +44,7 @@ const PurchaseOrderFormDrawerInner: FC<PurchaseOrderFormDrawerProps> = ({
   const [form] = Form.useForm()
   const isEdit = !!orderId
 
-  const { data: order } = usePurchaseOrder(orderId)
+  const { data: order, isLoading: loadingRecord } = usePurchaseOrder(orderId)
   const { data: suppliers = [] } = useSuppliers()
   const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
@@ -151,6 +151,7 @@ const PurchaseOrderFormDrawerInner: FC<PurchaseOrderFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Purchase Order' : 'New Purchase Order'}
       status={isEdit && order ? PO_STATUS_BADGE[order.status] : undefined}
       statusLabel={isEdit && order ? PO_STATUS_LABELS[order.status] : undefined}

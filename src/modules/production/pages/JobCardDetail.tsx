@@ -66,7 +66,7 @@ import { useProductionReceipts } from '../hooks/useProductionReceipts'
 import { useReworkReviewsForJobCard } from '../hooks/useRejections'
 import { computeJobCardTotals, computeStepProgress } from '../utils/jobCardProgress'
 import type { StepProgress } from '../utils/jobCardProgress'
-import { computeReworkBatches } from '../utils/reworkProgress'
+import { computeReworkSummary } from '../utils/reworkProgress'
 import { getErrorMessage } from '@/api/client'
 import { formatDateTime } from '@/utils/date'
 
@@ -148,8 +148,16 @@ export const JobCardDetail: FC = () => {
   // counted, and mixing them would double-count every step.
   const firstPassLogs = logs.filter(log => !log.isRework)
   const progress = computeStepProgress(jobCard?.routes ?? [], firstPassLogs, movements, orderedQty)
-  const reworkBatches = computeReworkBatches(jobCard?.routes ?? [], reworkReviews, logs, movements)
-  const activeBatch = reworkBatches.find(batch => batch.review.id === activeReworkReviewId)
+  // One pooled rework pass, not a table per review: qty sent back to a process
+  // is qty to redo at that process, whichever rejection put it there.
+  const rework = computeReworkSummary(jobCard?.routes ?? [], reworkReviews, logs, movements)
+  // A log has to cite a review, so a step takes the one that has been waiting
+  // longest at it; a later step of the redo has no review of its own, so it
+  // falls back to the oldest open one (ERP-BE only balances at the rework step).
+  const reviewForStep = (processId: string | undefined) =>
+    (processId ? reworkReviews.filter(r => r.reworkProcessId === processId) : []).at(0) ??
+    reworkReviews.at(-1)
+  const activeBatch = activeReworkReviewId ? rework : undefined
   const activeRows = activeBatch?.steps ?? progress
   const currentStep = progress.find(row => row.isCurrent)
   const activeStep =
@@ -177,9 +185,7 @@ export const JobCardDetail: FC = () => {
   // Nothing left unaccepted or pending anywhere on the route — there's no
   // backend "complete" action for a job card yet, so this is a display-only
   // signal, not the real jobCard.status.
-  const reworkOutstanding = reworkBatches.some(batch =>
-    batch.steps.some(row => row.pendingQty > 0 || row.unacceptedQty > 0),
-  )
+  const reworkOutstanding = rework.steps.some(row => row.pendingQty > 0 || row.unacceptedQty > 0)
   const isFullyProduced =
     progress.length > 0 &&
     finalOk > 0 &&
@@ -316,7 +322,9 @@ export const JobCardDetail: FC = () => {
     }
   })
 
-  const makeProcessColumns = (reworkReviewId?: string): TableColumnsType<StepProgress> => [
+  const makeProcessColumns = (
+    reworkReviewIdFor?: (record: StepProgress) => string | undefined,
+  ): TableColumnsType<StepProgress> => [
     {
       title: '#',
       key: 'seq',
@@ -401,7 +409,7 @@ export const JobCardDetail: FC = () => {
                 type={action.key === primary ? 'primary' : 'default'}
                 icon={action.icon}
                 disabled={!action.enabled || isClosed}
-                onClick={() => openDrawer(record, action.key, reworkReviewId)}
+                onClick={() => openDrawer(record, action.key, reworkReviewIdFor?.(record))}
                 style={{ fontSize: 12, paddingInline: 6 }}
               >
                 {action.label}
@@ -736,45 +744,42 @@ export const JobCardDetail: FC = () => {
             },
             {
               key: 'rework',
-              label: `Rejection / Rework (${reworkBatches.length})`,
+              label: `Rejection / Rework (${reworkReviews.length})`,
               children:
-                reworkBatches.length === 0 ? (
+                rework.steps.length === 0 ? (
                   <Empty
-                    description="No rework batches yet. Rejected qty appears here once Rejection Review approves a Rework decision for it."
+                    description="No rework yet. Rejected qty appears here once Rejection Review approves a Rework decision for it."
                     style={{ padding: '32px 0' }}
                   />
                 ) : (
-                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    {reworkBatches.map(batch => (
-                      <div key={batch.review.id}>
-                        <Space wrap style={{ marginBottom: 8 }}>
-                          <Typography.Text strong>
-                            {batch.review.reviewedQty} back to{' '}
-                            {batch.review.reworkProcessName ?? '—'}
-                          </Typography.Text>
-                          {batch.review.reasonName && <Tag>{batch.review.reasonName}</Tag>}
-                          <Tag color={batch.outstandingQty > 0 ? 'orange' : 'default'}>
-                            {batch.outstandingQty} to redo
-                          </Tag>
-                          <Tag color={batch.finishedQty > 0 ? 'green' : 'default'}>
-                            {batch.finishedQty} finished
-                          </Tag>
-                        </Space>
-                        <DataTable<StepProgress>
-                          columns={makeProcessColumns(batch.review.id)}
-                          dataSource={batch.steps}
-                          rowKey={record => record.step.id}
-                          loading={reworkLoading}
-                          pagination={false}
-                          size="middle"
-                          scroll={{ x: 'max-content' }}
-                          rowClassName={record =>
-                            record.isCurrent ? 'erp-current-process-row' : ''
-                          }
-                        />
-                      </div>
-                    ))}
-                  </Space>
+                  <>
+                    <Space wrap style={{ marginBottom: 8 }}>
+                      <Typography.Text strong>
+                        {rework.totalQty} sent back for rework
+                      </Typography.Text>
+                      {rework.reasons.map(reason => (
+                        <Tag key={reason}>{reason}</Tag>
+                      ))}
+                      <Tag color={rework.outstandingQty > 0 ? 'orange' : 'default'}>
+                        {rework.outstandingQty} to redo
+                      </Tag>
+                      <Tag color={rework.finishedQty > 0 ? 'green' : 'default'}>
+                        {rework.finishedQty} finished
+                      </Tag>
+                    </Space>
+                    <DataTable<StepProgress>
+                      columns={makeProcessColumns(
+                        record => reviewForStep(record.step.processId)?.id,
+                      )}
+                      dataSource={rework.steps}
+                      rowKey={record => record.step.id}
+                      loading={reworkLoading}
+                      pagination={false}
+                      size="middle"
+                      scroll={{ x: 'max-content' }}
+                      rowClassName={record => (record.isCurrent ? 'erp-current-process-row' : '')}
+                    />
+                  </>
                 ),
             },
           ]}

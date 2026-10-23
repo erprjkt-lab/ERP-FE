@@ -36,7 +36,7 @@ const CustomerFormDrawerInner: FC<CustomerFormDrawerProps> = ({ open, onClose, c
   const [form] = Form.useForm()
   const isEdit = !!customerId
 
-  const { data: customer } = useCustomer(customerId)
+  const { data: customer, isLoading: loadingRecord } = useCustomer(customerId)
   const countryId = Form.useWatch('countryId', form) as string | undefined
   const stateId = Form.useWatch('stateId', form) as string | undefined
   const { data: countries = [] } = useCountries()
@@ -152,6 +152,7 @@ const CustomerFormDrawerInner: FC<CustomerFormDrawerProps> = ({ open, onClose, c
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Customer' : 'Add Customer'}
       status={isEdit ? (customer?.status ?? 'active') : undefined}
       open={open}

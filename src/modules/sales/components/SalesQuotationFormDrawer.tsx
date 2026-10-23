@@ -78,7 +78,7 @@ const SalesQuotationFormDrawerInner: FC<SalesQuotationFormDrawerProps> = ({
   const { data: customers } = useSalesCustomers()
   const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: sourceEnquiry } = useSalesEnquiry(isEdit ? undefined : sourceEnquiryId)
-  const { data: existing } = useSalesQuotation(quotationId)
+  const { data: existing, isLoading: loadingRecord } = useSalesQuotation(quotationId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesQuotation()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesQuotation()
 
@@ -194,6 +194,7 @@ const SalesQuotationFormDrawerInner: FC<SalesQuotationFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? `Edit ${existing?.quotationNumber ?? 'Quotation'}` : 'New Sales Quotation'}
       open={open}
       width={960}

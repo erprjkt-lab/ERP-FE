@@ -51,7 +51,7 @@ const StockAdjustmentFormDrawerInner: FC<StockAdjustmentFormDrawerProps> = ({
 
   const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: locations } = useLocations()
-  const { data: existing } = useStockAdjustment(adjustmentId)
+  const { data: existing, isLoading: loadingRecord } = useStockAdjustment(adjustmentId)
   const { mutateAsync: createAdjustment, isPending: creating } = useCreateStockAdjustment()
   const { mutateAsync: updateAdjustment, isPending: updating } = useUpdateStockAdjustment()
 
@@ -186,6 +186,7 @@ const StockAdjustmentFormDrawerInner: FC<StockAdjustmentFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? `Edit ${existing?.adjustmentNumber ?? 'Adjustment'}` : 'New Stock Adjustment'}
       status={statusBadge}
       statusLabel={existing?.status}

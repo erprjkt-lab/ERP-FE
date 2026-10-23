@@ -86,7 +86,7 @@ const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
     if (open && !isEdit) setMode(fromRequisitionId ? 'fromRequisitions' : 'manual')
   }
 
-  const { data: enquiry } = usePurchaseEnquiry(enquiryId)
+  const { data: enquiry, isLoading: loadingRecord } = usePurchaseEnquiry(enquiryId)
   const { data: suppliers = [] } = useSuppliers()
   const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
   const { data: requisitions } = usePurchaseRequisitions()
@@ -239,6 +239,7 @@ const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Purchase Enquiry' : 'New Purchase Enquiry'}
       status={isEdit && enquiry ? ENQUIRY_STATUS_BADGE[enquiry.status] : undefined}
       statusLabel={isEdit && enquiry ? ENQUIRY_STATUS_LABELS[enquiry.status] : undefined}

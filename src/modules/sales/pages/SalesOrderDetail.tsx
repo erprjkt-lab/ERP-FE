@@ -6,7 +6,7 @@ import {
   EditOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Input, Row, Skeleton, Space, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useRef, useState } from 'react'
@@ -125,7 +125,11 @@ export const SalesOrderDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/orders')}>
           Back to Sales Orders
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Sales order not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Sales order not found.</p>
+        )}
       </div>
     )
   }

@@ -57,7 +57,7 @@ const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClos
 
   const { data: customers } = useSalesCustomers()
   const { data: items } = useProcurementItems()
-  const { data: existing } = useSalesOrder(orderId)
+  const { data: existing, isLoading: loadingRecord } = useSalesOrder(orderId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesOrder()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesOrder()
 
@@ -140,6 +140,7 @@ const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClos
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? `Edit ${existing?.orderNumber ?? 'Sales Order'}` : 'New Sales Order'}
       open={open}
       width={960}

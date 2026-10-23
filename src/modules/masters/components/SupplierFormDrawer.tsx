@@ -34,7 +34,7 @@ const SupplierFormDrawerInner: FC<SupplierFormDrawerProps> = ({ open, onClose, s
   const [form] = Form.useForm()
   const isEdit = !!supplierId
 
-  const { data: supplier } = useSupplier(supplierId)
+  const { data: supplier, isLoading: loadingRecord } = useSupplier(supplierId)
   const countryId = Form.useWatch('countryId', form) as string | undefined
   const stateId = Form.useWatch('stateId', form) as string | undefined
   const { data: countries = [] } = useCountries()
@@ -138,6 +138,7 @@ const SupplierFormDrawerInner: FC<SupplierFormDrawerProps> = ({ open, onClose, s
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Supplier' : 'Add Supplier'}
       status={isEdit ? (supplier?.status ?? 'active') : undefined}
       open={open}

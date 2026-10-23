@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Row, Skeleton, Space, Typography } from 'antd'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -30,7 +30,11 @@ export const StockAdjustmentDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/inventory/adjustments')}>
           Back to Stock Adjustments
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Adjustment not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Adjustment not found.</p>
+        )}
       </div>
     )
   }

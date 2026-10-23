@@ -66,7 +66,7 @@ const StockRequisitionFormDrawerInner: FC<StockRequisitionFormDrawerProps> = ({
   const { data: departments } = useDepartments()
   const { data: employees } = useEmployees()
   const { data: items } = useProcurementItems()
-  const { data: existing } = useStockRequisition(requisitionId)
+  const { data: existing, isLoading: loadingRecord } = useStockRequisition(requisitionId)
   const { mutateAsync: create, isPending: creating } = useCreateStockRequisition()
   const { mutateAsync: update, isPending: updating } = useUpdateStockRequisition()
 
@@ -144,6 +144,7 @@ const StockRequisitionFormDrawerInner: FC<StockRequisitionFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={
         isEdit ? `Edit ${existing?.requisitionNumber ?? 'Requisition'}` : 'New Stock Requisition'
       }

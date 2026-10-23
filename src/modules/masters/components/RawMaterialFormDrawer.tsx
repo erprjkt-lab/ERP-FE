@@ -34,7 +34,7 @@ const RawMaterialFormDrawerInner: FC<RawMaterialFormDrawerProps> = ({
   const [form] = Form.useForm()
   const isEdit = !!rawMaterialId
 
-  const { data: rawMaterial } = useRawMaterial(rawMaterialId)
+  const { data: rawMaterial, isLoading: loadingRecord } = useRawMaterial(rawMaterialId)
   const { mutateAsync: createRawMaterial, isPending: creating } = useCreateRawMaterial()
   const { mutateAsync: updateRawMaterial, isPending: updating } = useUpdateRawMaterial()
   const { data: categories = [] } = useItemCategories()
@@ -143,6 +143,7 @@ const RawMaterialFormDrawerInner: FC<RawMaterialFormDrawerProps> = ({
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Raw Material' : 'Add Raw Material'}
       status={isEdit ? (rawMaterial?.status ?? 'active') : undefined}
       open={open}

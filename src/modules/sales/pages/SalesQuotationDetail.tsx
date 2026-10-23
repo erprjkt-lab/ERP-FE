@@ -6,7 +6,19 @@ import {
   EditOutlined,
   FileDoneOutlined,
 } from '@ant-design/icons'
-import { App, Button, Card, Col, Descriptions, Input, Row, Space, Tag, Typography } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Input,
+  Row,
+  Skeleton,
+  Space,
+  Tag,
+  Typography,
+} from 'antd'
 import type { TableColumnsType } from 'antd'
 import type { FC } from 'react'
 import { useRef, useState } from 'react'
@@ -78,7 +90,11 @@ export const SalesQuotationDetail: FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/sales/quotations')}>
           Back to Quotations
         </Button>
-        <p style={{ marginTop: 24 }}>{isLoading ? 'Loading…' : 'Quotation not found.'}</p>
+        {isLoading ? (
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        ) : (
+          <p style={{ marginTop: 24 }}>Quotation not found.</p>
+        )}
       </div>
     )
   }

@@ -31,7 +31,7 @@ const EmployeeFormDrawerInner: FC<EmployeeFormDrawerProps> = ({ open, onClose, e
   const [form] = Form.useForm()
   const isEdit = !!employeeId
 
-  const { data: employee } = useEmployee(employeeId)
+  const { data: employee, isLoading: loadingRecord } = useEmployee(employeeId)
   const { data: departments = [] } = useDepartments()
   const { data: designations = [] } = useDesignations()
   const { data: shifts = [] } = useShifts()
@@ -136,6 +136,7 @@ const EmployeeFormDrawerInner: FC<EmployeeFormDrawerProps> = ({ open, onClose, e
 
   return (
     <FormDrawer
+      loading={loadingRecord}
       title={isEdit ? 'Edit Employee' : 'Add Employee'}
       status={isEdit ? (employee?.status ?? 'active') : undefined}
       open={open}
