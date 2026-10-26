@@ -31,6 +31,8 @@ export type { DrawerProps } from './Drawer'
 export { FormDrawer } from './FormDrawer'
 export type { FormDrawerProps } from './FormDrawer'
 
+export { ItemGridHeader } from './ItemGridHeader'
+export type { ItemGridHeaderProps } from './ItemGridHeader'
 export { UploadField } from './UploadField'
 export type { UploadFieldProps } from './UploadField'
 

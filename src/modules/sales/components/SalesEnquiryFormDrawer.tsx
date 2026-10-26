@@ -16,6 +16,7 @@ import type { FC } from 'react'
 import { useEffect } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
@@ -215,13 +216,19 @@ const SalesEnquiryFormDrawerInner: FC<SalesEnquiryFormDrawerProps> = ({
                       paddingBottom: 4,
                     }}
                   >
-                    <div style={{ minWidth: 480 }}>
+                    <div style={{ minWidth: 560 }}>
+                      <ItemGridHeader
+                        template={'minmax(240px, 2.4fr) 90px minmax(140px, 1fr) 32px'}
+                        labels={['Item', 'Qty', 'Remark', '']}
+                      />
                       {fields.map(field => (
                         <div
                           key={field.key}
+                          className="erp-item-grid"
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 90px 1fr 32px',
+                            gridTemplateColumns:
+                              'minmax(240px, 2.4fr) 90px minmax(140px, 1fr) 32px',
                             gap: '0 8px',
                             alignItems: 'start',
                           }}

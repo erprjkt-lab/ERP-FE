@@ -6,6 +6,7 @@ import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
@@ -426,13 +427,30 @@ const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
                           paddingBottom: 4,
                         }}
                       >
-                        <div style={{ minWidth: 840 }}>
+                        <div style={{ minWidth: 880 }}>
+                          <ItemGridHeader
+                            template={
+                              'minmax(190px, 2fr) minmax(110px, 1fr) 80px 80px 120px 120px minmax(110px, 1fr) 32px'
+                            }
+                            labels={[
+                              'Item',
+                              'Description',
+                              'Qty',
+                              'UOM',
+                              'Required By',
+                              'Preferred Delivery',
+                              'Remarks',
+                              '',
+                            ]}
+                          />
                           {fields.map(field => (
                             <div
                               key={field.key}
+                              className="erp-item-grid"
                               style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 1fr 100px 90px 130px 130px 1fr 32px',
+                                gridTemplateColumns:
+                                  'minmax(190px, 2fr) minmax(110px, 1fr) 80px 80px 120px 120px minmax(110px, 1fr) 32px',
                                 gap: '0 8px',
                                 alignItems: 'start',
                               }}

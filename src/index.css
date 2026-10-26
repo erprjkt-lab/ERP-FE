@@ -394,3 +394,46 @@ body {
     opacity: 0.45;
   }
 }
+
+/* Inline item rows inside a form (components/ui/ItemGridHeader + Form.List).
+   A validation message is taken out of the flow and dropped into the row's
+   bottom margin: without this, a message appearing or clearing as the user
+   picks an item resizes the row and shifts every field below it. */
+.erp-item-grid .ant-form-item {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+/* A grid item defaults to min-width:auto, so one long value — a picked item
+   like "FG0024 — MAIN BEARING CAP ASSEMBLY" — widens its column past the
+   track it was given and pushes every field out of line with its heading.
+   Letting the cells shrink keeps the columns where the header put them; the
+   control inside ellipsises instead. */
+.erp-item-grid > *,
+.erp-item-grid-header > * {
+  min-width: 0;
+}
+
+/* A picked item wraps onto a second line rather than ellipsising: the column
+   is narrow by necessity (six more fields share the row) and the name is the
+   one value the user has to be able to read back. Ant Design 6 puts the
+   ellipsis on `.ant-select-content` (v5's `.ant-select-selection-item` is
+   gone), and the control has no fixed height — it is an inline-flex box sized
+   by its content — so letting the text wrap is all that is needed for it to
+   grow downward. The grid's align-items:start keeps the rest of the row put. */
+.erp-item-grid .ant-select-single .ant-select-content {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  align-self: stretch;
+}
+
+.erp-item-grid .ant-form-item-explain {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+}
