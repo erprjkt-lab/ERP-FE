@@ -62,7 +62,7 @@ export const ReportFilterBar: FC<ReportFilterBarProps> = ({ filterKeys, value, o
 
   // The pickers are only mounted when a report asks for them, but hooks can't be
   // conditional — TanStack's cache makes the unused ones effectively free.
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { data: customers } = useCustomers()
   const { data: suppliers } = useSuppliers()

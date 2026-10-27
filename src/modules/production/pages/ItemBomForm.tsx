@@ -19,7 +19,7 @@ export const ItemBomForm: FC = () => {
   const { itemId } = useParams()
   const { data: finishedGood } = useFinishedGood(itemId)
   const { data: bomLines = [], isLoading } = useItemBom(itemId)
-  const { data: componentItems = [] } = useProcurementItems()
+  const { data: componentItems = [] } = useProcurementItems(false)
   const { data: uoms = [] } = useUoms()
   const { mutateAsync: createLine } = useCreateItemBomLine(itemId)
   const { mutateAsync: updateLine } = useUpdateItemBomLine(itemId)

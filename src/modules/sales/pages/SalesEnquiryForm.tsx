@@ -55,7 +55,7 @@ export const SalesEnquiryForm: FC = () => {
   const [form] = Form.useForm<EnquiryFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: existing, isLoading } = useSalesEnquiry(id)
   const { mutateAsync: create, isPending: creating } = useCreateSalesEnquiry()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesEnquiry()

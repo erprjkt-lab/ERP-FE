@@ -17,6 +17,7 @@ import type { FC } from 'react'
 import { useEffect } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { useDepartments } from '@/modules/hr/hooks/useDepartments'
 import { useEmployees } from '@/modules/hr/hooks/useEmployees'
@@ -65,7 +66,7 @@ const StockRequisitionFormDrawerInner: FC<StockRequisitionFormDrawerProps> = ({
 
   const { data: departments } = useDepartments()
   const { data: employees } = useEmployees()
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: existing, isLoading: loadingRecord } = useStockRequisition(requisitionId)
   const { mutateAsync: create, isPending: creating } = useCreateStockRequisition()
   const { mutateAsync: update, isPending: updating } = useUpdateStockRequisition()
@@ -242,7 +243,11 @@ const StockRequisitionFormDrawerInner: FC<StockRequisitionFormDrawerProps> = ({
                       paddingBottom: 4,
                     }}
                   >
-                    <div style={{ minWidth: 640 }}>
+                    <div style={{ minWidth: 600 }}>
+                      <ItemGridHeader
+                        template={'minmax(240px, 2.4fr) 120px minmax(140px, 1fr) 32px'}
+                        labels={['Item', 'Required Qty', 'Remarks', '']}
+                      />
                       {fields.map(field => (
                         <RequisitionItemRow
                           key={field.key}
@@ -281,12 +286,14 @@ interface RequisitionItemRowProps {
 const RequisitionItemRow: FC<RequisitionItemRowProps> = ({ field, items, onRemove }) => {
   const selectedItemId = Form.useWatch(['items', field.name, 'itemId']) as string | undefined
   const selectedItem = items.find(i => i.id === selectedItemId)
+  const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
 
   return (
     <div
+      className="erp-item-grid"
       style={{
         display: 'grid',
-        gridTemplateColumns: '2fr 130px 1fr 32px',
+        gridTemplateColumns: 'minmax(240px, 2.4fr) 120px minmax(140px, 1fr) 32px',
         gap: '0 8px',
         alignItems: 'start',
       }}
@@ -294,7 +301,7 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({ field, items, onRemov
       <Form.Item name={[field.name, 'itemId']} rules={[{ required: true, message: 'Required' }]}>
         <Select
           placeholder="Select item"
-          options={items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))}
+          options={itemOptions}
           showSearch
           filterOption={(input, option) =>
             String(option?.label ?? '')

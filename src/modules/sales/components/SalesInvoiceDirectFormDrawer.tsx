@@ -73,7 +73,7 @@ const SalesInvoiceDirectFormDrawerInner: FC<SalesInvoiceDirectFormDrawerProps> =
   const [pendingItemId, setPendingItemId] = useState<string>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createInvoice, isPending } = useCreateSalesInvoice()
 
   const itemsById = useMemo(() => new Map(items.map(i => [i.id, i])), [items])

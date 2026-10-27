@@ -44,7 +44,7 @@ export const ItemInspectionParameterForm: FC<ItemInspectionParameterFormProps> =
   const params = useParams()
   const itemId = itemIdProp ?? params.itemId
   const { pathname } = useLocation()
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const item = items.find(i => i.id === itemId)
   const breadcrumbParent =
     breadcrumbParentProp ??

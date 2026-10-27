@@ -44,7 +44,7 @@ const InspectionParametersDrawerInner: FC<InspectionParametersDrawerProps> = ({
   itemId,
   rawMaterial = false,
 }) => {
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const item = items.find(i => i.id === itemId)
   const { data: parameters = [], isLoading } = useInspectionParameters(itemId)
   const { data: routeSteps } = useItemProcessRoute(rawMaterial ? undefined : itemId)

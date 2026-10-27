@@ -49,7 +49,7 @@ const StockAdjustmentFormDrawerInner: FC<StockAdjustmentFormDrawerProps> = ({
   const [qtyByItem, setQtyByItem] = useState<Record<string, Record<string, number>>>({})
   const [pendingItemId, setPendingItemId] = useState<string>()
 
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { data: existing, isLoading: loadingRecord } = useStockAdjustment(adjustmentId)
   const { mutateAsync: createAdjustment, isPending: creating } = useCreateStockAdjustment()

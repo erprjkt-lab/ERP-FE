@@ -16,6 +16,7 @@ import type { FC } from 'react'
 import { useEffect } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import { useSalesCustomers } from '../hooks/useSalesCustomers'
@@ -56,7 +57,7 @@ const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClos
   const [form] = Form.useForm<OrderFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: existing, isLoading: loadingRecord } = useSalesOrder(orderId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesOrder()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesOrder()
@@ -236,7 +237,22 @@ const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClos
                       paddingBottom: 4,
                     }}
                   >
-                    <div style={{ minWidth: 780 }}>
+                    <div style={{ minWidth: 870 }}>
+                      <ItemGridHeader
+                        template={
+                          'minmax(200px, 2.2fr) 80px 80px 70px 70px 130px minmax(110px, 1fr) 32px'
+                        }
+                        labels={[
+                          'Item',
+                          'Qty',
+                          'Rate',
+                          'Disc %',
+                          'Tax %',
+                          'Committed Date',
+                          'Remarks',
+                          '',
+                        ]}
+                      />
                       {fields.map(field => {
                         const selectedElsewhere = new Set(
                           (watchedItems ?? [])
@@ -250,9 +266,11 @@ const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClos
                         return (
                           <div
                             key={field.key}
+                            className="erp-item-grid"
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: '2fr 90px 90px 90px 90px 140px 1fr 32px',
+                              gridTemplateColumns:
+                                'minmax(200px, 2.2fr) 80px 80px 70px 70px 130px minmax(110px, 1fr) 32px',
                               gap: '0 8px',
                               alignItems: 'start',
                             }}

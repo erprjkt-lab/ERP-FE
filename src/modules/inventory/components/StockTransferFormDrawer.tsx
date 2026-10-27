@@ -35,7 +35,7 @@ const StockTransferFormDrawerInner: FC<StockTransferFormDrawerProps> = ({ open, 
   const [qtyByItem, setQtyByItem] = useState<Record<string, Record<string, number>>>({})
   const [pendingItemId, setPendingItemId] = useState<string>()
 
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { mutateAsync: createTransfer, isPending: creating } = useCreateStockTransfer()
 

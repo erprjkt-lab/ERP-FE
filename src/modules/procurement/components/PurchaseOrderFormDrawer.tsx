@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
 import { PO_STATUS_BADGE, PO_STATUS_LABELS } from '../constants'
@@ -46,7 +47,7 @@ const PurchaseOrderFormDrawerInner: FC<PurchaseOrderFormDrawerProps> = ({
 
   const { data: order, isLoading: loadingRecord } = usePurchaseOrder(orderId)
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
   const { mutateAsync: updateOrder, isPending: updating } = useUpdatePurchaseOrder()
 
@@ -247,13 +248,30 @@ const PurchaseOrderFormDrawerInner: FC<PurchaseOrderFormDrawerProps> = ({
                       paddingBottom: 4,
                     }}
                   >
-                    <div style={{ minWidth: 780 }}>
+                    <div style={{ minWidth: 860 }}>
+                      <ItemGridHeader
+                        template={
+                          'minmax(200px, 2.2fr) 80px 80px 70px 70px 120px minmax(110px, 1fr) 32px'
+                        }
+                        labels={[
+                          'Item',
+                          'Qty',
+                          'Rate',
+                          'Disc %',
+                          'Tax %',
+                          'Delivery Date',
+                          'Remarks',
+                          '',
+                        ]}
+                      />
                       {fields.map(field => (
                         <div
                           key={field.key}
+                          className="erp-item-grid"
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 90px 90px 90px 90px 130px 1fr 32px',
+                            gridTemplateColumns:
+                              'minmax(200px, 2.2fr) 80px 80px 70px 70px 120px minmax(110px, 1fr) 32px',
                             gap: '0 8px',
                             alignItems: 'start',
                           }}

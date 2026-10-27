@@ -16,6 +16,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { getErrorMessage } from '@/api/client'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { useProcurementItems } from '@/modules/procurement/hooks/useProcurementItems'
 import type { ProcurementItemOption } from '@/modules/procurement/hooks/useProcurementItems'
@@ -49,7 +50,7 @@ const OpeningStockFormDrawerInner: FC<OpeningStockFormDrawerProps> = ({ open, on
   const { message } = App.useApp()
   const [form] = Form.useForm<OpeningStockFormValues>()
 
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { mutateAsync: createEntry, isPending: creating } = useCreateOpeningStock()
 
@@ -142,7 +143,11 @@ const OpeningStockFormDrawerInner: FC<OpeningStockFormDrawerProps> = ({ open, on
                     paddingBottom: 4,
                   }}
                 >
-                  <div style={{ minWidth: 740 }}>
+                  <div style={{ minWidth: 880 }}>
+                    <ItemGridHeader
+                      template={'minmax(230px, 2.2fr) minmax(140px, 1.4fr) 1fr 1fr 90px 90px 32px'}
+                      labels={['Item', 'Location', 'Batch No', 'Heat No', 'Qty', 'Rate', '']}
+                    />
                     {fields.map(field => (
                       <OpeningStockItemRow
                         key={field.key}
@@ -187,6 +192,7 @@ const OpeningStockItemRow: FC<OpeningStockItemRowProps> = ({
 }) => {
   const selectedItemId = Form.useWatch(['items', field.name, 'itemId']) as string | undefined
   const selectedItem = items.find(i => i.id === selectedItemId)
+  const itemOptions = items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))
 
   const searchFilter = (input: string, option?: { label?: string }) =>
     String(option?.label ?? '')
@@ -195,9 +201,10 @@ const OpeningStockItemRow: FC<OpeningStockItemRowProps> = ({
 
   return (
     <div
+      className="erp-item-grid"
       style={{
         display: 'grid',
-        gridTemplateColumns: '2fr 1.4fr 1fr 1fr 100px 100px 32px',
+        gridTemplateColumns: 'minmax(230px, 2.2fr) minmax(140px, 1.4fr) 1fr 1fr 90px 90px 32px',
         gap: '0 8px',
         alignItems: 'start',
       }}
@@ -205,7 +212,7 @@ const OpeningStockItemRow: FC<OpeningStockItemRowProps> = ({
       <Form.Item name={[field.name, 'itemId']} rules={[{ required: true, message: 'Required' }]}>
         <Select
           placeholder="Select item"
-          options={items.map(i => ({ label: `${i.code} — ${i.name}`, value: i.id }))}
+          options={itemOptions}
           showSearch
           filterOption={searchFilter}
         />

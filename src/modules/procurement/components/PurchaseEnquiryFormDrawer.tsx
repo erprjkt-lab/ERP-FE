@@ -6,6 +6,7 @@ import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/ui/DataTable'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useSuppliers } from '@/modules/masters/hooks/useSuppliers'
@@ -30,10 +31,7 @@ import type {
   PurchaseEnquiryManualInput,
   PurchaseEnquirySupplierInput,
 } from '../hooks/usePurchaseEnquiries'
-import {
-  usePurchaseRequisitions,
-  usePurchaseRequisitionsByIds,
-} from '../hooks/usePurchaseRequisitions'
+import { usePurchaseRequisitions } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
 import { formatDateTime } from '@/utils/date'
 import { deferMount } from '@/components/ui/deferMount'
@@ -102,7 +100,9 @@ const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
   const requisitionOptions = requisitions
     .filter(pr => pr.status === 'APPROVED')
     .map(pr => ({ label: pr.requisitionNumber, value: pr.id }))
-  const selectedPrs = usePurchaseRequisitionsByIds(selectedReqIds ?? [])
+  // The requisition list already carries each PR's items, so the selected ones
+  // are filtered from it rather than re-fetched one detail call per PR.
+  const selectedPrs = (requisitions ?? []).filter(pr => (selectedReqIds ?? []).includes(pr.id))
   const previewItems = selectedPrs.flatMap(pr =>
     pr.items
       .filter(item => item.pendingQty > 0)
@@ -426,13 +426,30 @@ const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
                           paddingBottom: 4,
                         }}
                       >
-                        <div style={{ minWidth: 840 }}>
+                        <div style={{ minWidth: 880 }}>
+                          <ItemGridHeader
+                            template={
+                              'minmax(190px, 2fr) minmax(110px, 1fr) 80px 80px 120px 120px minmax(110px, 1fr) 32px'
+                            }
+                            labels={[
+                              'Item',
+                              'Description',
+                              'Qty',
+                              'UOM',
+                              'Required By',
+                              'Preferred Delivery',
+                              'Remarks',
+                              '',
+                            ]}
+                          />
                           {fields.map(field => (
                             <div
                               key={field.key}
+                              className="erp-item-grid"
                               style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 1fr 100px 90px 130px 130px 1fr 32px',
+                                gridTemplateColumns:
+                                  'minmax(190px, 2fr) minmax(110px, 1fr) 80px 80px 120px 120px minmax(110px, 1fr) 32px',
                                 gap: '0 8px',
                                 alignItems: 'start',
                               }}

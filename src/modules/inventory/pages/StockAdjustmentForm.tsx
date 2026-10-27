@@ -43,7 +43,7 @@ export const StockAdjustmentForm: FC = () => {
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { mutateAsync: createAdjustment, isPending: creating } = useCreateStockAdjustment()
   const locationId = Form.useWatch('locationId', form) as string | undefined

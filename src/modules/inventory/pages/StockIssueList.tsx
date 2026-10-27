@@ -54,7 +54,7 @@ export const StockIssueList: FC = () => {
   const [locationId, setLocationId] = useState<string | undefined>()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const { data: items, isLoading: loadingItems } = useProcurementItems()
+  const { data: items, isLoading: loadingItems } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { data: issues, isLoading } = useAllStockIssues({
     item_id: itemId ? Number(itemId) : undefined,

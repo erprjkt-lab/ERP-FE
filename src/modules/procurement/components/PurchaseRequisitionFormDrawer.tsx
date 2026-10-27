@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import type { FC } from 'react'
 import { useEffect } from 'react'
 import { FormDrawer } from '@/components/ui/FormDrawer'
+import { ItemGridHeader } from '@/components/ui/ItemGridHeader'
 import { FormSection } from '@/components/ui/FormSection'
 import { useDepartments } from '@/modules/hr/hooks/useDepartments'
 import type { Priority } from '@/types/procurement'
@@ -47,7 +48,7 @@ const PurchaseRequisitionFormDrawerInner: FC<PurchaseRequisitionFormDrawerProps>
 
   const { data: requisition, isLoading: loadingRecord } = usePurchaseRequisition(requisitionId)
   const { data: departments } = useDepartments()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createRequisition, isPending: creating } = useCreatePurchaseRequisition()
   const { mutateAsync: updateRequisition, isPending: updating } = useUpdatePurchaseRequisition()
 
@@ -222,7 +223,13 @@ const PurchaseRequisitionFormDrawerInner: FC<PurchaseRequisitionFormDrawerProps>
                       paddingBottom: 4,
                     }}
                   >
-                    <div style={{ minWidth: 700 }}>
+                    <div style={{ minWidth: 860 }}>
+                      <ItemGridHeader
+                        template={
+                          'minmax(220px, 2.2fr) minmax(120px, 1fr) 90px 120px minmax(110px, 1fr) 32px'
+                        }
+                        labels={['Item', 'Description', 'Qty', 'Required By', 'Remarks', '']}
+                      />
                       {fields.map(field => (
                         <RequisitionItemRow
                           key={field.key}
@@ -277,9 +284,11 @@ const RequisitionItemRow: FC<RequisitionItemRowProps> = ({
 
   return (
     <div
+      className="erp-item-grid"
       style={{
         display: 'grid',
-        gridTemplateColumns: '2fr 1fr 100px 130px 1fr 32px',
+        gridTemplateColumns:
+          'minmax(220px, 2.2fr) minmax(120px, 1fr) 90px 120px minmax(110px, 1fr) 32px',
         gap: '0 8px',
         alignItems: 'start',
       }}

@@ -55,7 +55,7 @@ export const PurchaseRequisitionForm: FC = () => {
 
   const { data: requisition } = usePurchaseRequisition(id)
   const { data: departments } = useDepartments()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createRequisition, isPending: creating } = useCreatePurchaseRequisition()
   const { mutateAsync: updateRequisition, isPending: updating } = useUpdatePurchaseRequisition()
 

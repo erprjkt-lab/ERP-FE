@@ -42,7 +42,7 @@ export const PurchaseOrderForm: FC = () => {
   const [form] = Form.useForm()
 
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
 
   const supplierOptions = suppliers.map(s => ({ label: `${s.code} — ${s.name}`, value: s.id }))

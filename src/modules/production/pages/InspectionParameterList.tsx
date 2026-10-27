@@ -14,7 +14,7 @@ import { ItemInspectionParameterForm } from './ItemInspectionParameterForm'
  */
 export const InspectionParameterList: FC = () => {
   const [itemId, setItemId] = useState<string>()
-  const { data: items, isLoading, loadMore, hasMore } = useProcurementItems()
+  const { data: items, isLoading, loadMore, hasMore } = useProcurementItems(false)
 
   const itemOptions = items.map(item => ({
     label: `${item.code} — ${item.name}`,
