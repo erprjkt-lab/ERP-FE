@@ -59,7 +59,7 @@ const SalesEnquiryFormDrawerInner: FC<SalesEnquiryFormDrawerProps> = ({
   const [form] = Form.useForm<EnquiryFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: existing, isLoading: loadingRecord } = useSalesEnquiry(enquiryId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesEnquiry()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesEnquiry()

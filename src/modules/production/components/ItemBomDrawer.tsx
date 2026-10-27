@@ -24,7 +24,7 @@ export interface ItemBomDrawerProps {
 const ItemBomDrawerInner: FC<ItemBomDrawerProps> = ({ open, onClose, itemId }) => {
   const { data: finishedGood } = useFinishedGood(itemId)
   const { data: bomLines = [], isLoading } = useItemBom(itemId)
-  const { data: componentItems = [] } = useProcurementItems()
+  const { data: componentItems = [] } = useProcurementItems(false)
   const { mutateAsync: createLine } = useCreateItemBomLine(itemId)
   const { mutateAsync: updateLine } = useUpdateItemBomLine(itemId)
   const { mutateAsync: deleteLine } = useDeleteItemBomLine(itemId)

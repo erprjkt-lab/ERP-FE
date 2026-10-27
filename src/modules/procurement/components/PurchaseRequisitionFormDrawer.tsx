@@ -48,7 +48,7 @@ const PurchaseRequisitionFormDrawerInner: FC<PurchaseRequisitionFormDrawerProps>
 
   const { data: requisition, isLoading: loadingRecord } = usePurchaseRequisition(requisitionId)
   const { data: departments } = useDepartments()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createRequisition, isPending: creating } = useCreatePurchaseRequisition()
   const { mutateAsync: updateRequisition, isPending: updating } = useUpdatePurchaseRequisition()
 

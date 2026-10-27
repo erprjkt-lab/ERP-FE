@@ -53,7 +53,7 @@ export const StockRequisitionForm: FC = () => {
   const { data: requisition } = useStockRequisition(id)
   const { data: departments } = useDepartments()
   const { data: employees } = useEmployees()
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { mutateAsync: createRequisition, isPending: creating } = useCreateStockRequisition()
   const { mutateAsync: updateRequisition, isPending: updating } = useUpdateStockRequisition()
 

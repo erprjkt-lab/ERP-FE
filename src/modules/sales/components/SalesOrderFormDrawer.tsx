@@ -57,7 +57,7 @@ const SalesOrderFormDrawerInner: FC<SalesOrderFormDrawerProps> = ({ open, onClos
   const [form] = Form.useForm<OrderFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: existing, isLoading: loadingRecord } = useSalesOrder(orderId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesOrder()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesOrder()

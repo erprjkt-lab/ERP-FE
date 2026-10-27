@@ -41,7 +41,7 @@ const CustomerComplaintFormDrawerInner: FC<CustomerComplaintFormDrawerProps> = (
 
   const { data: customers = [] } = useCustomers()
   const { data: locations = [] } = useLocations()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createComplaint, isPending: creating } = useCreateCustomerComplaint()
   const { mutateAsync: updateComplaint, isPending: updating } = useUpdateCustomerComplaint()
 

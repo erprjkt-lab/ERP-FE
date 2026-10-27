@@ -57,7 +57,7 @@ export const SalesOrderForm: FC = () => {
   const [form] = Form.useForm<OrderFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: existing, isLoading } = useSalesOrder(id)
   const { mutateAsync: create, isPending: creating } = useCreateSalesOrder()
   const { mutateAsync: update, isPending: updating } = useUpdateSalesOrder()

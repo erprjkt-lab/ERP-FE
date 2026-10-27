@@ -81,7 +81,7 @@ export const SalesQuotationForm: FC = () => {
   const [form] = Form.useForm<QuotationFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: sourceEnquiry } = useSalesEnquiry(enquiryId ?? undefined)
   const { data: existing, isLoading } = useSalesQuotation(id)
   const { mutateAsync: create, isPending: creating } = useCreateSalesQuotation()

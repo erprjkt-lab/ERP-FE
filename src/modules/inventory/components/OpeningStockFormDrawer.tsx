@@ -50,7 +50,7 @@ const OpeningStockFormDrawerInner: FC<OpeningStockFormDrawerProps> = ({ open, on
   const { message } = App.useApp()
   const [form] = Form.useForm<OpeningStockFormValues>()
 
-  const { data: items } = useProcurementItems()
+  const { data: items } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const { mutateAsync: createEntry, isPending: creating } = useCreateOpeningStock()
 

@@ -47,7 +47,7 @@ const PurchaseOrderFormDrawerInner: FC<PurchaseOrderFormDrawerProps> = ({
 
   const { data: order, isLoading: loadingRecord } = usePurchaseOrder(orderId)
   const { data: suppliers = [] } = useSuppliers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { mutateAsync: createDirect, isPending: creating } = useCreatePurchaseOrderDirect()
   const { mutateAsync: updateOrder, isPending: updating } = useUpdatePurchaseOrder()
 

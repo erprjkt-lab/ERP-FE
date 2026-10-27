@@ -31,10 +31,7 @@ import type {
   PurchaseEnquiryManualInput,
   PurchaseEnquirySupplierInput,
 } from '../hooks/usePurchaseEnquiries'
-import {
-  usePurchaseRequisitions,
-  usePurchaseRequisitionsByIds,
-} from '../hooks/usePurchaseRequisitions'
+import { usePurchaseRequisitions } from '../hooks/usePurchaseRequisitions'
 import { getErrorMessage } from '@/api/client'
 import { formatDateTime } from '@/utils/date'
 import { deferMount } from '@/components/ui/deferMount'
@@ -103,7 +100,9 @@ const PurchaseEnquiryFormDrawerInner: FC<PurchaseEnquiryFormDrawerProps> = ({
   const requisitionOptions = requisitions
     .filter(pr => pr.status === 'APPROVED')
     .map(pr => ({ label: pr.requisitionNumber, value: pr.id }))
-  const selectedPrs = usePurchaseRequisitionsByIds(selectedReqIds ?? [])
+  // The requisition list already carries each PR's items, so the selected ones
+  // are filtered from it rather than re-fetched one detail call per PR.
+  const selectedPrs = (requisitions ?? []).filter(pr => (selectedReqIds ?? []).includes(pr.id))
   const previewItems = selectedPrs.flatMap(pr =>
     pr.items
       .filter(item => item.pendingQty > 0)

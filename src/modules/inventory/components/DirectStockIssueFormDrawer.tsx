@@ -33,7 +33,7 @@ const DirectStockIssueFormDrawerInner: FC<DirectStockIssueFormDrawerProps> = ({
   const [form] = Form.useForm<{ issuedTo: string; issueDate?: dayjs.Dayjs }>()
   const [itemLines, setItemLines] = useState<ItemLine[]>([])
   const [pendingItemId, setPendingItemId] = useState<string>()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: employees } = useEmployees()
   const { mutateAsync: createDirectIssue, isPending } = useCreateDirectStockIssue()
 

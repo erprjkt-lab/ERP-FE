@@ -76,7 +76,7 @@ const SalesQuotationFormDrawerInner: FC<SalesQuotationFormDrawerProps> = ({
   const [form] = Form.useForm<QuotationFormValues>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: sourceEnquiry } = useSalesEnquiry(isEdit ? undefined : sourceEnquiryId)
   const { data: existing, isLoading: loadingRecord } = useSalesQuotation(quotationId)
   const { mutateAsync: create, isPending: creating } = useCreateSalesQuotation()

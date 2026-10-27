@@ -83,7 +83,7 @@ export const DeliveryChallanForm: FC = () => {
   const [pendingItemId, setPendingItemId] = useState<string>()
 
   const { data: customers } = useSalesCustomers()
-  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems()
+  const { data: items, loadMore: loadMoreItems, hasMore: hasMoreItems } = useProcurementItems(false)
   const { data: confirmedOrders } = useSalesOrders({ status: 'CONFIRMED', perPage: 200 })
   const { data: selectedOrder } = useSalesOrder(salesOrderId)
   const { dispatchedByItemId } = useSalesOrderDispatchedQtyByItem(salesOrderId)

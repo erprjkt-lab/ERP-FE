@@ -57,7 +57,7 @@ export function StockLedger() {
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
   const [page, setPage] = useState(1)
 
-  const { data: items, isLoading: loadingItems } = useProcurementItems()
+  const { data: items, isLoading: loadingItems } = useProcurementItems(false)
   const { data: locations } = useLocations()
   const {
     data: rows,
